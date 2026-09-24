@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menjalankan Aplikasi Flutter ke Perangkat Nyata (Real Device)</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE; --blue:#7C93FF;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:#fff;}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:760px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:#fff;}
+  .sub{color:var(--muted); font-size:16.5px; max-width:58ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff; margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:26px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  table{border-collapse:collapse; width:100%; margin:0 0 22px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--muted); font-size:12.5px;}
+  td code{color:var(--blue); background:transparent; padding:0;}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .oscard{border:1px solid var(--line); border-radius:10px; padding:4px 18px 6px; margin:0 0 24px; background:var(--panel);}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Kenapa ke Real Device</a></li>
+      <li><a href="#s2">Menyiapkan Android</a></li>
+      <li><a href="#s3">Menyiapkan iOS</a></li>
+      <li><a href="#s4">Perintah Penting</a></li>
+      <li><a href="#s5">Masalah Umum</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 2 · Run to Device</span>
+      <h1>Menjalankan Aplikasi ke Perangkat Nyata (Real Device)</h1>
+      <p class="sub">Materi ini membahas persiapan perangkat Android dan iOS agar dapat digunakan untuk menjalankan dan menguji aplikasi Flutter secara langsung, tanpa emulator.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Mengapa Perlu Diuji pada Perangkat Nyata</h2>
+    <p>Emulator dan simulator memang praktis untuk pengembangan sehari-hari, namun performa, sensor (kamera, GPS, akselerometer), dan pengalaman sentuh pada perangkat sungguhan seringkali berbeda. Sebelum aplikasi dikumpulkan sebagai tugas, sebaiknya diuji langsung pada perangkat fisik minimal satu kali.</p>
+
+    <h2 id="s2"><span class="badge">02</span>Menyiapkan Perangkat Android</h2>
+    <div class="oscard">
+      <ol>
+        <li>Buka <strong>Pengaturan &rarr; Tentang Ponsel</strong>, lalu ketuk <strong>Nomor Build</strong> sebanyak 7 kali hingga muncul notifikasi "Anda sekarang menjadi pengembang".</li>
+        <li>Masuk ke <strong>Pengaturan &rarr; Opsi Pengembang</strong>, lalu aktifkan <strong>USB Debugging</strong>.</li>
+        <li>Hubungkan perangkat ke komputer menggunakan kabel USB.</li>
+        <li>Pada layar ponsel akan muncul dialog "Izinkan debugging USB?" — pilih <strong>Izinkan</strong>.</li>
+        <li>Periksa apakah perangkat sudah terdeteksi oleh Flutter:</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter devices</code></pre></div>
+    <p>Apabila perangkat muncul dalam daftar, jalankan aplikasi langsung ke perangkat tersebut:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter run</code></pre></div>
+    <div class="note"><span class="lbl">Lebih dari satu perangkat terdeteksi?</span><p>Gunakan <code>flutter run -d &lt;device_id&gt;</code>, di mana <code>device_id</code> diambil dari kolom paling kiri hasil <code>flutter devices</code>.</p></div>
+
+    <h2 id="s3"><span class="badge">03</span>Menyiapkan Perangkat iOS (Khusus Pengguna macOS)</h2>
+    <div class="oscard">
+      <ol>
+        <li>Hubungkan iPhone ke Mac menggunakan kabel, kemudian pilih <strong>Trust</strong> pada dialog yang muncul di kedua perangkat.</li>
+        <li>Buka proyek Flutter melalui Xcode dengan perintah <code>open ios/Runner.xcworkspace</code>, lalu pada bagian <strong>Signing &amp; Capabilities</strong>, pilih <strong>Team</strong> menggunakan Apple ID pribadi (akun gratis sudah cukup untuk keperluan pengujian).</li>
+        <li>Jalankan aplikasi pertama kali melalui tombol Run pada Xcode agar proses code signing selesai dengan sempurna.</li>
+        <li>Pada iPhone, buka <strong>Pengaturan &rarr; Umum &rarr; VPN &amp; Manajemen Perangkat</strong>, lalu percayai (trust) profil developer yang muncul.</li>
+        <li>Setelah langkah tersebut berhasil, aplikasi selanjutnya dapat dijalankan langsung dari terminal:</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter run</code></pre></div>
+    <div class="note"><span class="lbl">Khusus pengguna Windows/Linux</span><p>Pengembangan dan pengujian untuk perangkat iOS memerlukan macOS dan Xcode, sehingga langkah ini tidak dapat dilakukan pada sistem operasi lain.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Perintah-Perintah yang Sering Digunakan</h2>
+    <table>
+      <tr><th>Perintah</th><th>Fungsi</th></tr>
+      <tr><td><code>flutter devices</code></td><td>Menampilkan daftar perangkat/emulator yang terdeteksi.</td></tr>
+      <tr><td><code>flutter run</code></td><td>Membangun dan menjalankan aplikasi pada perangkat yang terhubung.</td></tr>
+      <tr><td><code>flutter run -d &lt;id&gt;</code></td><td>Menjalankan aplikasi pada perangkat tertentu apabila lebih dari satu terdeteksi.</td></tr>
+      <tr><td>Tombol <code>r</code> saat flutter run berjalan</td><td>Hot reload — memuat ulang perubahan kode tanpa mengulang seluruh state aplikasi.</td></tr>
+      <tr><td>Tombol <code>R</code> saat flutter run berjalan</td><td>Hot restart — memulai ulang aplikasi dari awal beserta seluruh state-nya.</td></tr>
+      <tr><td>Tombol <code>q</code> saat flutter run berjalan</td><td>Menghentikan proses dan keluar dari sesi flutter run.</td></tr>
+    </table>
+
+    <h2 id="s5"><span class="badge">05</span>Masalah yang Sering Terjadi</h2>
+    <ul>
+      <li><strong>Perangkat berstatus "unauthorized"</strong> pada Android — lepas kabel, cabut sambungkan kembali, lalu periksa apakah dialog izin USB debugging muncul dan pilih Izinkan.</li>
+      <li><strong>Perangkat tidak muncul sama sekali</strong> — pastikan mode koneksi USB pada ponsel diatur ke <em>Transfer Berkas (MTP)</em>, bukan <em>Hanya Mengisi Daya</em>.</li>
+      <li><strong>Untrusted Developer pada iOS</strong> — ulangi langkah trust profil developer melalui menu VPN &amp; Manajemen Perangkat, karena langkah ini kadang perlu dilakukan ulang setelah build baru.</li>
+      <li><strong>Proses build pertama terasa lama</strong> — hal ini wajar, karena Gradle (Android) atau Xcode (iOS) sedang mengunduh dan menyiapkan dependensi untuk pertama kalinya.</li>
+    </ul>
+
+    <footer>Setelah aplikasi berhasil berjalan pada perangkat nyata, proses pengembangan selanjutnya dapat dilakukan dengan hot reload agar lebih cepat. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>

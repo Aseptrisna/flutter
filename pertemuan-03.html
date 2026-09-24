@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Komponen Flutter dan Navigasi Antar-Halaman</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE;
+    --blue:#7C93FF; --green:#8FD6A6;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent),
+      var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif;
+    line-height:1.65; font-size:16.5px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none;}
+  strong{font-weight:600; color:#fff;}
+
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{
+    position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px;
+    padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;
+  }
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side li{margin:0;}
+  nav.side a{
+    display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted);
+    border-left:2px solid transparent; margin-left:-1px; transition:color .15s;
+  }
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:760px;}
+
+  header.hero{margin-bottom:40px;}
+  .kicker{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent);
+    background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(30px,4.5vw,44px);
+    line-height:1.12; margin:0 0 14px; color:#fff;
+  }
+  .sub{color:var(--muted); font-size:16.5px; max-width:56ch; margin:0 0 28px;}
+
+  .flow{display:flex; align-items:center; flex-wrap:wrap; gap:0; font-family:'JetBrains Mono',monospace; font-size:13px;}
+  .flow .pill{background:var(--panel); border:1px solid var(--line); padding:8px 14px; border-radius:8px; color:var(--text);}
+  .flow .arrow{color:var(--muted); padding:0 10px; font-size:15px;}
+
+  h2{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff;
+    margin:64px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;
+  }
+  h2 .badge{
+    flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim);
+    color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:30px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch; color:var(--text);}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch; color:var(--text);}
+  li::marker{color:var(--accent);}
+
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+
+  table{border-collapse:collapse; width:100%; margin:0 0 22px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--muted); font-size:12.5px;}
+  td code{color:var(--blue); background:transparent; padding:0;}
+
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+
+  @media (max-width:880px){
+    nav.side{display:none;}
+    main{padding:36px 20px 90px; max-width:100%;}
+  }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="side" id="sidenav">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Konsep Widget</a></li>
+      <li><a href="#s2">Komponen Dasar</a></li>
+      <li><a href="#s3">Navigasi Halaman</a></li>
+      <li><a href="#s4">Praktik Implementasi</a></li>
+      <li><a href="#s5">Kesalahan Umum</a></li>
+      <li><a href="#s6">Latihan</a></li>
+      <li><a href="#s7">Struktur Kode</a></li>
+      <li><a href="#s8">Pembuatan Kelas Otomatis</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="kicker">Materi Pemula · Flutter</span>
+      <h1>Komponen Flutter dan Navigasi Antar-Halaman</h1>
+      <p class="sub">Materi ini membahas konsep dasar widget pada Flutter, cara berpindah antar-halaman, serta praktik pembuatan tiga halaman yang saling terhubung.</p>
+      <div class="flow">
+        <span class="pill">Splash Screen</span><span class="arrow">→</span>
+        <span class="pill">Login</span><span class="arrow">→</span>
+        <span class="pill">Register</span>
+      </div>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Konsep Dasar: Segala Sesuatu di Flutter Adalah Widget</h2>
+    <p>Dalam Flutter, setiap elemen yang tampil di layar disebut <strong>Widget</strong>. Teks adalah widget, tombol adalah widget, bahkan jarak kosong pun merupakan widget. Memahami konsep ini adalah langkah awal yang penting sebelum mempelajari hal lain.</p>
+    <p>Terdapat dua jenis widget yang perlu dipahami sejak awal:</p>
+    <ul>
+      <li><strong>StatelessWidget</strong> — digunakan untuk tampilan yang isinya tidak berubah. Contohnya adalah splash screen yang hanya menampilkan logo.</li>
+      <li><strong>StatefulWidget</strong> — digunakan untuk tampilan yang datanya dapat berubah ketika pengguna berinteraksi. Contohnya adalah formulir login yang nilainya berubah saat pengguna mengetik.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh sederhana</span></div><pre><code>class HalamanSaya extends StatelessWidget {
+  const HalamanSaya({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text('Halo dunia');
+  }
+}</code></pre></div>
+
+    <p>Apabila diperlukan pembaruan tampilan melalui <code>setState()</code>, maka widget yang digunakan harus berupa <code>StatefulWidget</code>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">stateful_widget.dart</span></div><pre><code>class CounterPage extends StatefulWidget {
+  const CounterPage({super.key});
+  @override
+  State&lt;CounterPage&gt; createState() =&gt; _CounterPageState();
+}
+
+class _CounterPageState extends State&lt;CounterPage&gt; {
+  int angka = 0;
+
+  void tambah() {
+    setState(() { angka++; });
+  }
+
+  @override
+  Widget build(BuildContext context) =&gt; Text('Angka: $angka');
+}</code></pre></div>
+    <p>Perlu diperhatikan bahwa setiap kali <code>setState()</code> dipanggil, method <code>build()</code> akan dijalankan kembali. Mekanisme inilah yang digunakan Flutter untuk menggambar ulang tampilan.</p>
+
+    <h2 id="s2"><span class="badge">02</span>Komponen yang Perlu Dikenal Terlebih Dahulu</h2>
+    <p>Berikut adalah widget-widget dasar yang paling sering digunakan dan wajib dikuasai sebelum melanjutkan ke materi berikutnya.</p>
+    <table>
+      <tr><th>Widget</th><th>Fungsi</th></tr>
+      <tr><td><code>MaterialApp</code></td><td>Pembungkus paling luar dari aplikasi. Mengatur tema, judul, dan routing.</td></tr>
+      <tr><td><code>Scaffold</code></td><td>Kerangka dasar satu halaman: AppBar, body, tombol, dan sebagainya.</td></tr>
+      <tr><td><code>AppBar</code></td><td>Bilah judul yang tampil di bagian atas layar.</td></tr>
+      <tr><td><code>Text</code></td><td>Menampilkan teks.</td></tr>
+      <tr><td><code>Container</code></td><td>Kotak serbaguna yang dapat diatur warna, ukuran, padding, dan margin-nya.</td></tr>
+      <tr><td><code>Column / Row</code></td><td>Menyusun widget secara vertikal atau horizontal.</td></tr>
+      <tr><td><code>TextField / TextFormField</code></td><td>Kolom input teks untuk formulir.</td></tr>
+      <tr><td><code>ElevatedButton</code></td><td>Tombol yang dapat ditekan.</td></tr>
+      <tr><td><code>SizedBox</code></td><td>Memberikan jarak kosong atau mengatur ukuran.</td></tr>
+      <tr><td><code>Form + GlobalKey&lt;FormState&gt;</code></td><td>Membungkus beberapa TextFormField agar dapat divalidasi sekaligus.</td></tr>
+    </table>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola yang akan sering digunakan</span></div><pre><code>Scaffold(
+  appBar: AppBar(title: const Text('Contoh')),
+  body: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      children: [
+        const Text('Nama Lengkap'),
+        const SizedBox(height: 8),
+        TextField(decoration: const InputDecoration(border: OutlineInputBorder())),
+        const SizedBox(height: 16),
+        ElevatedButton(onPressed: () {}, child: const Text('Simpan')),
+      ],
+    ),
+  ),
+)</code></pre></div>
+
+    <h2 id="s3"><span class="badge">03</span>Navigasi Antar-Halaman</h2>
+    <p>Bagian ini merupakan inti dari materi hari ini. Perpindahan halaman pada Flutter dilakukan melalui objek yang disebut <strong>Navigator</strong>. Terdapat tiga cara utama yang perlu dipahami.</p>
+
+    <h3>3.1 Navigator.push — membuka halaman baru</h3>
+    <p>Cara ini digunakan untuk membuka halaman baru, sementara halaman sebelumnya tetap berada di tumpukan sehingga dapat diakses kembali melalui tombol kembali (back).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Navigator.push(
+  context,
+  MaterialPageRoute(builder: (context) =&gt; const HalamanRegister()),
+);</code></pre></div>
+    <p>Untuk kembali ke halaman sebelumnya, gunakan: <code>Navigator.pop(context);</code></p>
+
+    <h3>3.2 Navigator.pushReplacement — halaman sebelumnya tidak dapat diakses kembali</h3>
+    <p>Contoh penerapannya adalah pada perpindahan dari Splash Screen menuju Login. Setelah pengguna berhasil login, tombol kembali seharusnya tidak mengarahkan kembali ke splash screen. Oleh karena itu, digunakan <code>pushReplacement</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(builder: (context) =&gt; const LoginPage()),
+);</code></pre></div>
+
+    <h3>3.3 Named Routes — untuk proyek berskala lebih besar</h3>
+    <p>Setiap halaman diberi nama pada <code>MaterialApp</code>, kemudian dipanggil menggunakan nama tersebut. Pendekatan inilah yang digunakan pada praktik selanjutnya.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>MaterialApp(
+  initialRoute: '/',
+  routes: {
+    '/': (context) =&gt; const SplashScreen(),
+    '/login': (context) =&gt; const LoginPage(),
+    '/register': (context) =&gt; const RegisterPage(),
+  },
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Navigator.pushNamed(context, '/login');
+Navigator.pushReplacementNamed(context, '/login');</code></pre></div>
+
+    <h2 id="s4"><span class="badge">04</span>Praktik: Splash Screen, Login, dan Register</h2>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur berkas</span></div><pre><code>lib/
+ ├─ main.dart
+ ├─ splash_screen.dart
+ ├─ login_page.dart
+ └─ register_page.dart</code></pre></div>
+
+    <h3>4.1 Splash Screen</h3>
+    <p>Halaman ini tampil sesaat ketika aplikasi dibuka, kemudian secara otomatis berpindah ke halaman Login. Mekanismenya menggunakan <code>initState()</code> yang dikombinasikan dengan <code>Future.delayed</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">splash_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+  @override
+  State&lt;SplashScreen&gt; createState() =&gt; _SplashScreenState();
+}
+
+class _SplashScreenState extends State&lt;SplashScreen&gt; {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.indigo,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.school, color: Colors.white, size: 80),
+            SizedBox(height: 16),
+            Text('SI FIK UBL',
+              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Mengapa perlu if (mounted)?</span><p>Pengecekan ini diperlukan untuk mengantisipasi kondisi widget yang sudah tidak aktif lagi (misalnya aplikasi ditutup oleh pengguna) sebelum durasi 3 detik selesai. Tanpa pengecekan ini, aplikasi berpotensi mengalami error.</p></div>
+
+    <h3>4.2 Login Page — versi terstruktur dengan pemisahan method</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">login_page.dart</span></div><pre><code>class _LoginPageState extends State&lt;LoginPage&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void _prosesLogin() {
+    if (_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login berhasil (dummy)')),
+      );
+    }
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+      validator: (v) =&gt; (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      obscureText: true,
+      decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+      validator: (v) =&gt; (v == null || v.length &lt; 6) ? 'Password minimal 6 karakter' : null,
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(onPressed: _prosesLogin, child: const Text('Masuk')),
+    );
+  }
+
+  Widget _buildRegisterLink() {
+    return TextButton(
+      onPressed: () =&gt; Navigator.pushNamed(context, '/register'),
+      child: const Text('Belum memiliki akun? Daftar di sini'),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildEmailField(),
+              const SizedBox(height: 16),
+              _buildPasswordField(),
+              const SizedBox(height: 24),
+              _buildLoginButton(),
+              const SizedBox(height: 12),
+              _buildRegisterLink(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <p>Terdapat dua hal penting yang perlu diperhatikan: perpindahan ke halaman Register menggunakan <code>pushNamed</code>, bukan <code>pushReplacement</code>, karena pengguna masih dapat kembali ke halaman Login. Selain itu, <code>_formKey.currentState!.validate()</code> akan menjalankan seluruh <code>validator</code> pada setiap kolom secara bersamaan.</p>
+
+    <h3>4.3 Register Page</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">register_page.dart</span></div><pre><code>class _RegisterPageState extends State&lt;RegisterPage&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _namaController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void _prosesRegister() {
+    if (_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Akun berhasil dibuat, silakan login')),
+      );
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Daftar Akun')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _namaController,
+                decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.length &lt; 6) ? 'Password minimal 6 karakter' : null,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(onPressed: _prosesRegister, child: const Text('Daftar')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <p>Penggunaan <code>Navigator.pop(context)</code> bertujuan agar setelah proses pendaftaran selesai, pengguna secara otomatis kembali ke halaman Login tanpa menambah tumpukan halaman baru.</p>
+
+    <h3>4.4 Menghubungkan Seluruh Halaman pada main.dart</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">main.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import 'splash_screen.dart';
+import 'login_page.dart';
+import 'register_page.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Aplikasi SI FIK UBL',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.indigo),
+      initialRoute: '/',
+      routes: {
+        '/': (context) =&gt; const SplashScreen(),
+        '/login': (context) =&gt; const LoginPage(),
+        '/register': (context) =&gt; const RegisterPage(),
+      },
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Alur akhir aplikasi</span><p>Splash Screen (3 detik) → pushReplacement → Login. Login → pushNamed → Register. Register → pop → kembali ke Login.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Kesalahan yang Umum Terjadi pada Pemula</h2>
+    <ul>
+      <li><strong>Lupa menambahkan const</strong> — bukan merupakan error fatal, namun dapat memperlambat performa aplikasi. Apabila isi widget tidak berubah, tambahkan <code>const</code> di depannya.</li>
+      <li><strong>Tertukar antara push dan pushReplacement</strong> — apabila halaman sebelumnya masih perlu diakses melalui tombol kembali, gunakan <code>push</code>. Apabila tidak, gunakan <code>pushReplacement</code>.</li>
+      <li><strong>Lupa memanggil dispose() pada controller</strong> — setiap <code>TextEditingController</code> yang dibuat wajib di-<code>dispose()</code>. Kelalaian ini dapat menyebabkan kebocoran memori (memory leak).</li>
+      <li><strong>Memanggil Navigator sebelum widget siap</strong> — oleh karena itu pada Splash Screen dilakukan pengecekan <code>if (mounted)</code> terlebih dahulu.</li>
+    </ul>
+
+    <h2 id="s6"><span class="badge">06</span>Latihan</h2>
+    <ol>
+      <li>Tambahkan <code>Image.asset()</code> pada Splash Screen untuk menampilkan logo kampus, menggantikan ikon <code>Icons.school</code>.</li>
+      <li>Tambahkan validasi format email pada halaman Login menggunakan <code>RegExp</code>, tidak hanya memeriksa apakah kolom kosong atau tidak.</li>
+      <li>Buat halaman baru bernama <code>HomePage</code> yang tampil setelah proses login berhasil, menggunakan <code>pushReplacementNamed</code>.</li>
+      <li>Ubah durasi splash screen dan amati perbedaannya.</li>
+      <li><strong>Tantangan:</strong> simpan status login pengguna menggunakan package <code>shared_preferences</code>, sehingga pengguna tidak perlu login ulang setiap kali membuka aplikasi.</li>
+    </ol>
+
+    <h2 id="s7"><span class="badge">07</span>Menyusun Kode agar Lebih Terstruktur</h2>
+    <p>Daripada menuliskan seluruh widget secara berurutan di dalam satu method <code>build()</code>, sebaiknya kode dipecah menjadi beberapa method kecil agar lebih mudah dibaca.</p>
+    <ul>
+      <li><strong>Tempatkan berkas pada folder yang sesuai</strong> — buat folder <code>lib/pages/</code>, jangan menumpuk seluruh berkas <code>.dart</code> langsung di dalam <code>lib/</code>.</li>
+      <li><strong>Pisahkan setiap bagian antarmuka menjadi method tersendiri</strong> — misalnya <code>_buildEmailField()</code>, <code>_buildLoginButton()</code>, dan sejenisnya.</li>
+      <li><strong>Pisahkan logika dari tampilan</strong> — fungsi seperti <code>_prosesLogin()</code> ditempatkan terpisah dari bagian yang menampilkan widget.</li>
+      <li><strong>Kelompokkan seluruh variabel di bagian atas kelas</strong> — controller dan <code>_formKey</code> dideklarasikan sebelum method lainnya.</li>
+    </ul>
+
+    <h2 id="s8"><span class="badge">08</span>Kelas Tidak Terbentuk Secara Otomatis — Berikut Cara Membuatnya dengan Cepat</h2>
+    <p>Berkas baru yang dibuat masih dalam keadaan kosong. Struktur dasar (boilerplate) <code>StatefulWidget</code> tidak muncul secara otomatis, namun terdapat fitur snippet pada editor yang dapat menghasilkannya secara instan.</p>
+    <div class="note"><span class="lbl">Snippet pada VS Code / Android Studio</span><p>Ketikkan <code>stful</code> kemudian tekan Enter atau Tab, maka struktur dasar <code>StatefulWidget</code> akan muncul secara lengkap. Apabila membutuhkan widget tanpa state, ketikkan <code>stless</code> kemudian tekan Enter.</p></div>
+
+    <footer>Apabila mengalami error, sebagian besar penyebabnya berasal dari tiga hal: lupa menuliskan <code>import</code>, kesalahan penggunaan <code>context</code>, atau lupa memanggil <code>setState()</code>. Periksa ketiga hal tersebut terlebih dahulu sebelum melakukan penelusuran lebih lanjut. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const idx = sections.indexOf(e.target);
+        if (idx >= 0) links[idx].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>

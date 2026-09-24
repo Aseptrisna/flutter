@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Instalasi Flutter di Windows, macOS, dan Linux</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE; --blue:#7C93FF;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:#fff;}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:760px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:#fff;}
+  .sub{color:var(--muted); font-size:16.5px; max-width:58ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff; margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:26px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .oscard{border:1px solid var(--line); border-radius:10px; padding:4px 18px 6px; margin:0 0 24px; background:var(--panel);}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Apa Itu Flutter SDK</a></li>
+      <li><a href="#s2">Sebelum Mulai</a></li>
+      <li><a href="#s3">Instalasi Windows</a></li>
+      <li><a href="#s4">Instalasi macOS</a></li>
+      <li><a href="#s5">Instalasi Linux</a></li>
+      <li><a href="#s6">Verifikasi flutter doctor</a></li>
+      <li><a href="#s7">Masalah Umum</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 1 · Instalasi</span>
+      <h1>Instalasi Flutter di Windows, macOS, dan Linux</h1>
+      <p class="sub">Materi ini membahas langkah-langkah pemasangan Flutter SDK pada tiga sistem operasi yang umum digunakan, serta cara memverifikasi bahwa instalasi telah berhasil.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Apa Itu Flutter SDK</h2>
+    <p>Flutter SDK adalah kumpulan alat (tools) dan pustaka (library) yang digunakan untuk membangun aplikasi menggunakan bahasa pemrograman Dart. Sebelum menulis satu baris kode pun, SDK ini perlu terpasang terlebih dahulu di komputer, beserta beberapa perangkat pendukung seperti Android Studio dan Git.</p>
+    <p>Proses instalasi berbeda pada setiap sistem operasi, namun tujuan akhirnya sama: memastikan perintah <code>flutter</code> dapat dijalankan dari terminal dan seluruh pemeriksaan pada <code>flutter doctor</code> berstatus baik.</p>
+
+    <h2 id="s2"><span class="badge">02</span>Kebutuhan Sebelum Memulai</h2>
+    <ul>
+      <li>Koneksi internet yang stabil, karena proses unduh SDK dan dependensinya berukuran cukup besar.</li>
+      <li>Ruang penyimpanan kosong minimal 2,5 GB (di luar ruang untuk Android Studio dan emulator).</li>
+      <li><strong>Git</strong> sudah terpasang, karena Flutter menggunakannya untuk memperbarui SDK.</li>
+      <li><strong>Android Studio</strong>, digunakan untuk menyediakan Android SDK, emulator, serta sebagai editor (opsional, dapat diganti VS Code).</li>
+    </ul>
+
+    <h2 id="s3"><span class="badge">03</span>Instalasi di Windows</h2>
+    <div class="oscard">
+      <ol>
+        <li>Unduh Flutter SDK dalam format <code>.zip</code> melalui laman resmi <a href="https://docs.flutter.dev/get-started/install/windows" target="_blank" rel="noopener">docs.flutter.dev</a>.</li>
+        <li>Ekstrak berkas tersebut ke lokasi tetap, misalnya <code>C:\src\flutter</code>. Hindari folder yang memerlukan hak akses administrator seperti <code>C:\Program Files</code>.</li>
+        <li>Tambahkan <code>C:\src\flutter\bin</code> ke environment variable <strong>Path</strong> melalui menu Edit Environment Variables.</li>
+        <li>Pasang Android Studio, kemudian buka menu <em>SDK Manager</em> untuk memastikan Android SDK dan Android SDK Command-line Tools sudah terpasang.</li>
+        <li>Buka Command Prompt baru, lalu jalankan <code>flutter doctor</code> untuk memeriksa hasil instalasi.</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cmd</span></div><pre><code>flutter doctor</code></pre></div>
+
+    <h2 id="s4"><span class="badge">04</span>Instalasi di macOS</h2>
+    <div class="oscard">
+      <ol>
+        <li>Unduh Flutter SDK melalui <a href="https://docs.flutter.dev/get-started/install/macos" target="_blank" rel="noopener">docs.flutter.dev</a>, lalu ekstrak ke folder tetap, misalnya <code>~/development</code>.</li>
+        <li>Tambahkan Flutter ke PATH dengan menambahkan baris berikut pada <code>~/.zshrc</code>:</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">~/.zshrc</span></div><pre><code>export PATH="$PATH:$HOME/development/flutter/bin"</code></pre></div>
+    <div class="oscard">
+      <ol start="3">
+        <li>Jalankan <code>source ~/.zshrc</code> agar perubahan langsung berlaku pada terminal yang sedang aktif.</li>
+        <li>Pasang <strong>Xcode</strong> melalui App Store apabila berencana membangun aplikasi untuk iOS, kemudian jalankan <code>sudo xcodebuild -runFirstLaunch</code>.</li>
+        <li>Pasang Android Studio untuk kebutuhan pengembangan Android.</li>
+        <li>Jalankan <code>flutter doctor</code> untuk memverifikasi instalasi.</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter doctor</code></pre></div>
+
+    <h2 id="s5"><span class="badge">05</span>Instalasi di Linux</h2>
+    <div class="oscard">
+      <ol>
+        <li>Unduh berkas <code>.tar.xz</code> melalui <a href="https://docs.flutter.dev/get-started/install/linux" target="_blank" rel="noopener">docs.flutter.dev</a>, lalu ekstrak ke folder tetap seperti <code>~/development</code>.</li>
+        <li>Tambahkan Flutter ke PATH dengan menambahkan baris berikut pada <code>~/.bashrc</code>:</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">~/.bashrc</span></div><pre><code>export PATH="$PATH:$HOME/development/flutter/bin"</code></pre></div>
+    <div class="oscard">
+      <ol start="3">
+        <li>Jalankan <code>source ~/.bashrc</code>.</li>
+        <li>Pasang dependensi tambahan yang dibutuhkan untuk pengembangan aplikasi Linux/Android:</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal (Ubuntu/Debian)</span></div><pre><code>sudo apt-get update
+sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa \
+  clang cmake ninja-build pkg-config libgtk-3-dev</code></pre></div>
+    <div class="oscard">
+      <ol start="5">
+        <li>Pasang Android Studio (diunduh dari situs resminya, bukan dari package manager bawaan distro), lalu buka SDK Manager untuk memasang Android SDK.</li>
+        <li>Jalankan <code>flutter doctor</code> untuk memverifikasi instalasi.</li>
+      </ol>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter doctor</code></pre></div>
+
+    <h2 id="s6"><span class="badge">06</span>Membaca Hasil flutter doctor</h2>
+    <p>Perintah <code>flutter doctor</code> memeriksa seluruh komponen yang dibutuhkan Flutter dan menampilkan status masing-masing dengan tanda berikut:</p>
+    <ul>
+      <li><strong>[✓]</strong> — komponen sudah terpasang dan berfungsi dengan baik.</li>
+      <li><strong>[!]</strong> — komponen terpasang namun ada catatan yang sebaiknya ditindaklanjuti (tidak wajib segera diperbaiki).</li>
+      <li><strong>[✗]</strong> — komponen belum terpasang atau bermasalah, dan wajib diperbaiki sebelum melanjutkan.</li>
+    </ul>
+    <div class="note"><span class="lbl">Tidak perlu semua baris hijau</span><p>Untuk kebutuhan pengembangan Android saja, tanda seru pada baris terkait iOS/Xcode (khusus Windows dan Linux) dapat diabaikan. Fokuskan perhatian pada baris Flutter, Android toolchain, dan editor yang digunakan.</p></div>
+
+    <h2 id="s7"><span class="badge">07</span>Masalah yang Sering Terjadi</h2>
+    <ul>
+      <li><strong>Perintah flutter tidak dikenali</strong> — biasanya karena PATH belum ditambahkan dengan benar, atau terminal belum dibuka ulang setelah perubahan PATH dilakukan.</li>
+      <li><strong>Android licenses belum diterima</strong> — jalankan <code>flutter doctor --android-licenses</code> lalu ketik <code>y</code> pada setiap pertanyaan yang muncul.</li>
+      <li><strong>cmdline-tools component is missing</strong> — buka Android Studio, masuk ke SDK Manager, lalu pasang komponen <em>Android SDK Command-line Tools</em> secara manual.</li>
+    </ul>
+
+    <footer>Setelah <code>flutter doctor</code> menunjukkan status baik pada bagian Flutter dan Android toolchain, instalasi sudah dapat dilanjutkan ke pertemuan berikutnya. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>
