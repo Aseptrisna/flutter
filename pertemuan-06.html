@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HTTP Client, Model Data & State Asinkron di Flutter</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE;
+    --blue:#7C93FF; --green:#8FD6A6;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent),
+      var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif;
+    line-height:1.65; font-size:16.5px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none;}
+  strong{font-weight:600; color:#fff;}
+
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{
+    position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px;
+    padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;
+  }
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side li{margin:0;}
+  nav.side a{
+    display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted);
+    border-left:2px solid transparent; margin-left:-1px; transition:color .15s;
+  }
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
+
+  header.hero{margin-bottom:40px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent);
+    background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(30px,4.5vw,44px);
+    line-height:1.12; margin:0 0 14px; color:#fff;
+  }
+  .sub{color:var(--muted); font-size:16.5px; max-width:58ch; margin:0 0 28px;}
+
+  .flow{display:flex; align-items:center; flex-wrap:wrap; gap:0; font-family:'JetBrains Mono',monospace; font-size:13px;}
+  .flow .pill{background:var(--panel); border:1px solid var(--line); padding:8px 14px; border-radius:8px; color:var(--text);}
+  .flow .arrow{color:var(--muted); padding:0 10px; font-size:15px;}
+
+  h2{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff;
+    margin:64px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;
+  }
+  h2 .badge{
+    flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim);
+    color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:30px 0 10px;}
+  p{margin:0 0 15px; max-width:68ch; color:var(--text);}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch; color:var(--text);}
+  li::marker{color:var(--accent);}
+
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+
+  table{border-collapse:collapse; width:100%; margin:0 0 22px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--muted); font-size:12.5px;}
+  td code{color:var(--blue); background:transparent; padding:0;}
+
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+
+  .verify{background:#12241A; border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+
+  /* ===== Mockup Android ===== */
+  .devrow{display:flex; gap:22px; flex-wrap:wrap; margin:4px 0 26px; align-items:flex-start;}
+  .devcol{flex:0 0 auto; width:212px; text-align:center;}
+  .devcol.wide{width:260px;}
+  .devcap{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); margin:10px 0 2px; letter-spacing:.02em;}
+  .devsub{font-size:11.5px; color:var(--muted); margin-bottom:0;}
+  .device{background:#0c0d12; border-radius:30px; padding:9px; box-shadow:0 22px 44px -14px rgba(0,0,0,.6), 0 0 0 1px #262A36; margin:0 auto;}
+  .device .notch{width:56px; height:13px; background:#0c0d12; border-radius:0 0 10px 10px; margin:0 auto 4px; position:relative; z-index:2;}
+  .device .screen{background:#F5F4F8; border-radius:22px; overflow:hidden; min-height:300px; display:flex; flex-direction:column; font-family:'Inter',sans-serif; color:#1B1B1F;}
+  .device.short .screen{min-height:200px;}
+  .device.tall .screen{min-height:400px;}
+  .device .status{height:20px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-size:9px; color:#4A4A55; font-family:'JetBrains Mono',monospace;}
+  .device .abar{background:#5B4EE0; color:#fff; padding:13px 14px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:9px;}
+  .device .body{flex:1; padding:14px; font-size:12px; display:flex; flex-direction:column;}
+  .device .body.center{align-items:center; justify-content:center;}
+  .spinner{width:26px; height:26px; border-radius:50%; border:3px solid #DAD7E6; border-top-color:#5B4EE0; animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .mbtn{border-radius:20px; padding:9px 18px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:6px; justify-content:center;}
+  .mbtn.elevated{background:#5B4EE0; color:#fff; box-shadow:0 3px 8px rgba(91,78,224,.4);}
+  .mlisttile{display:flex; align-items:center; gap:10px; width:100%; padding:8px 0; border-bottom:1px solid #EDEBF3; text-align:left;}
+  .mlisttile:last-child{border-bottom:none;}
+  .mlisttile .av{width:32px; height:32px; border-radius:50%; background:#E4E1F7; color:#5B4EE0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:0 0 auto; overflow:hidden;}
+  .mlisttile .txt .t1{font-size:11.5px; font-weight:600; color:#1B1B1F;}
+  .mlisttile .txt .t2{font-size:10px; color:#8A8894;}
+  .errico{width:40px; height:40px; border-radius:50%; background:#FBE7E7; color:#D64545; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; margin-bottom:8px;}
+
+  @media (max-width:880px){
+    nav.side{display:none;}
+    main{padding:36px 20px 90px; max-width:100%;}
+    .devrow{justify-content:center;}
+  }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="side" id="sidenav">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Kenapa Perlu Ini</a></li>
+      <li><a href="#s2">Setup Package & Izin</a></li>
+      <li><a href="#s3">Mengingat Kontrak API</a></li>
+      <li><a href="#s4">Model Data (fromJson)</a></li>
+      <li><a href="#s5">Membungkus Pagination</a></li>
+      <li><a href="#s6">ApiService & http.get</a></li>
+      <li><a href="#s7">Base URL: Emulator vs Device</a></li>
+      <li><a href="#s8">FutureBuilder</a></li>
+      <li><a href="#s9">Alternatif: setState Manual</a></li>
+      <li><a href="#s10">Menampilkan Foto dari API</a></li>
+      <li><a href="#s11">Struktur Folder Project</a></li>
+      <li><a href="#s12">Praktik: Halaman Semua UMKM</a></li>
+      <li><a href="#s13">Latihan</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header class="hero">
+      <span class="kicker">Materi Pemula · HTTP & State Asinkron</span>
+      <h1>HTTP Client, Model Data & State Asinkron di Flutter</h1>
+      <p class="sub">Materi ini adalah jembatan antara latihan widget (Pertemuan 5) dan integrasi penuh ke API UMKM (Pertemuan 7): cara memanggil REST API sungguhan, mengubah JSON menjadi objek Dart, dan menampilkannya dengan menangani tiga kondisi wajib — loading, error, dan data.</p>
+      <div class="flow">
+        <span class="pill">http.get</span><span class="arrow">→</span>
+        <span class="pill">Model.fromJson</span><span class="arrow">→</span>
+        <span class="pill">FutureBuilder</span><span class="arrow">→</span>
+        <span class="pill">Tampil di Layar</span>
+      </div>
+    </header>
+
+    <div class="verify">
+      <span class="lbl">✓ Seluruh kode pada materi ini sudah diverifikasi</span>
+      <p>Setiap model dan service ditulis ulang menjadi project Flutter sungguhan, dijalankan <code>flutter analyze</code> (tanpa isu) dan diuji dengan <code>flutter test</code> menggunakan contoh respons JSON asli dari API Golang pada Pertemuan 4 — termasuk kasus foto kosong dan meta pagination yang hilang.</p>
+    </div>
+
+    <h2 id="s1"><span class="badge">01</span>Kenapa Perlu HTTP Client & Model Data</h2>
+    <p>Sejauh ini, data yang ditampilkan pada latihan-latihan sebelumnya berasal dari nilai yang ditulis langsung di kode (dummy). Pada aplikasi nyata, data berasal dari server — pada kasus mata kuliah ini, dari <strong>API UMKM berbasis Golang</strong> yang dibangun pada Pertemuan 4.</p>
+    <p>Ada tiga hal baru yang perlu dikuasai dibanding sebelumnya:</p>
+    <ul>
+      <li><strong>Memanggil API</strong> — mengirim HTTP request dan menunggu responsnya, yang sifatnya <em>asinkron</em> (tidak langsung selesai).</li>
+      <li><strong>Mengubah JSON menjadi objek Dart</strong> — respons API berbentuk teks JSON, perlu diubah menjadi <em>model</em> agar mudah dipakai di widget.</li>
+      <li><strong>Menangani waktu tunggu</strong> — selama data belum datang (atau gagal datang), UI tetap harus menampilkan sesuatu yang masuk akal, bukan layar kosong atau error mentah.</li>
+    </ul>
+
+    <h2 id="s2"><span class="badge">02</span>Menambahkan Package http & Izin Internet</h2>
+    <p>Flutter tidak memiliki HTTP client bawaan yang ringkas untuk dipakai langsung; package resmi <code>http</code> dari tim Dart adalah pilihan paling sederhana untuk memulai.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter pub add http</code></pre></div>
+    <table>
+      <tr><th>Platform</th><th>Yang perlu diperiksa</th></tr>
+      <tr><td>Android</td><td>Izin internet biasanya sudah otomatis ada di <code>android/app/src/main/AndroidManifest.xml</code> lewat template Flutter. Jika tidak, tambahkan <code>&lt;uses-permission android:name="android.permission.INTERNET" /&gt;</code>.</td></tr>
+      <tr><td>iOS</td><td>Untuk memanggil URL <code>http://</code> (bukan <code>https://</code>) saat development, tambahkan pengecualian App Transport Security di <code>Info.plist</code>. Untuk produksi, gunakan <code>https://</code>.</td></tr>
+    </table>
+
+    <h2 id="s3"><span class="badge">03</span>Mengingat Kembali Kontrak API</h2>
+    <p>Model dan service pada materi ini dibuat mengikuti persis bentuk respons API UMKM dari Pertemuan 4 — bukan format buatan sendiri. Tiga aturan yang wajib diingat:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">respons sukses (single)</span></div><pre><code>{ "data": { "id": 1, "nama": "Warung Bu Sari", "foto": "umkm/169....png" } }</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">respons sukses (list + pagination)</span></div><pre><code>{ "data": [ { "id": 1, "nama": "Warung Bu Sari", "foto": "" } ], "meta": { "page": 1, "limit": 10, "total": 1 } }</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">respons gagal</span></div><pre><code>{ "error": { "message": "UMKM tidak ditemukan", "code": "NOT_FOUND" } }</code></pre></div>
+    <div class="note"><span class="lbl">foto berisi path relatif, bukan URL penuh</span><p>Seperti dibahas di Pertemuan 4, field <code>foto</code> hanya berisi path relatif (mis. <code>"umkm/169....png"</code>) atau string kosong jika belum ada foto. Aplikasi Flutter yang menggabungkannya menjadi URL lengkap — dibahas di Bagian 10.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Membuat Model Data (fromJson)</h2>
+    <p>Model adalah class Dart biasa yang merepresentasikan satu baris data dari API, dengan constructor <code>fromJson</code> untuk mengubah <code>Map&lt;String, dynamic&gt;</code> (hasil decode JSON) menjadi objek. Materi ini memakai model manual (tanpa <code>freezed</code>/code generation) agar setiap barisnya mudah ditelusuri.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/umkm_model.dart</span></div><pre><code>class Umkm {
+  final int id;
+  final int userId;
+  final String nama;
+  final String deskripsi;
+  final String alamat;
+  final String foto;
+
+  Umkm({
+    required this.id,
+    required this.userId,
+    required this.nama,
+    required this.deskripsi,
+    required this.alamat,
+    required this.foto,
+  });
+
+  factory Umkm.fromJson(Map&lt;String, dynamic&gt; json) {
+    return Umkm(
+      id: json['id'] as int,
+      userId: json['user_id'] as int,
+      nama: json['nama'] as String,
+      deskripsi: json['deskripsi'] as String? ?? '',
+      alamat: json['alamat'] as String? ?? '',
+      foto: json['foto'] as String? ?? '',
+    );
+  }
+
+  bool get punyaFoto =&gt; foto.isNotEmpty;
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/produk_model.dart</span></div><pre><code>class Produk {
+  final int id;
+  final int umkmId;
+  final String nama;
+  final double harga;
+  final String deskripsi;
+  final String foto;
+
+  Produk({
+    required this.id,
+    required this.umkmId,
+    required this.nama,
+    required this.harga,
+    required this.deskripsi,
+    required this.foto,
+  });
+
+  factory Produk.fromJson(Map&lt;String, dynamic&gt; json) {
+    return Produk(
+      id: json['id'] as int,
+      umkmId: json['umkm_id'] as int,
+      nama: json['nama'] as String,
+      harga: (json['harga'] as num).toDouble(),
+      deskripsi: json['deskripsi'] as String? ?? '',
+      foto: json['foto'] as String? ?? '',
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa (json['harga'] as num).toDouble()?</span><p>PostgreSQL <code>NUMERIC</code> dapat dikirim sebagai angka bulat oleh <code>encoding/json</code> Go (misal <code>17000</code> tanpa desimal). Meng-cast ke <code>num</code> dahulu (bukan langsung <code>double</code>) membuat kode tetap aman baik ketika nilainya <code>17000</code> maupun <code>17000.50</code>.</p></div>
+    <div class="note"><span class="lbl">Kenapa pakai ?? '' di setiap field String?</span><p>Field seperti <code>deskripsi</code>, <code>alamat</code>, atau <code>foto</code> boleh kosong di API (dikirim sebagai string kosong, bukan <code>null</code>) — namun berjaga dengan <code>as String? ?? ''</code> membuat parsing tidak pernah crash walau suatu saat backend mengirim <code>null</code>.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Membungkus Pagination</h2>
+    <p>Karena banyak endpoint (Pertemuan 4) mengembalikan <code>data</code> beserta <code>meta</code> (page/limit/total), dibuat satu class generic <code>PaginatedResult&lt;T&gt;</code> yang bisa dipakai ulang untuk daftar UMKM maupun daftar apa pun di masa depan.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/paginated_result.dart</span></div><pre><code>class PaginatedResult&lt;T&gt; {
+  final List&lt;T&gt; data;
+  final int page;
+  final int limit;
+  final int total;
+
+  PaginatedResult({
+    required this.data,
+    required this.page,
+    required this.limit,
+    required this.total,
+  });
+
+  factory PaginatedResult.fromJson(
+    Map&lt;String, dynamic&gt; json,
+    T Function(Map&lt;String, dynamic&gt;) fromJsonItem,
+  ) {
+    final items = (json['data'] as List&lt;dynamic&gt;? ?? [])
+        .map((e) =&gt; fromJsonItem(e as Map&lt;String, dynamic&gt;))
+        .toList();
+    final meta = json['meta'] as Map&lt;String, dynamic&gt;? ?? {};
+    return PaginatedResult(
+      data: items,
+      page: meta['page'] as int? ?? 1,
+      limit: meta['limit'] as int? ?? items.length,
+      total: meta['total'] as int? ?? items.length,
+    );
+  }
+
+  bool get masihAdaHalamanBerikutnya =&gt; page * limit &lt; total;
+}</code></pre></div>
+    <p>Generic <code>&lt;T&gt;</code> berarti class ini tidak terikat pada satu jenis model — dipanggil dengan <code>PaginatedResult.fromJson(json, Umkm.fromJson)</code> untuk daftar UMKM, atau <code>PaginatedResult.fromJson(json, Produk.fromJson)</code> untuk daftar produk, tanpa perlu menulis ulang logika paginasinya.</p>
+
+    <h2 id="s6"><span class="badge">06</span>ApiService: Memanggil Endpoint dengan http.get</h2>
+    <p>Seluruh logika pemanggilan API dikumpulkan dalam satu class <code>ApiService</code>, terpisah dari widget/screen. Dengan begitu, screen hanya perlu tahu <em>apa</em> yang dipanggil, bukan <em>bagaimana</em> detail HTTP-nya.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/services/api_service.dart</span></div><pre><code>import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import '../models/umkm_model.dart';
+import '../models/produk_model.dart';
+import '../models/paginated_result.dart';
+
+class ApiException implements Exception {
+  final String message;
+  ApiException(this.message);
+
+  @override
+  String toString() =&gt; message;
+}
+
+class ApiService {
+  static const String baseUrl = 'http://10.0.2.2:8080/api';
+
+  Future&lt;PaginatedResult&lt;Umkm&gt;&gt; getUmkmList({String q = '', int page = 1}) async {
+    final uri = Uri.parse('$baseUrl/umkm').replace(queryParameters: {
+      if (q.isNotEmpty) 'q': q,
+      'page': '$page',
+      'limit': '10',
+    });
+
+    final response = await http.get(uri);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat data UMKM');
+    }
+    return PaginatedResult.fromJson(body, Umkm.fromJson);
+  }
+
+  Future&lt;Umkm&gt; getUmkmDetail(int id) async {
+    final response = await http.get(Uri.parse('$baseUrl/umkm/$id'));
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'UMKM tidak ditemukan');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;List&lt;Produk&gt;&gt; getProdukByUmkm(int umkmId) async {
+    final response = await http.get(Uri.parse('$baseUrl/umkm/$umkmId/produk'));
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat produk');
+    }
+    final items = (body['data'] as List&lt;dynamic&gt;? ?? []);
+    return items.map((e) =&gt; Produk.fromJson(e as Map&lt;String, dynamic&gt;)).toList();
+  }
+
+  static String fotoUrl(String relativePath) {
+    final origin = baseUrl.replaceFirst('/api', '');
+    return '$origin/uploads/$relativePath';
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa error dibaca dari body, bukan cuma statusCode?</span><p>API Pertemuan 4 selalu mengembalikan body JSON meskipun gagal (<code>{"error":{"message":...}}</code>). Membaca <code>body['error']['message']</code> memungkinkan pesan error yang ramah ("UMKM tidak ditemukan") ditampilkan ke pengguna, bukan sekadar kode angka seperti <code>404</code>.</p></div>
+
+    <h2 id="s7"><span class="badge">07</span>Base URL: Emulator vs Device Fisik</h2>
+    <p>Kesalahan paling umum saat pertama kali menyambungkan Flutter ke backend lokal adalah alamat <code>baseUrl</code> yang salah untuk jenis perangkat yang dipakai.</p>
+    <table>
+      <tr><th>Menjalankan dari</th><th>Alamat backend lokal (port 8080)</th></tr>
+      <tr><td>Android Emulator</td><td><code>http://10.0.2.2:8080</code> — alamat khusus yang diarahkan emulator ke <code>localhost</code> komputer</td></tr>
+      <tr><td>iOS Simulator</td><td><code>http://localhost:8080</code> — simulator berbagi jaringan langsung dengan komputer</td></tr>
+      <tr><td>Device fisik (Android/iOS)</td><td><code>http://&lt;IP-LAN-komputer&gt;:8080</code>, misal <code>http://192.168.1.10:8080</code> — device dan komputer wajib berada di WiFi yang sama</td></tr>
+      <tr><td>Backend sudah di-deploy (produksi)</td><td>Domain sungguhan dengan <code>https://</code></td></tr>
+    </table>
+    <div class="note"><span class="lbl">Cek IP LAN komputer</span><p>Jalankan <code>ipconfig</code> (Windows) atau <code>ifconfig</code>/<code>ip addr</code> (macOS/Linux) untuk melihat alamat IP lokal komputer sebelum menguji dari device fisik.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Menampilkan Data Asinkron dengan FutureBuilder</h2>
+    <p><code>FutureBuilder</code> adalah widget yang secara otomatis membangun ulang tampilan berdasarkan status sebuah <code>Future</code>: sedang menunggu, gagal, atau berhasil dengan data. Tiga kondisi ini <strong>wajib</strong> ditangani secara eksplisit.</p>
+    <div class="devrow">
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center"><div class="spinner"></div></div>
+          </div>
+        </div>
+        <div class="devcap">ConnectionState.waiting</div>
+      </div>
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center">
+              <div class="errico">!</div>
+              <div style="font-size:10.5px; color:#4A4A55; text-align:center; margin-bottom:8px;">Gagal memuat data</div>
+              <div class="mbtn elevated">Coba Lagi</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">snapshot.hasError</div>
+      </div>
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body" style="align-items:stretch; padding-top:10px;">
+              <div class="mlisttile"><div class="av">WS</div><div class="txt"><div class="t1">Warung Bu Sari</div><div class="t2">Jl. Melati 10</div></div></div>
+              <div class="mlisttile"><div class="av">TB</div><div class="txt"><div class="t1">Toko Pak Budi</div><div class="t2">Jl. Kenanga 5</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">snapshot.hasData</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola FutureBuilder lengkap</span></div><pre><code>FutureBuilder&lt;PaginatedResult&lt;Umkm&gt;&gt;(
+  future: _futureUmkm,
+  builder: (context, snapshot) {
+    // 1. Loading
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    // 2. Error
+    if (snapshot.hasError) {
+      return Center(child: Text('Gagal memuat data: ${snapshot.error}'));
+    }
+    final hasil = snapshot.data!;
+    // 3. Kosong
+    if (hasil.data.isEmpty) {
+      return const Center(child: Text('Belum ada UMKM yang terdaftar'));
+    }
+    // 4. Data tersedia
+    return ListView.builder(
+      itemCount: hasil.data.length,
+      itemBuilder: (context, i) =&gt; ListTile(title: Text(hasil.data[i].nama)),
+    );
+  },
+)</code></pre></div>
+    <div class="note"><span class="lbl">Future dibuat sekali di initState, bukan di build()</span><p>Jika pemanggilan <code>ApiService().getUmkmList()</code> diletakkan langsung di dalam <code>build()</code>, setiap kali widget rebuild (misalnya karena animasi kecil) akan memicu request baru ke server berulang-ulang. Simpan hasilnya ke variabel <code>Future</code> di <code>initState()</code> agar hanya dipanggil sekali.</p></div>
+
+    <h2 id="s9"><span class="badge">09</span>Alternatif: initState + setState Manual</h2>
+    <p><code>FutureBuilder</code> sangat cocok untuk pemanggilan sekali saat halaman dibuka. Namun ketika dibutuhkan kontrol lebih (misalnya tombol "muat ulang", atau menggabungkan loading dari beberapa sumber data), pola manual dengan variabel state lebih fleksibel.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola manual dengan setState</span></div><pre><code>bool _loading = true;
+String? _error;
+List&lt;Produk&gt; _produk = [];
+
+@override
+void initState() {
+  super.initState();
+  _muatProduk();
+}
+
+Future&lt;void&gt; _muatProduk() async {
+  setState(() {
+    _loading = true;
+    _error = null;
+  });
+  try {
+    final hasil = await _apiService.getProdukByUmkm(widget.umkmId);
+    setState(() =&gt; _produk = hasil);
+  } on ApiException catch (e) {
+    setState(() =&gt; _error = e.message);
+  } finally {
+    setState(() =&gt; _loading = false);
+  }
+}</code></pre></div>
+    <table>
+      <tr><th>Pola</th><th>Kapan dipakai</th></tr>
+      <tr><td><code>FutureBuilder</code></td><td>Pemanggilan sederhana, sekali per halaman, tidak butuh tombol muat ulang manual</td></tr>
+      <tr><td><code>initState</code> + <code>setState</code></td><td>Butuh tombol "coba lagi"/refresh eksplisit, atau menggabungkan beberapa variabel status (loading, error, data) secara terpisah</td></tr>
+    </table>
+
+    <h2 id="s10"><span class="badge">10</span>Menampilkan Foto dari API</h2>
+    <p>Karena field <code>foto</code> dari API hanya berisi path relatif (Bagian 03), method <code>ApiService.fotoUrl()</code> menggabungkannya menjadi URL lengkap sebelum dipakai <code>Image.network</code>/<code>NetworkImage</code>. Jika UMKM belum punya foto, tampilkan inisial nama sebagai gantinya.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>CircleAvatar(
+  backgroundImage: umkm.punyaFoto
+      ? NetworkImage(ApiService.fotoUrl(umkm.foto))
+      : null,
+  child: umkm.punyaFoto ? null : Text(umkm.nama[0]),
+)</code></pre></div>
+    <div class="note"><span class="lbl">Diuji dengan unit test</span><p><code>ApiService.fotoUrl('umkm/169999.png')</code> diverifikasi menghasilkan persis <code>http://10.0.2.2:8080/uploads/umkm/169999.png</code> — menggabungkan origin server (tanpa <code>/api</code>) dengan <code>/uploads/</code> dan path relatifnya.</p></div>
+
+    <h2 id="s11"><span class="badge">11</span>Struktur Folder Project</h2>
+    <p>Mulai pertemuan ini, folder <code>lib/</code> ditambah dua folder baru — <code>models/</code> dan <code>services/</code> — mengikuti struktur project referensi yang akan dipakai pada Pertemuan 7 (integrasi penuh). Folder <code>screens/</code> tetap flat per area (bukan <code>features/</code> berlapis), agar konsisten dengan project yang akan dilanjutkan nanti.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder</span></div><pre><code>lib/
+├── main.dart
+├── models/
+│   ├── umkm_model.dart
+│   ├── produk_model.dart
+│   └── paginated_result.dart
+├── services/
+│   └── api_service.dart
+└── screens/
+    ├── splash_screen.dart
+    ├── auth/
+    │   ├── login_screen.dart
+    │   └── register_screen.dart
+    └── home/
+        ├── home_screen.dart
+        ├── profile/
+        │   ├── profile_screen.dart
+        │   └── update_profile_screen.dart
+        └── umkm/
+            ├── umkm_list_screen.dart
+            └── umkm_detail_screen.dart</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa bukan lib/features/...?</span><p>Struktur feature-first (setiap fitur punya folder <code>data/</code>, <code>domain/</code>, <code>presentation/</code> sendiri) memang umum di proyek skala besar, tetapi materi ini sengaja mengikuti struktur <code>lib/screens/</code> yang lebih flat agar konsisten dengan project yang akan dipakai dan dilanjutkan langsung pada Pertemuan 7.</p></div>
+
+    <h2 id="s12"><span class="badge">12</span>Praktik: Halaman "Semua UMKM" Tersambung ke API Sungguhan</h2>
+    <p>Menggabungkan seluruh bagian di atas menjadi satu halaman utuh yang memanggil API, menampilkan avatar dari foto (atau inisial), serta mendukung tarik-untuk-refresh.</p>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device tall">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="abar"><span>☰</span>Semua UMKM</div>
+            <div class="body" style="align-items:stretch; padding-top:10px;">
+              <div class="mlisttile"><div class="av">WS</div><div class="txt"><div class="t1">Warung Bu Sari</div><div class="t2">Jl. Melati 10</div></div></div>
+              <div class="mlisttile"><div class="av">TB</div><div class="txt"><div class="t1">Toko Pak Budi</div><div class="t2">Jl. Kenanga 5</div></div></div>
+              <div class="mlisttile"><div class="av">KC</div><div class="txt"><div class="t1">Kedai Bu Citra</div><div class="t2">Jl. Anggrek 2</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">UmkmListScreen — data dari API sungguhan</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_list_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+
+import '../../../models/paginated_result.dart';
+import '../../../models/umkm_model.dart';
+import '../../../services/api_service.dart';
+
+class UmkmListScreen extends StatefulWidget {
+  const UmkmListScreen({super.key});
+
+  @override
+  State&lt;UmkmListScreen&gt; createState() =&gt; _UmkmListScreenState();
+}
+
+class _UmkmListScreenState extends State&lt;UmkmListScreen&gt; {
+  final _apiService = ApiService();
+  late Future&lt;PaginatedResult&lt;Umkm&gt;&gt; _futureUmkm;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureUmkm = _apiService.getUmkmList();
+  }
+
+  Future&lt;void&gt; _muatUlang() async {
+    setState(() {
+      _futureUmkm = _apiService.getUmkmList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Semua UMKM')),
+      body: FutureBuilder&lt;PaginatedResult&lt;Umkm&gt;&gt;(
+        future: _futureUmkm,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Gagal memuat data: ${snapshot.error}'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(onPressed: _muatUlang, child: const Text('Coba Lagi')),
+                ],
+              ),
+            );
+          }
+
+          final hasil = snapshot.data!;
+          if (hasil.data.isEmpty) {
+            return const Center(child: Text('Belum ada UMKM yang terdaftar'));
+          }
+
+          return RefreshIndicator(
+            onRefresh: _muatUlang,
+            child: ListView.builder(
+              itemCount: hasil.data.length,
+              itemBuilder: (context, i) {
+                final umkm = hasil.data[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: umkm.punyaFoto
+                        ? NetworkImage(ApiService.fotoUrl(umkm.foto))
+                        : null,
+                    child: umkm.punyaFoto ? null : Text(umkm.nama[0]),
+                  ),
+                  title: Text(umkm.nama),
+                  subtitle: Text(umkm.alamat),
+                  onTap: () {
+                    // navigasi ke UmkmDetailScreen, dibahas Pertemuan 7
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Menjalankan bersama API Pertemuan 4</span><p>Jalankan backend Go (<code>go run ./cmd/api</code>) sebelum menjalankan aplikasi Flutter ini. Isi minimal satu data UMKM lewat <code>POST /api/umkm</code> (lihat Pertemuan 4 Bagian 12) agar daftar tidak kosong saat pertama kali dicoba.</p></div>
+
+    <h2 id="s13"><span class="badge">13</span>Latihan</h2>
+    <ol>
+      <li>Tambahkan parameter pencarian pada <code>UmkmListScreen</code>: sebuah <code>TextField</code> di atas daftar yang memanggil ulang <code>getUmkmList(q: ...)</code> ketika pengguna mengetik.</li>
+      <li>Buat <code>UmkmDetailScreen</code> menampilkan detail satu UMKM (<code>getUmkmDetail</code>) beserta daftar produknya (<code>getProdukByUmkm</code>) dalam satu halaman, dan hubungkan dari <code>onTap</code> pada Bagian 12.</li>
+      <li>Tambahkan penanganan <em>timeout</em>: bungkus pemanggilan <code>http.get</code> dengan <code>.timeout(const Duration(seconds: 10))</code> dan tampilkan pesan khusus jika waktu habis.</li>
+      <li><strong>Tantangan:</strong> pindahkan <code>baseUrl</code> pada <code>ApiService</code> agar bisa diatur lewat <code>--dart-define=API_BASE_URL=...</code> saat <code>flutter run</code>, sehingga tidak perlu mengubah kode setiap berpindah antara emulator dan device fisik.</li>
+    </ol>
+
+    <footer>Pola pada materi ini — model + service + FutureBuilder — adalah fondasi yang akan dipakai berulang kali pada Pertemuan 7 untuk seluruh fitur: login, register, profil, dan CRUD UMKM/produk. Semakin terbiasa dengan tiga kondisi wajib (loading/error/data) di sini, semakin mudah mengikuti integrasi penuh nanti. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const idx = sections.indexOf(e.target);
+        if (idx >= 0) links[idx].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>

@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Praktik Widget & Layout Flutter — dari Kode ke Tampilan Android</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE;
+    --blue:#7C93FF; --green:#8FD6A6;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent),
+      var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif;
+    line-height:1.65; font-size:16.5px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none;}
+  strong{font-weight:600; color:#fff;}
+
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{
+    position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px;
+    padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;
+  }
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side li{margin:0;}
+  nav.side a{
+    display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted);
+    border-left:2px solid transparent; margin-left:-1px; transition:color .15s;
+  }
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
+
+  header.hero{margin-bottom:40px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent);
+    background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(30px,4.5vw,44px);
+    line-height:1.12; margin:0 0 14px; color:#fff;
+  }
+  .sub{color:var(--muted); font-size:16.5px; max-width:58ch; margin:0 0 28px;}
+
+  .flow{display:flex; align-items:center; flex-wrap:wrap; gap:0; font-family:'JetBrains Mono',monospace; font-size:13px;}
+  .flow .pill{background:var(--panel); border:1px solid var(--line); padding:8px 14px; border-radius:8px; color:var(--text);}
+  .flow .arrow{color:var(--muted); padding:0 10px; font-size:15px;}
+
+  h2{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff;
+    margin:64px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;
+  }
+  h2 .badge{
+    flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim);
+    color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:30px 0 10px;}
+  p{margin:0 0 15px; max-width:68ch; color:var(--text);}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch; color:var(--text);}
+  li::marker{color:var(--accent);}
+
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+
+  table{border-collapse:collapse; width:100%; margin:0 0 22px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--muted); font-size:12.5px;}
+  td code{color:var(--blue); background:transparent; padding:0;}
+
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+
+  /* ===== Mockup Android (visual hasil widget) ===== */
+  .devrow{display:flex; gap:22px; flex-wrap:wrap; margin:4px 0 26px; align-items:flex-start;}
+  .devcol{flex:0 0 auto; width:212px; text-align:center;}
+  .devcol.wide{width:260px;}
+  .devcap{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--accent); margin:10px 0 2px; letter-spacing:.02em;}
+  .devsub{font-size:11.5px; color:var(--muted); margin-bottom:0;}
+
+  .device{
+    background:#0c0d12; border-radius:30px; padding:9px; box-shadow:0 22px 44px -14px rgba(0,0,0,.6), 0 0 0 1px #262A36;
+    margin:0 auto;
+  }
+  .device .notch{width:56px; height:13px; background:#0c0d12; border-radius:0 0 10px 10px; margin:0 auto 4px; position:relative; z-index:2;}
+  .device .screen{
+    background:#F5F4F8; border-radius:22px; overflow:hidden; min-height:300px;
+    display:flex; flex-direction:column; font-family:'Inter',sans-serif; color:#1B1B1F;
+  }
+  .device.short .screen{min-height:180px;}
+  .device.tall .screen{min-height:420px;}
+  .device .status{height:20px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-size:9px; color:#4A4A55; font-family:'JetBrains Mono',monospace;}
+  .device .abar{background:#5B4EE0; color:#fff; padding:13px 14px; font-weight:600; font-size:13.5px; display:flex; align-items:center; gap:9px;}
+  .device .abar .ic{font-size:15px; opacity:.9;}
+  .device .body{flex:1; padding:14px; font-size:12px; display:flex; flex-direction:column;}
+  .device .body.center{align-items:center; justify-content:center;}
+  .device .body.top{align-items:center; justify-content:flex-start;}
+  .device .body.left{align-items:flex-start; justify-content:center;}
+  .device .body.right{align-items:flex-end; justify-content:center;}
+  .device .body.between{flex-direction:row; align-items:center; justify-content:space-between;}
+  .device .body.stackdemo{padding:0; position:relative;}
+
+  .mimg{
+    background:linear-gradient(135deg,#C9C4F5,#9C8FF0); border-radius:10px; display:flex; align-items:center;
+    justify-content:center; color:#3F3480; font-size:10.5px; font-weight:700; flex:0 0 auto;
+  }
+  .mtitle{font-weight:700; font-size:13px; color:#1B1B1F; margin-top:8px;}
+  .msub{font-size:10.5px; color:#6B6B76; margin-top:2px;}
+
+  .mbtn{border-radius:20px; padding:9px 18px; font-size:11.5px; font-weight:700; display:inline-flex; align-items:center; gap:6px; justify-content:center;}
+  .mbtn.elevated{background:#5B4EE0; color:#fff; box-shadow:0 3px 8px rgba(91,78,224,.4);}
+  .mbtn.outlined{border:1.6px solid #5B4EE0; color:#5B4EE0; background:transparent;}
+  .mbtn.text{color:#5B4EE0; padding:9px 12px;}
+  .mfab{width:42px; height:42px; border-radius:50%; background:#5B4EE0; color:#fff; display:flex; align-items:center; justify-content:center; font-size:17px; box-shadow:0 4px 10px rgba(91,78,224,.45);}
+  .micon{width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; color:#5B4EE0;}
+
+  .mfield{width:100%; text-align:left; border:1.4px solid #CAC7D6; border-radius:8px; padding:9px 11px; margin-bottom:10px; background:#fff;}
+  .mfield .flbl{display:block; font-size:9px; color:#5B4EE0; font-weight:700; margin-bottom:3px; letter-spacing:.02em;}
+  .mfield .fval{font-size:11.5px; color:#2B2B33;}
+  .mfield .fval.ph{color:#9A98A6;}
+
+  .mrow{display:flex; align-items:center; gap:8px; width:100%; margin-bottom:8px; font-size:11px; color:#2B2B33;}
+  .mcheck{width:16px; height:16px; border-radius:4px; border:1.6px solid #9A97A8; flex:0 0 auto;}
+  .mcheck.on{background:#5B4EE0; border-color:#5B4EE0; color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px;}
+  .mradio{width:16px; height:16px; border-radius:50%; border:1.6px solid #9A97A8; flex:0 0 auto; position:relative;}
+  .mradio.on::after{content:''; position:absolute; inset:3px; border-radius:50%; background:#5B4EE0;}
+  .mswitch{width:34px; height:18px; border-radius:20px; background:#CFCBDD; position:relative; flex:0 0 auto;}
+  .mswitch.on{background:#5B4EE0;}
+  .mswitch::after{content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:.2s;}
+  .mswitch.on::after{left:18px;}
+  .mslider{width:100%; height:4px; border-radius:4px; background:#DAD7E6; position:relative; margin:14px 0;}
+  .mslider::after{content:''; position:absolute; left:38%; top:50%; width:14px; height:14px; border-radius:50%; background:#5B4EE0; transform:translate(-50%,-50%); box-shadow:0 0 0 4px rgba(91,78,224,.18);}
+  .mslider .fill{position:absolute; left:0; top:0; height:100%; width:38%; background:#5B4EE0; border-radius:4px;}
+  .mdrop{width:100%; border:1.4px solid #CAC7D6; border-radius:8px; padding:9px 11px; display:flex; align-items:center; justify-content:space-between; font-size:11.5px; color:#2B2B33; background:#fff;}
+
+  .mcard{background:#fff; border-radius:12px; padding:12px; box-shadow:0 1px 5px rgba(0,0,0,.1); width:100%; margin-bottom:10px; text-align:left;}
+  .mlisttile{display:flex; align-items:center; gap:10px; width:100%; padding:8px 0; border-bottom:1px solid #EDEBF3; text-align:left;}
+  .mlisttile:last-child{border-bottom:none;}
+  .mlisttile .av{width:32px; height:32px; border-radius:50%; background:#E4E1F7; color:#5B4EE0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:0 0 auto;}
+  .mlisttile .txt .t1{font-size:11.5px; font-weight:600; color:#1B1B1F;}
+  .mlisttile .txt .t2{font-size:10px; color:#8A8894;}
+
+  .mgrid{display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;}
+  .mgrid .cell{background:linear-gradient(135deg,#E3E0FB,#C9C4F5); border-radius:8px; height:56px; display:flex; align-items:center; justify-content:center; color:#4B3F9E; font-size:10px; font-weight:700;}
+
+  .posgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:24px; margin:8px 0 8px;}
+  @media (max-width:620px){.posgrid{grid-template-columns:1fr;}}
+  .poscard .device{width:100%; max-width:180px;}
+  .poscard{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 16px 16px;}
+  .poscard h4{font-family:'Space Grotesk',sans-serif; font-size:14px; color:#fff; margin:0 0 12px; text-align:center;}
+  .poscard .codecard{margin-top:12px; margin-bottom:0;}
+  .poscard .codecard pre{font-size:11.5px; padding:12px 14px;}
+
+  @media (max-width:880px){
+    nav.side{display:none;}
+    main{padding:36px 20px 90px; max-width:100%;}
+    .devrow{justify-content:center;}
+  }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="side" id="sidenav">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Filosofi Tata Letak</a></li>
+      <li><a href="#s2">Mengatur Posisi Elemen</a></li>
+      <li><a href="#s3">Container & Dekorasi</a></li>
+      <li><a href="#s4">Teks & Gaya Tulisan</a></li>
+      <li><a href="#s5">Gambar (Image)</a></li>
+      <li><a href="#s6">Tombol (Button)</a></li>
+      <li><a href="#s7">Form Input Teks</a></li>
+      <li><a href="#s8">Input Lainnya</a></li>
+      <li><a href="#s9">List & Grid</a></li>
+      <li><a href="#s10">Card & Kombinasi</a></li>
+      <li><a href="#s11">Praktik: Halaman Profil</a></li>
+      <li><a href="#s12">Latihan</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header class="hero">
+      <span class="kicker">Materi Pemula · Praktik Widget Flutter</span>
+      <h1>Praktik Widget & Layout Flutter — dari Kode ke Tampilan Android</h1>
+      <p class="sub">Setiap widget pada materi ini disertai visual berupa mockup layar Android, sehingga terlihat jelas bagaimana kode Dart yang ditulis benar-benar menghasilkan tampilan tersebut. Materi mencakup posisi elemen (atas, tengah, kiri, kanan), teks, gambar, tombol, form, hingga menyusun satu halaman lengkap.</p>
+      <div class="flow">
+        <span class="pill">Layout</span><span class="arrow">→</span>
+        <span class="pill">Widget Dasar</span><span class="arrow">→</span>
+        <span class="pill">Form</span><span class="arrow">→</span>
+        <span class="pill">Halaman Utuh</span>
+      </div>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Filosofi Tata Letak: Row, Column, Stack</h2>
+    <p>Seluruh posisi elemen pada Flutter — atas, bawah, kiri, kanan, tengah, atau bertumpuk — dibangun dari tiga widget dasar berikut. Memahami ketiganya dengan baik membuat sisa materi ini jauh lebih mudah diikuti.</p>
+    <table>
+      <tr><th>Widget</th><th>Fungsi</th></tr>
+      <tr><td><code>Column</code></td><td>Menyusun widget secara <strong>vertikal</strong> (atas ke bawah).</td></tr>
+      <tr><td><code>Row</code></td><td>Menyusun widget secara <strong>horizontal</strong> (kiri ke kanan).</td></tr>
+      <tr><td><code>Stack</code></td><td>Menumpuk widget satu di atas yang lain (untuk overlay, badge, label di atas gambar, dsb).</td></tr>
+    </table>
+
+    <div class="devrow">
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>••• 100%</span></div>
+            <div class="body top" style="gap:8px;">
+              <div class="mcard" style="height:28px;"></div>
+              <div class="mcard" style="height:28px;"></div>
+              <div class="mcard" style="height:28px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Column</div>
+        <p class="devsub">Tersusun ke bawah</p>
+      </div>
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>••• 100%</span></div>
+            <div class="body" style="flex-direction:row; align-items:center; justify-content:space-evenly;">
+              <div class="mcard" style="width:26%; height:36px;"></div>
+              <div class="mcard" style="width:26%; height:36px;"></div>
+              <div class="mcard" style="width:26%; height:36px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Row</div>
+        <p class="devsub">Tersusun ke samping</p>
+      </div>
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>••• 100%</span></div>
+            <div class="body stackdemo">
+              <div class="mimg" style="width:100%; height:100%; border-radius:0;">FOTO LATAR</div>
+              <div style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,.55); color:#fff; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:700;">Label di Atas</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Stack</div>
+        <p class="devsub">Bertumpuk (overlay)</p>
+      </div>
+    </div>
+
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Column — vertikal</span></div><pre><code>Column(
+  children: [
+    Text('Baris pertama'),
+    Text('Baris kedua'),
+    Text('Baris ketiga'),
+  ],
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Row — horizontal</span></div><pre><code>Row(
+  children: [
+    Icon(Icons.star),
+    Icon(Icons.star),
+    Icon(Icons.star),
+  ],
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Stack — bertumpuk</span></div><pre><code>Stack(
+  children: [
+    Image.network('https://.../foto.jpg', fit: BoxFit.cover),
+    Positioned(
+      bottom: 10,
+      left: 10,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: const Text('Label di Atas', style: TextStyle(color: Colors.white)),
+      ),
+    ),
+  ],
+)</code></pre></div>
+    <div class="note"><span class="lbl">Positioned hanya berlaku di dalam Stack</span><p>Widget <code>Positioned</code> (mengatur jarak dari <code>top</code>/<code>bottom</code>/<code>left</code>/<code>right</code>) hanya bisa dipakai sebagai anak langsung dari <code>Stack</code>. Di luar <code>Stack</code>, gunakan <code>Align</code> atau <code>Padding</code>.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Mengatur Posisi Elemen (Gambar Atas, Tengah, Kiri, Kanan)</h2>
+    <p>Bagian ini menjawab pertanyaan paling umum pemula: <em>"bagaimana caranya taruh gambar/teks di posisi tertentu?"</em>. Empat pola paling sering dipakai ditunjukkan berikut, lengkap dengan visualnya.</p>
+
+    <div class="posgrid">
+      <div class="poscard">
+        <h4>Gambar di Atas</h4>
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body top">
+              <div class="mimg" style="width:64px; height:64px;">IMG</div>
+              <div class="mtitle">Nama Aplikasi</div>
+            </div>
+          </div>
+        </div>
+        <div class="codecard"><div class="bar"><span class="tag">di atas</span></div><pre><code>Column(
+  mainAxisAlignment: MainAxisAlignment.start,
+  children: [
+    Image.asset('assets/logo.png', width: 64),
+    const SizedBox(height: 10),
+    const Text('Nama Aplikasi'),
+  ],
+)</code></pre></div>
+      </div>
+
+      <div class="poscard">
+        <h4>Gambar di Tengah</h4>
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center">
+              <div class="mimg" style="width:64px; height:64px;">IMG</div>
+            </div>
+          </div>
+        </div>
+        <div class="codecard"><div class="bar"><span class="tag">di tengah</span></div><pre><code>Center(
+  child: Image.asset('assets/logo.png', width: 64),
+)</code></pre></div>
+      </div>
+
+      <div class="poscard">
+        <h4>Gambar di Kiri</h4>
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body left">
+              <div class="mimg" style="width:56px; height:56px;">IMG</div>
+            </div>
+          </div>
+        </div>
+        <div class="codecard"><div class="bar"><span class="tag">di kiri</span></div><pre><code>Align(
+  alignment: Alignment.centerLeft,
+  child: Image.asset('assets/logo.png', width: 56),
+)</code></pre></div>
+      </div>
+
+      <div class="poscard">
+        <h4>Gambar di Kanan</h4>
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body right">
+              <div class="mimg" style="width:56px; height:56px;">IMG</div>
+            </div>
+          </div>
+        </div>
+        <div class="codecard"><div class="bar"><span class="tag">di kanan</span></div><pre><code>Align(
+  alignment: Alignment.centerRight,
+  child: Image.asset('assets/logo.png', width: 56),
+)</code></pre></div>
+      </div>
+    </div>
+
+    <h3>2.1 Gambar Kiri dan Kanan Sekaligus (Row + spaceBetween)</h3>
+    <p>Untuk menaruh dua elemen di ujung kiri dan ujung kanan dalam satu baris yang sama, gunakan <code>Row</code> dengan <code>MainAxisAlignment.spaceBetween</code>.</p>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body between" style="padding:20px 16px;">
+              <div class="mimg" style="width:44px; height:44px;">KIRI</div>
+              <div class="mimg" style="width:44px; height:44px;">KANAN</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Row + spaceBetween</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Image.asset('assets/kiri.png', width: 44),
+    Image.asset('assets/kanan.png', width: 44),
+  ],
+)</code></pre></div>
+
+    <h3>2.2 Tabel Referensi Alignment</h3>
+    <table>
+      <tr><th>Properti</th><th>Nilai umum</th><th>Efek</th></tr>
+      <tr><td><code>mainAxisAlignment</code></td><td><code>start</code>, <code>end</code>, <code>center</code>, <code>spaceBetween</code>, <code>spaceAround</code>, <code>spaceEvenly</code></td><td>Posisi di sepanjang arah utama (vertikal untuk <code>Column</code>, horizontal untuk <code>Row</code>)</td></tr>
+      <tr><td><code>crossAxisAlignment</code></td><td><code>start</code>, <code>end</code>, <code>center</code>, <code>stretch</code></td><td>Posisi tegak lurus arah utama</td></tr>
+      <tr><td><code>Alignment</code> (dipakai <code>Align</code>/<code>Container</code>)</td><td><code>topLeft</code>, <code>topCenter</code>, <code>topRight</code>, <code>centerLeft</code>, <code>center</code>, <code>centerRight</code>, <code>bottomLeft</code>, <code>bottomCenter</code>, <code>bottomRight</code></td><td>Menaruh satu widget di titik tertentu dalam ruang yang tersedia</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Align vs Center</span><p><code>Center</code> sebenarnya adalah <code>Align</code> dengan nilai <code>alignment: Alignment.center</code> yang sudah dipersingkat. Gunakan <code>Center</code> untuk kasus di tengah, dan <code>Align</code> untuk delapan posisi lainnya.</p></div>
+
+    <h2 id="s3"><span class="badge">03</span>Container, Padding, Margin & Dekorasi</h2>
+    <p><code>Container</code> adalah widget serbaguna: bisa mengatur ukuran, jarak dalam (<code>padding</code>), jarak luar (<code>margin</code>), warna, sudut membulat, bayangan, hingga border — semua dalam satu widget.</p>
+    <div class="devrow">
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center" style="background:#EFEDF6;">
+              <div class="mcard" style="width:70%;">
+                <div class="mtitle" style="margin-top:0;">Kartu Info</div>
+                <div class="msub">Dibungkus Container dengan bayangan &amp; sudut membulat</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Container + BoxDecoration</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Container(
+  margin: const EdgeInsets.all(16),
+  padding: const EdgeInsets.all(14),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(12),
+    boxShadow: const [
+      BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+    ],
+  ),
+  child: const Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Kartu Info', style: TextStyle(fontWeight: FontWeight.bold)),
+      SizedBox(height: 4),
+      Text('Dibungkus Container dengan bayangan & sudut membulat'),
+    ],
+  ),
+)</code></pre></div>
+    <table>
+      <tr><th>Properti</th><th>Kegunaan</th></tr>
+      <tr><td><code>padding</code></td><td>Jarak antara tepi <code>Container</code> dengan isi di dalamnya</td></tr>
+      <tr><td><code>margin</code></td><td>Jarak antara <code>Container</code> dengan widget di sekelilingnya</td></tr>
+      <tr><td><code>decoration</code></td><td>Warna, <code>borderRadius</code>, <code>border</code>, <code>boxShadow</code> — tidak bisa dipakai bersamaan dengan <code>color</code> langsung, pakai <code>decoration: BoxDecoration(color: ...)</code></td></tr>
+      <tr><td><code>width</code> / <code>height</code></td><td>Ukuran tetap; kosongkan agar mengikuti ukuran isi</td></tr>
+    </table>
+    <div class="note"><span class="lbl">SizedBox untuk jarak kosong</span><p>Untuk sekadar memberi jarak antar-widget (tanpa warna/dekorasi), <code>SizedBox(height: 12)</code> atau <code>SizedBox(width: 12)</code> lebih ringan dan lebih jelas maksudnya dibanding <code>Container</code> kosong.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Teks & Gaya Tulisan</h2>
+    <p>Semua teks pada Flutter ditampilkan lewat widget <code>Text</code>, dengan tampilan diatur melalui parameter <code>style: TextStyle(...)</code>.</p>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body top" style="align-items:flex-start; gap:6px; padding-top:20px;">
+              <div style="font-size:17px; font-weight:800; color:#1B1B1F;">Judul Besar &amp; Tebal</div>
+              <div style="font-size:12px; color:#5B4EE0; font-weight:600;">Subjudul berwarna</div>
+              <div style="font-size:11px; color:#6B6B76; line-height:1.5;">Paragraf biasa dengan warna abu-abu dan ukuran lebih kecil untuk teks pendukung.</div>
+              <div style="font-size:11px; text-decoration:underline; color:#1B1B1F;">Teks bergaris bawah</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Variasi TextStyle</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(
+      'Judul Besar & Tebal',
+      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+    ),
+    Text(
+      'Subjudul berwarna',
+      style: TextStyle(fontSize: 14, color: Colors.indigo, fontWeight: FontWeight.w600),
+    ),
+    Text(
+      'Paragraf biasa dengan warna abu-abu dan ukuran lebih kecil untuk teks pendukung.',
+      style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+    ),
+    Text(
+      'Teks bergaris bawah',
+      style: TextStyle(decoration: TextDecoration.underline),
+    ),
+  ],
+)</code></pre></div>
+    <table>
+      <tr><th>Parameter</th><th>Kegunaan</th></tr>
+      <tr><td><code>fontSize</code></td><td>Ukuran huruf (satuan logical pixel)</td></tr>
+      <tr><td><code>fontWeight</code></td><td><code>FontWeight.normal</code>, <code>w600</code>, <code>bold</code>, dst.</td></tr>
+      <tr><td><code>color</code></td><td>Warna teks</td></tr>
+      <tr><td><code>height</code></td><td>Jarak antar-baris (line-height), relatif terhadap <code>fontSize</code></td></tr>
+      <tr><td><code>overflow</code> + <code>maxLines</code></td><td>Memotong teks panjang, misal <code>overflow: TextOverflow.ellipsis, maxLines: 1</code></td></tr>
+    </table>
+
+    <h2 id="s5"><span class="badge">05</span>Gambar (Image)</h2>
+    <p>Dua sumber gambar paling umum: berkas lokal di folder <code>assets/</code> (<code>Image.asset</code>) dan gambar dari internet (<code>Image.network</code>).</p>
+    <div class="devrow">
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center">
+              <div class="mimg" style="width:120px; height:80px; border-radius:8px;">BoxFit.cover</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Image.asset</div>
+      </div>
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center">
+              <div class="mimg" style="width:100px; height:100px; border-radius:50%;">FOTO</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Image.network (avatar bulat)</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">dari assets</span></div><pre><code>Image.asset(
+  'assets/produk.png',
+  width: 160,
+  height: 100,
+  fit: BoxFit.cover,
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">dari internet, dibuat bulat</span></div><pre><code>ClipOval(
+  child: Image.network(
+    'https://contoh.com/foto-profil.jpg',
+    width: 100,
+    height: 100,
+    fit: BoxFit.cover,
+    loadingBuilder: (context, child, progress) {
+      if (progress == null) return child;
+      return const Center(child: CircularProgressIndicator());
+    },
+    errorBuilder: (context, error, stack) =>
+        const Icon(Icons.broken_image, size: 40),
+  ),
+)</code></pre></div>
+    <table>
+      <tr><th>Nilai <code>BoxFit</code></th><th>Efek</th></tr>
+      <tr><td><code>cover</code></td><td>Mengisi penuh, sebagian gambar bisa terpotong (paling umum untuk foto produk/profil)</td></tr>
+      <tr><td><code>contain</code></td><td>Seluruh gambar terlihat, bisa ada ruang kosong di sisi</td></tr>
+      <tr><td><code>fill</code></td><td>Meregang mengisi penuh, rasio gambar bisa berubah</td></tr>
+      <tr><td><code>fitWidth</code> / <code>fitHeight</code></td><td>Menyesuaikan salah satu sisi saja</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Mendaftarkan folder assets</span><p>Sebelum <code>Image.asset</code> bisa dipakai, folder harus didaftarkan di <code>pubspec.yaml</code>:</p><p style="margin-top:8px;"><code>flutter:<br>&nbsp;&nbsp;assets:<br>&nbsp;&nbsp;&nbsp;&nbsp;- assets/</code></p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Tombol (Button)</h2>
+    <p>Flutter menyediakan beberapa jenis tombol dengan gaya visual dan tujuan pemakaian yang berbeda.</p>
+    <div class="devrow">
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body center" style="gap:12px;">
+              <div class="mbtn elevated">Simpan</div>
+              <div class="mbtn outlined">Batal</div>
+              <div class="mbtn text">Lewati</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Elevated · Outlined · Text</div>
+      </div>
+      <div class="devcol">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body" style="flex-direction:row; align-items:center; justify-content:center; gap:14px;">
+              <div class="micon" style="background:#EFEDF9;">♡</div>
+              <div class="mfab">+</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">IconButton · FloatingActionButton</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">tiga tombol utama</span></div><pre><code>ElevatedButton(
+  onPressed: () {},
+  child: const Text('Simpan'),
+)
+
+OutlinedButton(
+  onPressed: () {},
+  child: const Text('Batal'),
+)
+
+TextButton(
+  onPressed: () {},
+  child: const Text('Lewati'),
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">icon &amp; floating action button</span></div><pre><code>IconButton(
+  onPressed: () {},
+  icon: const Icon(Icons.favorite_border),
+)
+
+// dipasang di properti floatingActionButton milik Scaffold
+FloatingActionButton(
+  onPressed: () {},
+  child: const Icon(Icons.add),
+)</code></pre></div>
+    <table>
+      <tr><th>Tombol</th><th>Kapan dipakai</th></tr>
+      <tr><td><code>ElevatedButton</code></td><td>Aksi utama pada halaman (submit, simpan, lanjut)</td></tr>
+      <tr><td><code>OutlinedButton</code></td><td>Aksi sekunder, sejajar dengan tombol utama (batal, kembali)</td></tr>
+      <tr><td><code>TextButton</code></td><td>Aksi ringan/opsional (lewati, lihat lainnya)</td></tr>
+      <tr><td><code>IconButton</code></td><td>Aksi yang cukup diwakili ikon (suka, bagikan, hapus)</td></tr>
+      <tr><td><code>FloatingActionButton</code></td><td>Aksi paling penting di halaman, melayang di sudut layar</td></tr>
+    </table>
+
+    <h2 id="s7"><span class="badge">07</span>Form Input Teks</h2>
+    <p><code>TextFormField</code> adalah pilihan default untuk input teks karena mendukung validasi bawaan ketika dibungkus <code>Form</code>. Untuk kasus sederhana tanpa validasi, <code>TextField</code> saja sudah cukup.</p>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device tall">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="abar"><span class="ic">←</span>Masuk</div>
+            <div class="body top" style="align-items:stretch; padding-top:20px;">
+              <div class="mfield"><span class="flbl">EMAIL</span><span class="fval">asep@mail.com</span></div>
+              <div class="mfield"><span class="flbl">PASSWORD</span><span class="fval">••••••••</span></div>
+              <div class="mbtn elevated" style="width:100%; margin-top:8px;">Masuk</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">TextFormField di dalam Form</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">form login sederhana</span></div><pre><code>final _formKey = GlobalKey&lt;FormState&gt;();
+final _emailController = TextEditingController();
+final _passwordController = TextEditingController();
+
+Form(
+  key: _formKey,
+  child: Column(
+    children: [
+      TextFormField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        decoration: const InputDecoration(
+          labelText: 'Email',
+          border: OutlineInputBorder(),
+        ),
+        validator: (v) => (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+      ),
+      const SizedBox(height: 16),
+      TextFormField(
+        controller: _passwordController,
+        obscureText: true,
+        decoration: const InputDecoration(
+          labelText: 'Password',
+          border: OutlineInputBorder(),
+        ),
+        validator: (v) =>
+            (v == null || v.length &lt; 6) ? 'Password minimal 6 karakter' : null,
+      ),
+      const SizedBox(height: 20),
+      ElevatedButton(
+        onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            // proses login
+          }
+        },
+        child: const Text('Masuk'),
+      ),
+    ],
+  ),
+)</code></pre></div>
+    <table>
+      <tr><th>Properti</th><th>Kegunaan</th></tr>
+      <tr><td><code>controller</code></td><td>Membaca/mengatur nilai yang diketik pengguna</td></tr>
+      <tr><td><code>decoration</code></td><td>Label, hint, border, ikon di dalam field</td></tr>
+      <tr><td><code>obscureText</code></td><td>Menyembunyikan karakter (untuk password)</td></tr>
+      <tr><td><code>keyboardType</code></td><td>Jenis keyboard: <code>emailAddress</code>, <code>number</code>, <code>phone</code>, dst.</td></tr>
+      <tr><td><code>validator</code></td><td>Fungsi pengecekan, dijalankan bersamaan saat <code>_formKey.currentState!.validate()</code> dipanggil</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Jangan lupa dispose()</span><p>Setiap <code>TextEditingController</code> yang dibuat wajib dipanggil <code>.dispose()</code> di method <code>dispose()</code> milik <code>State</code>, agar tidak terjadi kebocoran memori.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Input Lainnya: Checkbox, Radio, Switch, Dropdown, Slider</h2>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device tall">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="abar"><span class="ic">←</span>Pengaturan</div>
+            <div class="body top" style="align-items:stretch; padding-top:18px; gap:2px;">
+              <div class="mrow"><div class="mcheck on">✓</div>Ingat saya</div>
+              <div class="mrow"><div class="mradio on"></div>Laki-laki</div>
+              <div class="mrow"><div class="mradio"></div>Perempuan</div>
+              <div class="mrow" style="justify-content:space-between;">Notifikasi<div class="mswitch on"></div></div>
+              <div class="mdrop" style="margin-top:6px;"><span>Kota Bandar Lampung</span><span>▾</span></div>
+              <div class="msub" style="margin-top:10px; margin-bottom:-4px;">Volume</div>
+              <div class="mslider"><div class="fill"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Checkbox · Radio · Switch · Dropdown · Slider</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Checkbox</span></div><pre><code>bool _ingatSaya = false;
+
+CheckboxListTile(
+  value: _ingatSaya,
+  title: const Text('Ingat saya'),
+  onChanged: (v) => setState(() => _ingatSaya = v!),
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Radio</span></div><pre><code>enum JenisKelamin { pria, wanita }
+JenisKelamin? _pilihan = JenisKelamin.pria;
+
+RadioListTile&lt;JenisKelamin&gt;(
+  title: const Text('Laki-laki'),
+  value: JenisKelamin.pria,
+  groupValue: _pilihan,
+  onChanged: (v) => setState(() => _pilihan = v),
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Switch</span></div><pre><code>bool _notifAktif = true;
+
+SwitchListTile(
+  title: const Text('Notifikasi'),
+  value: _notifAktif,
+  onChanged: (v) => setState(() => _notifAktif = v),
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dropdown &amp; Slider</span></div><pre><code>String? _kota = 'Bandar Lampung';
+double _volume = 0.4;
+
+DropdownButtonFormField&lt;String&gt;(
+  value: _kota,
+  items: const [
+    DropdownMenuItem(value: 'Bandar Lampung', child: Text('Kota Bandar Lampung')),
+    DropdownMenuItem(value: 'Jakarta', child: Text('Jakarta')),
+  ],
+  onChanged: (v) => setState(() => _kota = v),
+)
+
+Slider(
+  value: _volume,
+  onChanged: (v) => setState(() => _volume = v),
+)</code></pre></div>
+    <div class="note"><span class="lbl">Semua widget ini butuh StatefulWidget</span><p>Checkbox, Radio, Switch, Dropdown, dan Slider tidak mengubah tampilannya sendiri — kode di atas wajib berada di dalam <code>StatefulWidget</code>, dan setiap <code>onChanged</code> memanggil <code>setState()</code> agar tampilan diperbarui.</p></div>
+
+    <h2 id="s9"><span class="badge">09</span>List & Grid: ListView dan GridView</h2>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device tall">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="abar"><span class="ic">☰</span>Daftar UMKM</div>
+            <div class="body top" style="align-items:stretch; padding-top:10px;">
+              <div class="mlisttile"><div class="av">WS</div><div class="txt"><div class="t1">Warung Bu Sari</div><div class="t2">Kuliner · Jl. Melati 10</div></div></div>
+              <div class="mlisttile"><div class="av">TB</div><div class="txt"><div class="t1">Toko Pak Budi</div><div class="t2">Sembako · Jl. Kenanga 5</div></div></div>
+              <div class="mlisttile"><div class="av">KC</div><div class="txt"><div class="t1">Kedai Bu Citra</div><div class="t2">Kopi · Jl. Anggrek 2</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">ListView.builder + ListTile</div>
+      </div>
+      <div class="devcol wide">
+        <div class="device tall">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="abar"><span class="ic">☰</span>Produk</div>
+            <div class="body top" style="align-items:stretch; padding-top:12px;">
+              <div class="mgrid">
+                <div class="cell">Produk A</div>
+                <div class="cell">Produk B</div>
+                <div class="cell">Produk C</div>
+                <div class="cell">Produk D</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">GridView.builder</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">ListView.builder</span></div><pre><code>ListView.builder(
+  itemCount: daftarUmkm.length,
+  itemBuilder: (context, i) {
+    final umkm = daftarUmkm[i];
+    return ListTile(
+      leading: CircleAvatar(child: Text(umkm.nama[0])),
+      title: Text(umkm.nama),
+      subtitle: Text('${umkm.kategori} · ${umkm.alamat}'),
+      onTap: () {},
+    );
+  },
+)</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">GridView.builder</span></div><pre><code>GridView.builder(
+  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 2,
+    crossAxisSpacing: 10,
+    mainAxisSpacing: 10,
+  ),
+  itemCount: daftarProduk.length,
+  itemBuilder: (context, i) => Container(
+    decoration: BoxDecoration(
+      color: Colors.indigo.shade50,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    alignment: Alignment.center,
+    child: Text(daftarProduk[i].nama),
+  ),
+)</code></pre></div>
+    <div class="note"><span class="lbl">Selalu pakai .builder untuk daftar panjang</span><p><code>ListView.builder</code>/<code>GridView.builder</code> hanya membuat widget untuk item yang terlihat di layar (lazy loading), jauh lebih hemat memori dibanding <code>ListView(children: [...])</code> yang membuat semua item sekaligus.</p></div>
+
+    <h2 id="s10"><span class="badge">10</span>Card & Kombinasi Layout</h2>
+    <p><code>Card</code> adalah <code>Container</code> yang sudah dipercantik (sudut membulat + bayangan tipis bawaan Material Design), sangat umum dipakai membungkus satu item ringkasan.</p>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device short">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="status"><span>9:41</span><span>100%</span></div>
+            <div class="body top" style="align-items:stretch; padding-top:16px;">
+              <div class="mcard" style="display:flex; align-items:center; gap:10px;">
+                <div class="mimg" style="width:44px; height:44px; border-radius:8px; flex:0 0 auto;">IMG</div>
+                <div style="text-align:left;">
+                  <div class="mtitle" style="margin-top:0;">Nasi Uduk Spesial</div>
+                  <div class="msub">Rp 15.000 · Warung Bu Sari</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Card + Row (foto, judul, harga)</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>Card(
+  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  child: Padding(
+    padding: const EdgeInsets.all(12),
+    child: Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network('https://.../produk.jpg', width: 56, height: 56, fit: BoxFit.cover),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('Nasi Uduk Spesial', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('Rp 15.000 · Warung Bu Sari'),
+          ],
+        ),
+      ],
+    ),
+  ),
+)</code></pre></div>
+
+    <h2 id="s11"><span class="badge">11</span>Praktik: Menyusun Halaman Profil Lengkap</h2>
+    <p>Sebagai penutup, seluruh widget pada materi ini digabungkan menjadi satu halaman profil yang realistis: foto di tengah-atas, nama di bawahnya, form untuk mengubah data, sebuah switch, dan tombol simpan di bagian bawah.</p>
+    <div class="devrow">
+      <div class="devcol wide">
+        <div class="device tall">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="abar"><span class="ic">←</span>Edit Profil</div>
+            <div class="body top" style="align-items:stretch; padding-top:18px;">
+              <div style="display:flex; justify-content:center; margin-bottom:14px;">
+                <div class="mimg" style="width:72px; height:72px; border-radius:50%;">FOTO</div>
+              </div>
+              <div class="mfield"><span class="flbl">NAMA LENGKAP</span><span class="fval">Asep Trisna Setiawan</span></div>
+              <div class="mfield"><span class="flbl">EMAIL</span><span class="fval">asep@mail.com</span></div>
+              <div class="mrow" style="justify-content:space-between; margin-top:2px;">Tampilkan email ke publik<div class="mswitch"></div></div>
+              <div class="mbtn elevated" style="width:100%; margin-top:14px;">Simpan Perubahan</div>
+            </div>
+          </div>
+        </div>
+        <div class="devcap">Kombinasi: Center, Form, Switch, Button</div>
+      </div>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">edit_profile_page.dart</span></div><pre><code>class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
+  @override
+  State&lt;EditProfilePage&gt; createState() =&gt; _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State&lt;EditProfilePage&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _namaController = TextEditingController(text: 'Asep Trisna Setiawan');
+  final _emailController = TextEditingController(text: 'asep@mail.com');
+  bool _emailPublik = false;
+
+  void _simpan() {
+    if (_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil berhasil disimpan')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Edit Profil')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. Foto di tengah-atas -> Center
+              const Center(
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundImage: NetworkImage('https://.../foto-profil.jpg'),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 2. Form input -> TextFormField
+              TextFormField(
+                controller: _namaController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Lengkap',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+              ),
+              const SizedBox(height: 10),
+
+              // 3. Switch -> Row + spaceBetween
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Tampilkan email ke publik'),
+                value: _emailPublik,
+                onChanged: (v) => setState(() => _emailPublik = v),
+              ),
+              const SizedBox(height: 10),
+
+              // 4. Tombol simpan -> ElevatedButton selebar layar
+              ElevatedButton(
+                onPressed: _simpan,
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('Simpan Perubahan'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa dibungkus SingleChildScrollView?</span><p>Ketika keyboard muncul (saat mengetik di <code>TextFormField</code>), tinggi layar yang tersedia berkurang. Tanpa <code>SingleChildScrollView</code>, konten yang tidak muat akan memicu error <em>"RenderFlex overflowed"</em>. Membungkus <code>Column</code> dengan <code>SingleChildScrollView</code> membuat halaman bisa digulir sehingga aman dari overflow.</p></div>
+
+    <h2 id="s12"><span class="badge">12</span>Latihan</h2>
+    <ol>
+      <li>Ubah halaman pada Bagian 11 agar foto profil berada di <strong>kiri atas</strong> (bukan tengah), sejajar dengan nama di sampingnya menggunakan <code>Row</code>.</li>
+      <li>Tambahkan <code>DropdownButtonFormField</code> untuk memilih kota domisili pada halaman yang sama.</li>
+      <li>Buat kartu produk (seperti Bagian 10) di dalam <code>GridView.builder</code> 2 kolom, menampilkan minimal 6 produk dummy.</li>
+      <li>Tambahkan <code>Stack</code> berisi gambar sampul UMKM dengan label kategori (misal "Kuliner") menumpuk di pojok kiri atas gambar, memakai <code>Positioned</code>.</li>
+      <li><strong>Tantangan:</strong> gabungkan seluruh latihan di atas menjadi satu halaman "Detail UMKM" yang utuh: gambar sampul dengan label di atasnya, nama & kategori UMKM, tombol "Hubungi" dan "Lihat Produk" berdampingan, lalu daftar produk dalam <code>GridView</code> di bawahnya.</li>
+    </ol>
+
+    <footer>Ingat: hampir seluruh tampilan Flutter yang rumit sekalipun hanyalah kombinasi berulang dari <code>Row</code>, <code>Column</code>, <code>Stack</code>, <code>Container</code>, dan beberapa widget input. Jika sebuah tampilan terasa sulit dibuat, coba pecah dulu di atas kertas menjadi kotak-kotak sederhana sebelum menerjemahkannya ke kode. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const idx = sections.indexOf(e.target);
+        if (idx >= 0) links[idx].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>

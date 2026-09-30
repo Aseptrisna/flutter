@@ -1,0 +1,2278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Membangun REST API UMKM dengan Golang dan PostgreSQL</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE;
+    --blue:#7C93FF; --green:#8FD6A6;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent),
+      var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif;
+    line-height:1.65; font-size:16.5px; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none;}
+  strong{font-weight:600; color:#fff;}
+
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{
+    position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px;
+    padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;
+  }
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side li{margin:0;}
+  nav.side a{
+    display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted);
+    border-left:2px solid transparent; margin-left:-1px; transition:color .15s;
+  }
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:760px;}
+
+  header.hero{margin-bottom:40px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{
+    display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent);
+    background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(30px,4.5vw,44px);
+    line-height:1.12; margin:0 0 14px; color:#fff;
+  }
+  .sub{color:var(--muted); font-size:16.5px; max-width:56ch; margin:0 0 28px;}
+
+  .flow{display:flex; align-items:center; flex-wrap:wrap; gap:0; font-family:'JetBrains Mono',monospace; font-size:13px;}
+  .flow .pill{background:var(--panel); border:1px solid var(--line); padding:8px 14px; border-radius:8px; color:var(--text);}
+  .flow .arrow{color:var(--muted); padding:0 10px; font-size:15px;}
+
+  h2{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff;
+    margin:64px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;
+  }
+  h2 .badge{
+    flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim);
+    color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:30px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch; color:var(--text);}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch; color:var(--text);}
+  li::marker{color:var(--accent);}
+
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+
+  table{border-collapse:collapse; width:100%; margin:0 0 22px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--muted); font-size:12.5px;}
+  td code{color:var(--blue); background:transparent; padding:0;}
+
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+
+  .verify{background:#12241A; border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+
+  @media (max-width:880px){
+    nav.side{display:none;}
+    main{padding:36px 20px 90px; max-width:100%;}
+  }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="side" id="sidenav">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Apa itu Golang</a></li>
+      <li><a href="#s2">Instalasi Golang</a></li>
+      <li><a href="#s3">Dasar-Dasar Golang</a></li>
+      <li><a href="#s4">Apa itu PostgreSQL</a></li>
+      <li><a href="#s5">Instalasi PostgreSQL</a></li>
+      <li><a href="#s6">Dasar-Dasar PostgreSQL</a></li>
+      <li><a href="#s7">PostgreSQL Neon untuk Development</a></li>
+      <li><a href="#s8">Setup Project di VS Code</a></li>
+      <li><a href="#s9">Desain Database & Kontrak API</a></li>
+      <li><a href="#s10">Implementasi API UMKM</a></li>
+      <li><a href="#s11">Dokumentasi API dengan Swagger</a></li>
+      <li><a href="#s12">Menjalankan & Menguji API</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header class="hero">
+      <span class="kicker">Materi Pemula · Backend Go</span>
+      <h1>Membangun REST API UMKM dengan Golang dan PostgreSQL</h1>
+      <p class="sub">Tutorial langkah demi langkah membangun REST API untuk aplikasi pendataan UMKM, lengkap dengan dokumentasi Swagger: pengguna dapat register, login, membuat UMKM miliknya sendiri, mengelola produk, mengunggah foto, serta melihat UMKM dan produk milik pengguna lain.</p>
+      <div class="flow">
+        <span class="pill">Golang</span><span class="arrow">→</span>
+        <span class="pill">PostgreSQL (Neon)</span><span class="arrow">→</span>
+        <span class="pill">REST API + Swagger</span>
+      </div>
+    </header>
+
+    <div class="verify">
+      <span class="lbl">✓ Seluruh kode pada materi ini sudah diverifikasi</span>
+      <p>Setiap potongan kode di bawah ditulis ulang menjadi project Go yang sesungguhnya, dijalankan dengan <code>go build</code> dan <code>go vet</code> (tanpa error/warning), lalu diuji end-to-end terhadap PostgreSQL sungguhan: register, login, update profil, update password, CRUD UMKM dengan upload foto, dan CRUD produk dengan penggantian/penghapusan foto — semuanya berjalan sesuai ekspektasi. Ikuti urutannya persis dan hasilnya akan sama.</p>
+    </div>
+
+    <h2 id="s1"><span class="badge">01</span>Apa itu Golang</h2>
+    <p><strong>Golang (Go)</strong> adalah bahasa pemrograman yang dikembangkan oleh Google, dirancang untuk membangun aplikasi backend/server yang cepat, sederhana, dan mudah di-deploy. Go bersifat <em>compiled</em> (dikompilasi menjadi satu file binary) sehingga tidak memerlukan runtime tambahan saat dijalankan di server.</p>
+    <p>Alasan Go banyak dipilih untuk membangun REST API:</p>
+    <ul>
+      <li><strong>Performa tinggi</strong> — sekelas bahasa C/C++ untuk urusan kecepatan, namun jauh lebih mudah ditulis.</li>
+      <li><strong>Concurrency bawaan</strong> — melalui <em>goroutine</em>, Go dapat menangani ribuan koneksi sekaligus tanpa framework tambahan.</li>
+      <li><strong>Sintaks sederhana</strong> — sengaja dibuat minim fitur agar kode mudah dibaca oleh siapa pun, termasuk tim yang besar.</li>
+      <li><strong>Standard library lengkap</strong> — untuk membuat HTTP server dan JSON, Go tidak selalu membutuhkan framework eksternal.</li>
+      <li><strong>Satu binary, tanpa dependency runtime</strong> — hasil <code>go build</code> tinggal dijalankan di server, cocok untuk Docker image yang ringan.</li>
+    </ul>
+    <div class="note"><span class="lbl">Kenapa Go cocok untuk API UMKM ini?</span><p>API yang akan dibangun perlu menangani autentikasi, upload file, dan banyak request dari aplikasi Flutter secara bersamaan. Go menangani ketiganya dengan baik menggunakan tools bawaan tanpa konfigurasi yang rumit.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Instalasi Golang</h2>
+    <p>Unduh dan pasang Go sesuai sistem operasi yang digunakan, lalu pastikan perintah <code>go</code> dapat dipanggil dari terminal. Materi ini diverifikasi dengan Go 1.22 ke atas (mendukung method &amp; path parameter pada <code>net/http</code>).</p>
+    <table>
+      <tr><th>OS</th><th>Langkah instalasi</th></tr>
+      <tr><td>Windows</td><td>Unduh installer <code>.msi</code> dari <code>go.dev/dl</code>, jalankan, ikuti wizard hingga selesai. Installer otomatis menambahkan Go ke <code>PATH</code>.</td></tr>
+      <tr><td>Linux</td><td>Unduh arsip <code>.tar.gz</code>, ekstrak ke <code>/usr/local</code>, lalu tambahkan <code>/usr/local/go/bin</code> ke <code>PATH</code> pada <code>~/.bashrc</code> atau <code>~/.zshrc</code>.</td></tr>
+      <tr><td>macOS</td><td>Paling mudah menggunakan Homebrew: <code>brew install go</code>. Alternatif lain: unduh installer <code>.pkg</code> dari <code>go.dev/dl</code>.</td></tr>
+    </table>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Linux — instalasi manual</span></div><pre><code>wget https://go.dev/dl/go1.22.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go
+sudo tar -C /usr/local -xzf go1.22.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/usr/local/go/bin' &gt;&gt; ~/.bashrc
+source ~/.bashrc</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">verifikasi instalasi (semua OS)</span></div><pre><code>go version
+# contoh keluaran: go version go1.22.3 darwin/arm64</code></pre></div>
+
+    <h2 id="s3"><span class="badge">03</span>Dasar-Dasar Golang</h2>
+    <p>Sebelum membangun API, berikut adalah bagian inti sintaks Go yang akan terus dipakai sepanjang tutorial ini.</p>
+
+    <h3>3.1 Package, Import, dan Fungsi main</h3>
+    <p>Setiap berkas Go wajib berada dalam sebuah <em>package</em>. Program yang dapat dijalankan langsung wajib memiliki package bernama <code>main</code> beserta fungsi <code>main()</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">main.go</span></div><pre><code>package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Halo, UMKM API")
+}</code></pre></div>
+
+    <h3>3.2 Variabel dan Tipe Data</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>var nama string = "Warung Bu Sari"
+kategori := "Kuliner"      // deklarasi singkat, tipe otomatis dikenali
+var stok int = 25
+var harga float64 = 15000.0
+var aktif bool = true</code></pre></div>
+
+    <h3>3.3 Struct — Merepresentasikan Data</h3>
+    <p><code>struct</code> pada Go dipakai untuk merepresentasikan sebuah entitas, misalnya data <em>user</em> atau <em>UMKM</em>. Tag <code>json:"..."</code> menentukan nama field saat data diubah menjadi JSON.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>type User struct {
+    ID       int64  `json:"id"`
+    Nama     string `json:"nama"`
+    Email    string `json:"email"`
+    Password string `json:"-"` // tanda "-" berarti tidak pernah dikirim ke klien
+}</code></pre></div>
+
+    <h3>3.4 Function, Multiple Return Value, dan Error</h3>
+    <p>Pola paling khas di Go: sebuah fungsi hampir selalu mengembalikan <strong>nilai hasil</strong> beserta <strong>error</strong> sekaligus. Pengecekan error dilakukan segera setelah pemanggilan fungsi.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>func bagi(a, b int) (int, error) {
+    if b == 0 {
+        return 0, errors.New("tidak boleh membagi dengan nol")
+    }
+    return a / b, nil
+}
+
+func main() {
+    hasil, err := bagi(10, 2)
+    if err != nil {
+        fmt.Println("terjadi error:", err)
+        return
+    }
+    fmt.Println("hasil:", hasil)
+}</code></pre></div>
+
+    <h3>3.5 Slice, Map, dan Pointer</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>umkmList := []string{"Warung Bu Sari", "Toko Pak Budi"} // slice (array dinamis)
+umkmList = append(umkmList, "Kedai Kopi Senja")
+
+filter := map[string]string{"kategori": "kuliner"} // map (key-value)
+
+func naikkanStok(stok *int) { // pointer: mengubah nilai asli, bukan salinan
+    *stok = *stok + 1
+}</code></pre></div>
+    <div class="note"><span class="lbl">Cukup untuk melanjutkan</span><p>Lima konsep di atas — package, struct, function multi-return, error, dan slice/map — sudah cukup untuk memahami seluruh kode API pada materi ini. Konsep lanjutan seperti interface dan goroutine akan dijelaskan langsung pada bagian implementasi.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Apa itu PostgreSQL</h2>
+    <p><strong>PostgreSQL</strong> adalah sistem basis data relasional (RDBMS) open-source yang dipakai untuk menyimpan data secara terstruktur dalam bentuk tabel-tabel yang saling berelasi. Pada aplikasi UMKM ini, PostgreSQL dipakai menyimpan tiga entitas utama yang saling berhubungan: <strong>users</strong>, <strong>umkm</strong>, dan <strong>produk</strong>.</p>
+    <p>PostgreSQL dipilih dibanding basis data lain karena:</p>
+    <ul>
+      <li>Mendukung relasi antar-tabel (foreign key) dengan baik — cocok untuk data "1 user punya 1 UMKM, 1 UMKM punya banyak produk".</li>
+      <li>Gratis, open-source, dan sangat stabil untuk skala kecil maupun besar.</li>
+      <li>Didukung penuh oleh driver Go modern seperti <code>pgx</code>.</li>
+      <li>Tersedia versi cloud gratis untuk development, salah satunya <strong>Neon</strong>, sehingga tidak wajib instalasi lokal.</li>
+    </ul>
+
+    <h2 id="s5"><span class="badge">05</span>Instalasi PostgreSQL (Opsional untuk Lokal)</h2>
+    <p>Instalasi lokal berguna untuk latihan dasar SQL di komputer sendiri. Untuk pengembangan API pada tutorial ini, disarankan langsung memakai Neon (lihat bagian 07) agar tidak perlu mengelola server database sendiri.</p>
+    <table>
+      <tr><th>OS</th><th>Langkah instalasi</th></tr>
+      <tr><td>Windows</td><td>Unduh installer dari <code>postgresql.org/download/windows</code>, jalankan wizard, catat password superuser <code>postgres</code> yang dibuat saat instalasi.</td></tr>
+      <tr><td>Linux (Debian/Ubuntu)</td><td><code>sudo apt update &amp;&amp; sudo apt install postgresql postgresql-contrib</code>, lalu service otomatis berjalan.</td></tr>
+      <tr><td>macOS</td><td><code>brew install postgresql@16</code>, kemudian <code>brew services start postgresql@16</code>.</td></tr>
+    </table>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">verifikasi instalasi</span></div><pre><code>psql --version
+psql -U postgres -h localhost   # masuk ke prompt psql</code></pre></div>
+
+    <h2 id="s6"><span class="badge">06</span>Dasar-Dasar PostgreSQL</h2>
+
+    <h3>6.1 Membuat Tabel</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);</code></pre></div>
+
+    <h3>6.2 Relasi dengan Foreign Key</h3>
+    <p>Foreign key memastikan setiap baris pada tabel <code>umkm</code> selalu terhubung ke satu baris pada tabel <code>users</code> yang benar-benar ada. Tambahan <code>ON DELETE CASCADE</code> membuat baris terkait ikut terhapus otomatis — dipakai nanti agar produk ikut terhapus saat UMKM induknya dihapus.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>CREATE TABLE umkm (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    foto VARCHAR(255)
+);</code></pre></div>
+
+    <h3>6.3 Query Dasar</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>-- menambah data
+INSERT INTO users (nama, email, password) VALUES ('Asep', 'asep@mail.com', '******');
+
+-- mengambil data dengan join antar-tabel
+SELECT umkm.nama, users.nama AS pemilik
+FROM umkm
+JOIN users ON umkm.user_id = users.id
+WHERE umkm.id = 1;
+
+-- mengubah dan menghapus data
+UPDATE users SET nama = 'Asep Trisna' WHERE id = 1;
+DELETE FROM umkm WHERE id = 3;</code></pre></div>
+    <div class="note"><span class="lbl">Cukup untuk melanjutkan</span><p>Tiga hal di atas — membuat tabel, foreign key, dan query CRUD dasar — adalah fondasi seluruh query yang dipakai pada Bagian 10.</p></div>
+
+    <h2 id="s7"><span class="badge">07</span>Memakai PostgreSQL Neon untuk Development</h2>
+    <p><strong>Neon</strong> (neon.tech) adalah layanan PostgreSQL cloud dengan paket gratis yang sangat praktis untuk development, karena tidak perlu instalasi ataupun menjaga server basis data tetap menyala di komputer sendiri.</p>
+    <ol>
+      <li>Buat akun di <code>neon.tech</code>, lalu buat <strong>Project</strong> baru (pilih region yang terdekat, misalnya Singapore).</li>
+      <li>Neon otomatis membuat sebuah database dan menyediakan <strong>Connection String</strong> pada dashboard project.</li>
+      <li>Salin connection string tersebut, formatnya menyerupai:</li>
+    </ol>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh connection string</span></div><pre><code>postgresql://neondb_owner:password@ep-xxxx-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require</code></pre></div>
+    <ol start="4">
+      <li>Simpan connection string tersebut pada berkas <code>.env</code> di project Go (dijelaskan pada bagian berikutnya). <strong>Jangan pernah</strong> mengunggah berkas <code>.env</code> ke repository Git.</li>
+    </ol>
+    <div class="note"><span class="lbl">Kenapa Neon dipilih untuk latihan ini?</span><p>Mahasiswa tidak perlu menginstal PostgreSQL di laptop masing-masing, tidak perlu mengatur user/permission database secara manual, dan connection string yang sama dapat langsung dipakai baik saat development maupun ketika API di-deploy nanti.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Setup Project API UMKM di Visual Studio Code</h2>
+    <p>Buat folder project baru, lalu inisialisasi module Go dan pasang seluruh dependency yang dibutuhkan.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal VS Code</span></div><pre><code>mkdir umkm-api &amp;&amp; cd umkm-api
+go mod init umkm-api
+
+go get github.com/jackc/pgx/v5/pgxpool
+go get github.com/golang-jwt/jwt/v5
+go get golang.org/x/crypto/bcrypt
+go get github.com/joho/godotenv
+go get golang.org/x/time/rate
+
+# untuk dokumentasi Swagger (dipakai di Bagian 11)
+go get github.com/swaggo/http-swagger/v2
+go get github.com/swaggo/swag
+go install github.com/swaggo/swag/cmd/swag@latest</code></pre></div>
+    <p>Struktur folder yang dipakai sepanjang tutorial ini — berlapis agar mudah dikembangkan, namun tetap sederhana untuk skala belajar:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder</span></div><pre><code>umkm-api/
+├── cmd/
+│   └── api/
+│       └── main.go
+├── internal/
+│   ├── config/
+│   │   └── config.go
+│   ├── domain/
+│   │   ├── user.go
+│   │   ├── umkm.go
+│   │   └── produk.go
+│   ├── repository/
+│   │   ├── user_repository.go
+│   │   ├── umkm_repository.go
+│   │   └── produk_repository.go
+│   ├── service/
+│   │   ├── auth_service.go
+│   │   ├── umkm_service.go
+│   │   ├── produk_service.go
+│   │   └── pagination.go
+│   ├── handler/
+│   │   ├── response.go
+│   │   ├── upload.go
+│   │   ├── swagger_types.go
+│   │   ├── auth_handler.go
+│   │   ├── umkm_handler.go
+│   │   └── produk_handler.go
+│   └── middleware/
+│       ├── auth.go
+│       └── ratelimit.go
+├── docs/                  # hasil generate "swag init" (Bagian 11)
+├── migrations/
+│   └── 001_init.sql
+├── uploads/
+│   ├── umkm/
+│   └── produk/
+├── .env.example
+├── go.mod
+└── go.sum</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">.env.example</span></div><pre><code>DATABASE_URL=postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require
+JWT_SECRET=ganti-dengan-string-acak-yang-panjang
+PORT=8080
+UPLOAD_DIR=./uploads</code></pre></div>
+    <p>Salin berkas tersebut menjadi <code>.env</code> lalu isi dengan connection string Neon milik masing-masing. Tambahkan juga <code>.env</code> ke dalam <code>.gitignore</code>.</p>
+
+    <h2 id="s9"><span class="badge">09</span>Desain Database dan Kontrak API</h2>
+    <p>Sebelum menulis kode, tentukan dahulu relasi data dan kontrak setiap endpoint agar implementasi terarah.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">relasi data</span></div><pre><code>users (1) ────── (1) umkm ────── (banyak) produk
+  │                    │
+  id                 user_id  →  merujuk ke users.id
+                        id
+                          └───  umkm_id  →  merujuk ke umkm.id (pada produk)</code></pre></div>
+    <p>Satu akun (<code>users</code>) hanya boleh memiliki satu UMKM, dan satu UMKM dapat memiliki banyak produk. Aturan ini akan dijaga pada lapisan <em>service</em>, bukan hanya di database.</p>
+
+    <h3>9.1 Kontrak Endpoint</h3>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Akses</th><th>Deskripsi</th></tr>
+      <tr><td><code>POST</code></td><td><code>/api/auth/register</code></td><td>Publik</td><td>Mendaftarkan akun baru</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/auth/login</code></td><td>Publik (rate limited)</td><td>Login, mengembalikan JWT token. Dibatasi 5 percobaan/menit per IP</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/profile</code></td><td>Login</td><td>Melihat profil akun sendiri</td></tr>
+      <tr><td><code>PUT</code></td><td><code>/api/profile</code></td><td>Login</td><td>Mengubah nama/email profil</td></tr>
+      <tr><td><code>PUT</code></td><td><code>/api/profile/password</code></td><td>Login</td><td>Mengubah password (wajib password lama)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/umkm?q=&amp;page=&amp;limit=</code></td><td>Publik</td><td>Melihat seluruh UMKM, mendukung pencarian nama (<code>q</code>) dan pagination</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/umkm/saya</code></td><td>Login</td><td>Melihat UMKM milik akun sendiri</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/umkm/{id}</code></td><td>Publik</td><td>Melihat detail satu UMKM</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/umkm</code></td><td>Login</td><td>Membuat UMKM milik sendiri (foto opsional, <code>multipart/form-data</code>)</td></tr>
+      <tr><td><code>PUT</code></td><td><code>/api/umkm/{id}</code></td><td>Login (pemilik)</td><td>Mengubah data UMKM sendiri, foto opsional diganti</td></tr>
+      <tr><td><code>DELETE</code></td><td><code>/api/umkm/{id}</code></td><td>Login (pemilik)</td><td>Menghapus UMKM sendiri beserta seluruh produknya</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/umkm/{id}/produk?page=&amp;limit=</code></td><td>Publik</td><td>Melihat seluruh produk pada satu UMKM, mendukung pagination</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/umkm/{id}/produk</code></td><td>Login (pemilik)</td><td>Menambahkan produk pada UMKM sendiri (foto <code>multipart/form-data</code>)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/produk/{id}</code></td><td>Publik</td><td>Melihat detail satu produk</td></tr>
+      <tr><td><code>PUT</code></td><td><code>/api/produk/{id}</code></td><td>Login (pemilik)</td><td>Mengubah data produk, foto opsional diganti</td></tr>
+      <tr><td><code>DELETE</code></td><td><code>/api/produk/{id}</code></td><td>Login (pemilik)</td><td>Menghapus produk beserta foto di folder lokal</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Kenapa path produk terpisah dari umkm/{id}/produk?</span><p>Membuat produk butuh konteks UMKM induknya (<code>POST /api/umkm/{id}/produk</code>), sedangkan operasi pada satu produk spesifik — detail, update, delete — cukup mengacu ke ID produk itu sendiri (<code>/api/produk/{id}</code>). Kepemilikan tetap divalidasi di service dengan menelusuri <code>produk → umkm → user_id</code>, jadi tidak ada celah pengguna lain mengubah produk yang bukan miliknya.</p></div>
+
+    <h3>9.2 Format Respons</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">respons sukses</span></div><pre><code>{ "data": { "id": 1, "nama": "Warung Bu Sari" } }</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">respons error</span></div><pre><code>{ "error": { "message": "email sudah terdaftar", "code": "CONFLICT" } }</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">respons list dengan pagination</span></div><pre><code>{
+  "data": [ { "id": 1, "nama": "Warung Bu Sari" } ],
+  "meta": { "page": 1, "limit": 10, "total": 1 }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Field foto berisi path relatif, bukan URL penuh</span><p>Agar aman dipindah-pindah server (localhost, staging, produksi), field <code>foto</code> pada respons hanya berisi path relatif seperti <code>"umkm/1699999999.jpg"</code>. Klien (aplikasi Flutter) tinggal menggabungkannya sendiri: <code>base_url + "/uploads/" + foto</code>.</p></div>
+
+    <h2 id="s10"><span class="badge">10</span>Implementasi API UMKM</h2>
+    <p>Kode disusun berlapis: <code>domain</code> (struktur data) → <code>repository</code> (akses database) → <code>service</code> (aturan bisnis) → <code>handler</code> (menerima HTTP request) → <code>middleware</code> + <code>main.go</code> (menyatukan semuanya).</p>
+
+    <h3>10.1 Migration — Membuat Tabel</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/001_init.sql</span></div><pre><code>CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE umkm (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    deskripsi TEXT,
+    alamat VARCHAR(255),
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE produk (
+    id SERIAL PRIMARY KEY,
+    umkm_id INTEGER NOT NULL REFERENCES umkm(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    harga NUMERIC(12,2) NOT NULL DEFAULT 0,
+    deskripsi TEXT,
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);</code></pre></div>
+    <p><code>user_id UNIQUE</code> pada tabel <code>umkm</code> memaksa di level database bahwa satu user hanya boleh punya satu baris UMKM — lapisan pertahanan tambahan selain pengecekan di service. Jalankan berkas ini ke database Neon melalui <code>psql</code> atau SQL editor pada dashboard Neon:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>psql "postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require" -f migrations/001_init.sql</code></pre></div>
+
+    <h3>10.2 Konfigurasi dan Koneksi Database</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/config/config.go</span></div><pre><code>package config
+
+import (
+    "os"
+
+    "github.com/joho/godotenv"
+)
+
+type Config struct {
+    DatabaseURL string
+    JWTSecret   string
+    Port        string
+    UploadDir   string
+}
+
+func Load() Config {
+    _ = godotenv.Load() // abaikan error, misal saat deploy tanpa berkas .env
+
+    return Config{
+        DatabaseURL: os.Getenv("DATABASE_URL"),
+        JWTSecret:   os.Getenv("JWT_SECRET"),
+        Port:        getOrDefault("PORT", "8080"),
+        UploadDir:   getOrDefault("UPLOAD_DIR", "./uploads"),
+    }
+}
+
+func getOrDefault(key, def string) string {
+    if v := os.Getenv(key); v != "" {
+        return v
+    }
+    return def
+}</code></pre></div>
+
+    <h3>10.3 Domain — Struktur Data</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/domain/user.go</span></div><pre><code>package domain
+
+import "errors"
+
+var (
+    ErrNotFound     = errors.New("data tidak ditemukan")
+    ErrConflict     = errors.New("data sudah ada")
+    ErrForbidden    = errors.New("tidak memiliki akses")
+    ErrInvalidInput = errors.New("input tidak valid")
+)
+
+type User struct {
+    ID       int64  `json:"id"`
+    Nama     string `json:"nama"`
+    Email    string `json:"email"`
+    Password string `json:"-"`
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/domain/umkm.go</span></div><pre><code>package domain
+
+type Umkm struct {
+    ID        int64  `json:"id"`
+    UserID    int64  `json:"user_id"`
+    Nama      string `json:"nama"`
+    Deskripsi string `json:"deskripsi"`
+    Alamat    string `json:"alamat"`
+    Foto      string `json:"foto"`
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/domain/produk.go</span></div><pre><code>package domain
+
+type Produk struct {
+    ID        int64   `json:"id"`
+    UmkmID    int64   `json:"umkm_id"`
+    Nama      string  `json:"nama"`
+    Harga     float64 `json:"harga"`
+    Deskripsi string  `json:"deskripsi"`
+    Foto      string  `json:"foto"`
+}</code></pre></div>
+
+    <h3>10.4 Repository — Akses Database</h3>
+    <p>Interface repository didefinisikan sesempit mungkin, hanya berisi method yang benar-benar dipakai oleh service.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/repository/user_repository.go</span></div><pre><code>package repository
+
+import (
+    "context"
+    "errors"
+
+    "github.com/jackc/pgx/v5"
+    "github.com/jackc/pgx/v5/pgxpool"
+    "umkm-api/internal/domain"
+)
+
+type UserRepository interface {
+    Create(ctx context.Context, u *domain.User) error
+    FindByEmail(ctx context.Context, email string) (*domain.User, error)
+    FindByID(ctx context.Context, id int64) (*domain.User, error)
+    UpdateProfile(ctx context.Context, id int64, nama, email string) error
+    UpdatePassword(ctx context.Context, id int64, hashed string) error
+}
+
+type userRepository struct {
+    db *pgxpool.Pool
+}
+
+func NewUserRepository(db *pgxpool.Pool) UserRepository {
+    return &userRepository{db: db}
+}
+
+func (r *userRepository) Create(ctx context.Context, u *domain.User) error {
+    query := `INSERT INTO users (nama, email, password) VALUES ($1, $2, $3) RETURNING id`
+    return r.db.QueryRow(ctx, query, u.Nama, u.Email, u.Password).Scan(&u.ID)
+}
+
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+    var u domain.User
+    query := `SELECT id, nama, email, password FROM users WHERE email = $1`
+    err := r.db.QueryRow(ctx, query, email).Scan(&u.ID, &u.Nama, &u.Email, &u.Password)
+    if errors.Is(err, pgx.ErrNoRows) {
+        return nil, domain.ErrNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+    return &u, nil
+}
+
+func (r *userRepository) FindByID(ctx context.Context, id int64) (*domain.User, error) {
+    var u domain.User
+    query := `SELECT id, nama, email, password FROM users WHERE id = $1`
+    err := r.db.QueryRow(ctx, query, id).Scan(&u.ID, &u.Nama, &u.Email, &u.Password)
+    if errors.Is(err, pgx.ErrNoRows) {
+        return nil, domain.ErrNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+    return &u, nil
+}
+
+func (r *userRepository) UpdateProfile(ctx context.Context, id int64, nama, email string) error {
+    query := `UPDATE users SET nama = $1, email = $2 WHERE id = $3`
+    _, err := r.db.Exec(ctx, query, nama, email, id)
+    return err
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, id int64, hashed string) error {
+    query := `UPDATE users SET password = $1 WHERE id = $2`
+    _, err := r.db.Exec(ctx, query, hashed, id)
+    return err
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/repository/umkm_repository.go</span></div><pre><code>package repository
+
+import (
+    "context"
+    "errors"
+
+    "github.com/jackc/pgx/v5"
+    "github.com/jackc/pgx/v5/pgxpool"
+    "umkm-api/internal/domain"
+)
+
+type UmkmRepository interface {
+    Create(ctx context.Context, u *domain.Umkm) error
+    FindAll(ctx context.Context, q string, limit, offset int) ([]domain.Umkm, error)
+    Count(ctx context.Context, q string) (int, error)
+    FindByID(ctx context.Context, id int64) (*domain.Umkm, error)
+    FindByUserID(ctx context.Context, userID int64) (*domain.Umkm, error)
+    Update(ctx context.Context, u *domain.Umkm) error
+    Delete(ctx context.Context, id int64) error
+}
+
+type umkmRepository struct {
+    db *pgxpool.Pool
+}
+
+func NewUmkmRepository(db *pgxpool.Pool) UmkmRepository {
+    return &umkmRepository{db: db}
+}
+
+func (r *umkmRepository) Create(ctx context.Context, u *domain.Umkm) error {
+    query := `INSERT INTO umkm (user_id, nama, deskripsi, alamat, foto)
+              VALUES ($1, $2, $3, $4, $5) RETURNING id`
+    return r.db.QueryRow(ctx, query, u.UserID, u.Nama, u.Deskripsi, u.Alamat, u.Foto).Scan(&u.ID)
+}
+
+// FindAll mengambil daftar UMKM dengan pagination, opsional difilter nama (q).
+// q kosong berarti tidak difilter sama sekali.
+func (r *umkmRepository) FindAll(ctx context.Context, q string, limit, offset int) ([]domain.Umkm, error) {
+    query := `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm
+              WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')
+              ORDER BY id DESC LIMIT $2 OFFSET $3`
+    rows, err := r.db.Query(ctx, query, q, limit, offset)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    list := []domain.Umkm{} // inisialisasi slice kosong, bukan nil, agar JSON-nya "[]" bukan "null"
+    for rows.Next() {
+        var u domain.Umkm
+        if err := rows.Scan(&u.ID, &u.UserID, &u.Nama, &u.Deskripsi, &u.Alamat, &u.Foto); err != nil {
+            return nil, err
+        }
+        list = append(list, u)
+    }
+    return list, rows.Err()
+}
+
+func (r *umkmRepository) Count(ctx context.Context, q string) (int, error) {
+    var total int
+    query := `SELECT COUNT(*) FROM umkm WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')`
+    err := r.db.QueryRow(ctx, query, q).Scan(&total)
+    return total, err
+}
+
+func (r *umkmRepository) FindByID(ctx context.Context, id int64) (*domain.Umkm, error) {
+    var u domain.Umkm
+    query := `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE id = $1`
+    err := r.db.QueryRow(ctx, query, id).Scan(&u.ID, &u.UserID, &u.Nama, &u.Deskripsi, &u.Alamat, &u.Foto)
+    if errors.Is(err, pgx.ErrNoRows) {
+        return nil, domain.ErrNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+    return &u, nil
+}
+
+func (r *umkmRepository) FindByUserID(ctx context.Context, userID int64) (*domain.Umkm, error) {
+    var u domain.Umkm
+    query := `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE user_id = $1`
+    err := r.db.QueryRow(ctx, query, userID).Scan(&u.ID, &u.UserID, &u.Nama, &u.Deskripsi, &u.Alamat, &u.Foto)
+    if errors.Is(err, pgx.ErrNoRows) {
+        return nil, domain.ErrNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+    return &u, nil
+}
+
+func (r *umkmRepository) Update(ctx context.Context, u *domain.Umkm) error {
+    query := `UPDATE umkm SET nama = $1, deskripsi = $2, alamat = $3, foto = $4 WHERE id = $5`
+    _, err := r.db.Exec(ctx, query, u.Nama, u.Deskripsi, u.Alamat, u.Foto, u.ID)
+    return err
+}
+
+func (r *umkmRepository) Delete(ctx context.Context, id int64) error {
+    _, err := r.db.Exec(ctx, `DELETE FROM umkm WHERE id = $1`, id)
+    return err
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/repository/produk_repository.go</span></div><pre><code>package repository
+
+import (
+    "context"
+    "errors"
+
+    "github.com/jackc/pgx/v5"
+    "github.com/jackc/pgx/v5/pgxpool"
+    "umkm-api/internal/domain"
+)
+
+type ProdukRepository interface {
+    Create(ctx context.Context, p *domain.Produk) error
+    FindByID(ctx context.Context, id int64) (*domain.Produk, error)
+    FindByUmkmID(ctx context.Context, umkmID int64, limit, offset int) ([]domain.Produk, error)
+    CountByUmkmID(ctx context.Context, umkmID int64) (int, error)
+    Update(ctx context.Context, p *domain.Produk) error
+    Delete(ctx context.Context, id int64) error
+}
+
+type produkRepository struct {
+    db *pgxpool.Pool
+}
+
+func NewProdukRepository(db *pgxpool.Pool) ProdukRepository {
+    return &produkRepository{db: db}
+}
+
+func (r *produkRepository) Create(ctx context.Context, p *domain.Produk) error {
+    query := `INSERT INTO produk (umkm_id, nama, harga, deskripsi, foto)
+              VALUES ($1, $2, $3, $4, $5) RETURNING id`
+    return r.db.QueryRow(ctx, query, p.UmkmID, p.Nama, p.Harga, p.Deskripsi, p.Foto).Scan(&p.ID)
+}
+
+func (r *produkRepository) FindByID(ctx context.Context, id int64) (*domain.Produk, error) {
+    var p domain.Produk
+    query := `SELECT id, umkm_id, nama, harga, deskripsi, foto FROM produk WHERE id = $1`
+    err := r.db.QueryRow(ctx, query, id).Scan(&p.ID, &p.UmkmID, &p.Nama, &p.Harga, &p.Deskripsi, &p.Foto)
+    if errors.Is(err, pgx.ErrNoRows) {
+        return nil, domain.ErrNotFound
+    }
+    if err != nil {
+        return nil, err
+    }
+    return &p, nil
+}
+
+func (r *produkRepository) FindByUmkmID(ctx context.Context, umkmID int64, limit, offset int) ([]domain.Produk, error) {
+    rows, err := r.db.Query(ctx,
+        `SELECT id, umkm_id, nama, harga, deskripsi, foto FROM produk
+         WHERE umkm_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3`,
+        umkmID, limit, offset)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    list := []domain.Produk{}
+    for rows.Next() {
+        var p domain.Produk
+        if err := rows.Scan(&p.ID, &p.UmkmID, &p.Nama, &p.Harga, &p.Deskripsi, &p.Foto); err != nil {
+            return nil, err
+        }
+        list = append(list, p)
+    }
+    return list, rows.Err()
+}
+
+func (r *produkRepository) CountByUmkmID(ctx context.Context, umkmID int64) (int, error) {
+    var total int
+    err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM produk WHERE umkm_id = $1`, umkmID).Scan(&total)
+    return total, err
+}
+
+func (r *produkRepository) Update(ctx context.Context, p *domain.Produk) error {
+    query := `UPDATE produk SET nama = $1, harga = $2, deskripsi = $3, foto = $4 WHERE id = $5`
+    _, err := r.db.Exec(ctx, query, p.Nama, p.Harga, p.Deskripsi, p.Foto, p.ID)
+    return err
+}
+
+func (r *produkRepository) Delete(ctx context.Context, id int64) error {
+    _, err := r.db.Exec(ctx, `DELETE FROM produk WHERE id = $1`, id)
+    return err
+}</code></pre></div>
+
+    <h3>10.5 Service — Aturan Bisnis</h3>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/auth_service.go</span></div><pre><code>package service
+
+import (
+    "context"
+    "errors"
+    "time"
+
+    "github.com/golang-jwt/jwt/v5"
+    "golang.org/x/crypto/bcrypt"
+    "umkm-api/internal/domain"
+    "umkm-api/internal/repository"
+)
+
+type AuthService struct {
+    userRepo  repository.UserRepository
+    jwtSecret string
+}
+
+func NewAuthService(userRepo repository.UserRepository, jwtSecret string) *AuthService {
+    return &AuthService{userRepo: userRepo, jwtSecret: jwtSecret}
+}
+
+func (s *AuthService) Register(ctx context.Context, nama, email, password string) (*domain.User, error) {
+    if nama == "" || email == "" || len(password) &lt; 6 {
+        return nil, domain.ErrInvalidInput
+    }
+
+    _, err := s.userRepo.FindByEmail(ctx, email)
+    if err == nil {
+        return nil, domain.ErrConflict // email sudah dipakai
+    }
+    if !errors.Is(err, domain.ErrNotFound) {
+        return nil, err
+    }
+
+    hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return nil, err
+    }
+
+    user := &domain.User{Nama: nama, Email: email, Password: string(hashed)}
+    if err := s.userRepo.Create(ctx, user); err != nil {
+        return nil, err
+    }
+    return user, nil
+}
+
+func (s *AuthService) Login(ctx context.Context, email, password string) (string, *domain.User, error) {
+    user, err := s.userRepo.FindByEmail(ctx, email)
+    if err != nil {
+        return "", nil, domain.ErrNotFound
+    }
+
+    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+        return "", nil, domain.ErrInvalidInput // password salah
+    }
+
+    token, err := s.generateToken(user.ID)
+    if err != nil {
+        return "", nil, err
+    }
+    return token, user, nil
+}
+
+func (s *AuthService) Profile(ctx context.Context, userID int64) (*domain.User, error) {
+    return s.userRepo.FindByID(ctx, userID)
+}
+
+func (s *AuthService) UpdateProfile(ctx context.Context, userID int64, nama, email string) error {
+    if nama == "" || email == "" {
+        return domain.ErrInvalidInput
+    }
+    return s.userRepo.UpdateProfile(ctx, userID, nama, email)
+}
+
+func (s *AuthService) UpdatePassword(ctx context.Context, userID int64, lama, baru string) error {
+    user, err := s.userRepo.FindByID(ctx, userID)
+    if err != nil {
+        return err
+    }
+    if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(lama)); err != nil {
+        return domain.ErrInvalidInput // password lama tidak cocok
+    }
+    if len(baru) &lt; 6 {
+        return domain.ErrInvalidInput
+    }
+    hashed, err := bcrypt.GenerateFromPassword([]byte(baru), bcrypt.DefaultCost)
+    if err != nil {
+        return err
+    }
+    return s.userRepo.UpdatePassword(ctx, userID, string(hashed))
+}
+
+func (s *AuthService) generateToken(userID int64) (string, error) {
+    claims := jwt.MapClaims{
+        "sub": userID,
+        "exp": time.Now().Add(24 * time.Hour).Unix(),
+    }
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString([]byte(s.jwtSecret))
+}</code></pre></div>
+    <p>Helper kecil berikut dipakai bersama oleh <code>UmkmService</code> dan <code>ProdukService</code> agar pengguna tidak bisa meminta <code>limit=0</code> (bikin loop tak berguna di sisi UI) atau <code>limit</code> yang sangat besar (membebani database).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/pagination.go</span></div><pre><code>package service
+
+const (
+    defaultLimit = 10
+    maxLimit     = 100
+)
+
+// normalizePagination memastikan page minimal 1 dan limit berada pada rentang wajar.
+func normalizePagination(page, limit int) (int, int) {
+    if page &lt; 1 {
+        page = 1
+    }
+    if limit &lt;= 0 {
+        limit = defaultLimit
+    }
+    if limit &gt; maxLimit {
+        limit = maxLimit
+    }
+    return page, limit
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/umkm_service.go</span></div><pre><code>package service
+
+import (
+    "context"
+    "errors"
+
+    "umkm-api/internal/domain"
+    "umkm-api/internal/repository"
+)
+
+type UmkmService struct {
+    umkmRepo repository.UmkmRepository
+}
+
+func NewUmkmService(umkmRepo repository.UmkmRepository) *UmkmService {
+    return &UmkmService{umkmRepo: umkmRepo}
+}
+
+// List mengambil daftar UMKM dengan pagination, opsional difilter nama (q).
+// Mengembalikan list, total data, serta page/limit yang benar-benar dipakai
+// (setelah dinormalisasi) agar handler bisa menuliskan meta pagination yang akurat.
+func (s *UmkmService) List(ctx context.Context, q string, page, limit int) (list []domain.Umkm, total, usedPage, usedLimit int, err error) {
+    usedPage, usedLimit = normalizePagination(page, limit)
+    offset := (usedPage - 1) * usedLimit
+
+    list, err = s.umkmRepo.FindAll(ctx, q, usedLimit, offset)
+    if err != nil {
+        return nil, 0, usedPage, usedLimit, err
+    }
+    total, err = s.umkmRepo.Count(ctx, q)
+    if err != nil {
+        return nil, 0, usedPage, usedLimit, err
+    }
+    return list, total, usedPage, usedLimit, nil
+}
+
+func (s *UmkmService) Detail(ctx context.Context, id int64) (*domain.Umkm, error) {
+    return s.umkmRepo.FindByID(ctx, id)
+}
+
+func (s *UmkmService) MyUmkm(ctx context.Context, userID int64) (*domain.Umkm, error) {
+    return s.umkmRepo.FindByUserID(ctx, userID)
+}
+
+func (s *UmkmService) CreateOwn(ctx context.Context, userID int64, nama, deskripsi, alamat, foto string) (*domain.Umkm, error) {
+    if nama == "" {
+        return nil, domain.ErrInvalidInput
+    }
+
+    _, err := s.umkmRepo.FindByUserID(ctx, userID)
+    if err == nil {
+        return nil, domain.ErrConflict // setiap user hanya boleh punya 1 UMKM
+    }
+    if !errors.Is(err, domain.ErrNotFound) {
+        return nil, err
+    }
+
+    umkm := &domain.Umkm{UserID: userID, Nama: nama, Deskripsi: deskripsi, Alamat: alamat, Foto: foto}
+    if err := s.umkmRepo.Create(ctx, umkm); err != nil {
+        return nil, err
+    }
+    return umkm, nil
+}
+
+// UpdateOwn mengembalikan UMKM hasil update beserta path foto lama (bisa kosong).
+// Handler bertanggung jawab menghapus berkas foto lama dari disk setelah update berhasil.
+func (s *UmkmService) UpdateOwn(ctx context.Context, userID, umkmID int64, nama, deskripsi, alamat, fotoBaru string) (umkm *domain.Umkm, fotoLama string, err error) {
+    if nama == "" {
+        return nil, "", domain.ErrInvalidInput
+    }
+
+    umkm, err = s.umkmRepo.FindByID(ctx, umkmID)
+    if err != nil {
+        return nil, "", err
+    }
+    if umkm.UserID != userID {
+        return nil, "", domain.ErrForbidden
+    }
+
+    fotoLama = umkm.Foto
+    umkm.Nama = nama
+    umkm.Deskripsi = deskripsi
+    umkm.Alamat = alamat
+    if fotoBaru != "" {
+        umkm.Foto = fotoBaru
+    } else {
+        fotoLama = "" // foto tidak diganti, tidak ada yang perlu dihapus
+    }
+
+    if err := s.umkmRepo.Update(ctx, umkm); err != nil {
+        return nil, "", err
+    }
+    return umkm, fotoLama, nil
+}
+
+func (s *UmkmService) DeleteOwn(ctx context.Context, userID, umkmID int64) (*domain.Umkm, error) {
+    umkm, err := s.umkmRepo.FindByID(ctx, umkmID)
+    if err != nil {
+        return nil, err
+    }
+    if umkm.UserID != userID {
+        return nil, domain.ErrForbidden
+    }
+    if err := s.umkmRepo.Delete(ctx, umkmID); err != nil {
+        return nil, err
+    }
+    return umkm, nil
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/produk_service.go</span></div><pre><code>package service
+
+import (
+    "context"
+
+    "umkm-api/internal/domain"
+    "umkm-api/internal/repository"
+)
+
+type ProdukService struct {
+    produkRepo repository.ProdukRepository
+    umkmRepo   repository.UmkmRepository
+}
+
+func NewProdukService(produkRepo repository.ProdukRepository, umkmRepo repository.UmkmRepository) *ProdukService {
+    return &ProdukService{produkRepo: produkRepo, umkmRepo: umkmRepo}
+}
+
+// ListByUmkm mengambil daftar produk milik satu UMKM dengan pagination.
+// Mengembalikan list, total data, serta page/limit yang benar-benar dipakai.
+func (s *ProdukService) ListByUmkm(ctx context.Context, umkmID int64, page, limit int) (list []domain.Produk, total, usedPage, usedLimit int, err error) {
+    usedPage, usedLimit = normalizePagination(page, limit)
+    offset := (usedPage - 1) * usedLimit
+
+    list, err = s.produkRepo.FindByUmkmID(ctx, umkmID, usedLimit, offset)
+    if err != nil {
+        return nil, 0, usedPage, usedLimit, err
+    }
+    total, err = s.produkRepo.CountByUmkmID(ctx, umkmID)
+    if err != nil {
+        return nil, 0, usedPage, usedLimit, err
+    }
+    return list, total, usedPage, usedLimit, nil
+}
+
+func (s *ProdukService) Detail(ctx context.Context, id int64) (*domain.Produk, error) {
+    return s.produkRepo.FindByID(ctx, id)
+}
+
+func (s *ProdukService) CreateForOwnUmkm(ctx context.Context, userID, umkmID int64, nama string, harga float64, deskripsi, foto string) (*domain.Produk, error) {
+    if nama == "" || harga &lt; 0 {
+        return nil, domain.ErrInvalidInput
+    }
+
+    umkm, err := s.umkmRepo.FindByID(ctx, umkmID)
+    if err != nil {
+        return nil, err
+    }
+    if umkm.UserID != userID {
+        return nil, domain.ErrForbidden // hanya pemilik UMKM yang boleh menambah produk
+    }
+
+    produk := &domain.Produk{UmkmID: umkmID, Nama: nama, Harga: harga, Deskripsi: deskripsi, Foto: foto}
+    if err := s.produkRepo.Create(ctx, produk); err != nil {
+        return nil, err
+    }
+    return produk, nil
+}
+
+// authorizeOwner memastikan userID adalah pemilik UMKM tempat produk berada.
+func (s *ProdukService) authorizeOwner(ctx context.Context, userID, produkID int64) (*domain.Produk, error) {
+    produk, err := s.produkRepo.FindByID(ctx, produkID)
+    if err != nil {
+        return nil, err
+    }
+    umkm, err := s.umkmRepo.FindByID(ctx, produk.UmkmID)
+    if err != nil {
+        return nil, err
+    }
+    if umkm.UserID != userID {
+        return nil, domain.ErrForbidden
+    }
+    return produk, nil
+}
+
+func (s *ProdukService) UpdateOwn(ctx context.Context, userID, produkID int64, nama string, harga float64, deskripsi, fotoBaru string) (produk *domain.Produk, fotoLama string, err error) {
+    if nama == "" || harga &lt; 0 {
+        return nil, "", domain.ErrInvalidInput
+    }
+
+    produk, err = s.authorizeOwner(ctx, userID, produkID)
+    if err != nil {
+        return nil, "", err
+    }
+
+    fotoLama = produk.Foto
+    produk.Nama = nama
+    produk.Harga = harga
+    produk.Deskripsi = deskripsi
+    if fotoBaru != "" {
+        produk.Foto = fotoBaru
+    } else {
+        fotoLama = ""
+    }
+
+    if err := s.produkRepo.Update(ctx, produk); err != nil {
+        return nil, "", err
+    }
+    return produk, fotoLama, nil
+}
+
+func (s *ProdukService) DeleteOwn(ctx context.Context, userID, produkID int64) (*domain.Produk, error) {
+    produk, err := s.authorizeOwner(ctx, userID, produkID)
+    if err != nil {
+        return nil, err
+    }
+    if err := s.produkRepo.Delete(ctx, produkID); err != nil {
+        return nil, err
+    }
+    return produk, nil
+}</code></pre></div>
+
+    <h3>10.6 Middleware — Autentikasi JWT</h3>
+    <p>Middleware ini memeriksa header <code>Authorization: Bearer &lt;token&gt;</code>, lalu menyisipkan <code>userID</code> ke dalam <code>context</code> agar dapat dibaca oleh handler berikutnya.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go</span></div><pre><code>package middleware
+
+import (
+    "context"
+    "net/http"
+    "strings"
+
+    "github.com/golang-jwt/jwt/v5"
+)
+
+type contextKey string
+
+const UserIDKey contextKey = "userID"
+
+func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            header := r.Header.Get("Authorization")
+            if !strings.HasPrefix(header, "Bearer ") {
+                http.Error(w, `{"error":{"message":"token tidak ditemukan","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
+                return
+            }
+
+            tokenStr := strings.TrimPrefix(header, "Bearer ")
+            token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+                return []byte(jwtSecret), nil
+            })
+            if err != nil || !token.Valid {
+                http.Error(w, `{"error":{"message":"token tidak valid","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
+                return
+            }
+
+            claims := token.Claims.(jwt.MapClaims)
+            userID := int64(claims["sub"].(float64))
+
+            ctx := context.WithValue(r.Context(), UserIDKey, userID)
+            next.ServeHTTP(w, r.WithContext(ctx))
+        })
+    }
+}
+
+func GetUserID(r *http.Request) int64 {
+    id, _ := r.Context().Value(UserIDKey).(int64)
+    return id
+}</code></pre></div>
+    <p>Middleware kedua membatasi laju request per alamat IP, dipasang khusus pada endpoint login agar percobaan brute-force password tidak bisa dilakukan tanpa batas.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/ratelimit.go</span></div><pre><code>package middleware
+
+import (
+    "net"
+    "net/http"
+    "sync"
+
+    "golang.org/x/time/rate"
+)
+
+// ipRateLimiter menyimpan satu rate.Limiter per alamat IP, supaya percobaan
+// login yang bertubi-tubi dari satu IP (brute-force) dibatasi tanpa mengganggu
+// pengguna lain yang mengakses endpoint yang sama secara wajar.
+type ipRateLimiter struct {
+    mu       sync.Mutex
+    limiters map[string]*rate.Limiter
+    r        rate.Limit
+    b        int
+}
+
+func newIPRateLimiter(r rate.Limit, b int) *ipRateLimiter {
+    return &ipRateLimiter{
+        limiters: make(map[string]*rate.Limiter),
+        r:        r,
+        b:        b,
+    }
+}
+
+func (i *ipRateLimiter) getLimiter(ip string) *rate.Limiter {
+    i.mu.Lock()
+    defer i.mu.Unlock()
+
+    limiter, exists := i.limiters[ip]
+    if !exists {
+        limiter = rate.NewLimiter(i.r, i.b)
+        i.limiters[ip] = limiter
+    }
+    return limiter
+}
+
+func clientIP(r *http.Request) string {
+    host, _, err := net.SplitHostPort(r.RemoteAddr)
+    if err != nil {
+        return r.RemoteAddr
+    }
+    return host
+}
+
+// RateLimit membatasi jumlah request per alamat IP. r adalah laju pengisian ulang
+// token (request/detik) dan b adalah ukuran burst (jumlah request beruntun yang
+// masih diizinkan sebelum limiter mulai menahan).
+func RateLimit(r rate.Limit, b int) func(http.Handler) http.Handler {
+    limiter := newIPRateLimiter(r, b)
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+            if !limiter.getLimiter(clientIP(req)).Allow() {
+                http.Error(w, `{"error":{"message":"terlalu banyak percobaan, coba lagi nanti","code":"TOO_MANY_REQUESTS"}}`, http.StatusTooManyRequests)
+                return
+            }
+            next.ServeHTTP(w, req)
+        })
+    }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa per-IP, bukan global?</span><p>Limiter global akan membatasi <em>semua</em> pengguna sekaligus begitu satu orang menembak berkali-kali. Dengan satu <code>rate.Limiter</code> per alamat IP (disimpan dalam <code>map</code>), pengguna lain yang login secara wajar dari IP berbeda tidak ikut terkena batas.</p></div>
+
+    <h3>10.7 Handler — Response Helper dan Upload File</h3>
+    <p><code>writePaginated</code> membungkus data list beserta info halaman (<code>page</code>, <code>limit</code>, <code>total</code>), dipakai oleh endpoint <code>GET /api/umkm</code> dan <code>GET /api/umkm/{id}/produk</code>. <code>parsePagination</code> membaca query param <code>page</code>/<code>limit</code> apa adanya — validasi/normalisasi rentangnya tetap tanggung jawab service (Bagian 10.5), bukan handler.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/response.go</span></div><pre><code>package handler
+
+import (
+    "encoding/json"
+    "net/http"
+    "strconv"
+)
+
+func writeJSON(w http.ResponseWriter, status int, data any) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(map[string]any{"data": data})
+}
+
+// paginationMeta adalah bentuk info halaman yang disisipkan pada respons list.
+type paginationMeta struct {
+    Page  int `json:"page"`
+    Limit int `json:"limit"`
+    Total int `json:"total"`
+}
+
+func writePaginated(w http.ResponseWriter, status int, data any, page, limit, total int) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(map[string]any{
+        "data": data,
+        "meta": paginationMeta{Page: page, Limit: limit, Total: total},
+    })
+}
+
+func writeError(w http.ResponseWriter, status int, message, code string) {
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(map[string]any{
+        "error": map[string]string{"message": message, "code": code},
+    })
+}
+
+// parsePagination membaca query param "page" dan "limit". Nilai yang tidak ada
+// atau tidak valid dibiarkan 0 agar dinormalisasi oleh lapisan service.
+func parsePagination(r *http.Request) (page, limit int) {
+    page, _ = strconv.Atoi(r.URL.Query().Get("page"))
+    limit, _ = strconv.Atoi(r.URL.Query().Get("limit"))
+    return page, limit
+}</code></pre></div>
+    <p>Upload foto ditangani dengan <code>multipart/form-data</code>. Berkas disimpan ke folder lokal, dan yang disimpan ke database hanyalah <strong>path relatif</strong> (<code>umkm/xxx.jpg</code>) — bukan path disk absolut — agar bisa langsung digabung menjadi URL oleh klien maupun dipakai untuk menghapus berkas lama saat update/delete. Hanya berkas berekstensi <code>.jpg</code>/<code>.jpeg</code>/<code>.png</code> yang diterima.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/upload.go</span></div><pre><code>package handler
+
+import (
+    "errors"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "path/filepath"
+    "strings"
+    "time"
+)
+
+// errInvalidFileType dikembalikan saat ekstensi berkas yang diunggah bukan
+// salah satu dari allowedImageExt.
+var errInvalidFileType = errors.New("tipe berkas tidak didukung, hanya jpg/jpeg/png")
+
+var allowedImageExt = map[string]bool{
+    ".jpg":  true,
+    ".jpeg": true,
+    ".png":  true,
+}
+
+// saveUploadedFile menyimpan berkas dari form-field fieldName ke &lt;uploadDir&gt;/&lt;subDir&gt;/.
+// Mengembalikan path RELATIF (contoh: "umkm/169...jpg"), bukan path disk absolut,
+// agar nilai yang sama bisa langsung dipakai klien sebagai "&lt;base_url&gt;/uploads/&lt;foto&gt;".
+// Mengembalikan string kosong (bukan error) apabila pengguna tidak mengunggah foto,
+// karena foto bersifat opsional. Hanya menerima berkas berekstensi .jpg/.jpeg/.png.
+func saveUploadedFile(r *http.Request, fieldName, uploadDir, subDir string) (string, error) {
+    file, header, err := r.FormFile(fieldName)
+    if err == http.ErrMissingFile {
+        return "", nil
+    }
+    if err != nil {
+        return "", err
+    }
+    defer file.Close()
+
+    ext := strings.ToLower(filepath.Ext(header.Filename))
+    if !allowedImageExt[ext] {
+        return "", errInvalidFileType
+    }
+
+    targetDir := filepath.Join(uploadDir, subDir)
+    if err := os.MkdirAll(targetDir, 0755); err != nil {
+        return "", err
+    }
+
+    filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+
+    dst, err := os.Create(filepath.Join(targetDir, filename))
+    if err != nil {
+        return "", err
+    }
+    defer dst.Close()
+
+    if _, err := io.Copy(dst, file); err != nil {
+        return "", err
+    }
+
+    return subDir + "/" + filename, nil
+}
+
+// deleteFile menghapus berkas lama di &lt;uploadDir&gt;/&lt;relPath&gt;. Dipanggil setelah
+// update/delete berhasil di database, agar tidak ada berkas foto yang menumpuk.
+func deleteFile(uploadDir, relPath string) {
+    if relPath == "" {
+        return
+    }
+    _ = os.Remove(filepath.Join(uploadDir, relPath))
+}</code></pre></div>
+
+    <h3>10.8 Handler — Auth, Profile, UMKM, Produk (dengan Anotasi Swagger)</h3>
+    <p>Komentar berformat <code>@Summary</code>, <code>@Param</code>, <code>@Success</code>, dsb. di atas setiap fungsi bukan komentar biasa — ini adalah <strong>anotasi Swagger</strong> yang akan dibaca oleh tool <code>swag</code> pada Bagian 11 untuk menghasilkan dokumentasi otomatis. Untuk anotasi tersebut merujuk ke tipe respons, tambahkan dahulu berkas berikut:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/swagger_types.go</span></div><pre><code>package handler
+
+import "umkm-api/internal/domain"
+
+type DataUserResponse struct {
+    Data domain.User `json:"data"`
+}
+
+type DataLoginResponse struct {
+    Data struct {
+        Token string      `json:"token"`
+        User  domain.User `json:"user"`
+    } `json:"data"`
+}
+
+type DataUmkmResponse struct {
+    Data domain.Umkm `json:"data"`
+}
+
+type DataUmkmListResponse struct {
+    Data []domain.Umkm `json:"data"`
+}
+
+type DataProdukResponse struct {
+    Data domain.Produk `json:"data"`
+}
+
+type DataProdukListResponse struct {
+    Data []domain.Produk `json:"data"`
+}
+
+type MessageResponse struct {
+    Data struct {
+        Message string `json:"message"`
+    } `json:"data"`
+}
+
+type ErrorResponse struct {
+    Error struct {
+        Message string `json:"message"`
+        Code    string `json:"code"`
+    } `json:"error"`
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/auth_handler.go</span></div><pre><code>package handler
+
+import (
+    "encoding/json"
+    "errors"
+    "net/http"
+
+    "umkm-api/internal/domain"
+    "umkm-api/internal/middleware"
+    "umkm-api/internal/service"
+)
+
+type AuthHandler struct {
+    svc *service.AuthService
+}
+
+func NewAuthHandler(svc *service.AuthService) *AuthHandler {
+    return &AuthHandler{svc: svc}
+}
+
+type registerRequest struct {
+    Nama     string `json:"nama"`
+    Email    string `json:"email"`
+    Password string `json:"password"`
+}
+
+// Register godoc
+// @Summary      Register akun baru
+// @Description  Mendaftarkan pengguna baru dengan nama, email, dan password
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body registerRequest true "Data registrasi"
+// @Success      201 {object} handler.DataUserResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Failure      409 {object} handler.ErrorResponse
+// @Router       /auth/register [post]
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+    var req registerRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        writeError(w, http.StatusBadRequest, "body tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    user, err := h.svc.Register(r.Context(), req.Nama, req.Email, req.Password)
+    switch {
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, "nama, email, dan password (min 6 karakter) wajib diisi", "BAD_REQUEST")
+    case errors.Is(err, domain.ErrConflict):
+        writeError(w, http.StatusConflict, "email sudah terdaftar", "CONFLICT")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusCreated, user)
+    }
+}
+
+type loginRequest struct {
+    Email    string `json:"email"`
+    Password string `json:"password"`
+}
+
+// Login godoc
+// @Summary      Login
+// @Description  Login dengan email dan password, mengembalikan JWT token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body loginRequest true "Kredensial login"
+// @Success      200 {object} handler.DataLoginResponse
+// @Failure      401 {object} handler.ErrorResponse
+// @Router       /auth/login [post]
+func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+    var req loginRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        writeError(w, http.StatusBadRequest, "body tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    token, user, err := h.svc.Login(r.Context(), req.Email, req.Password)
+    switch {
+    case errors.Is(err, domain.ErrNotFound), errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusUnauthorized, "email atau password salah", "UNAUTHORIZED")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusOK, map[string]any{"token": token, "user": user})
+    }
+}
+
+// Profile godoc
+// @Summary      Lihat profil sendiri
+// @Description  Mengambil data profil pengguna yang sedang login
+// @Tags         profile
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} handler.DataUserResponse
+// @Failure      401 {object} handler.ErrorResponse
+// @Router       /profile [get]
+func (h *AuthHandler) Profile(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    user, err := h.svc.Profile(r.Context(), userID)
+    if err != nil {
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+        return
+    }
+    writeJSON(w, http.StatusOK, user)
+}
+
+type updateProfileRequest struct {
+    Nama  string `json:"nama"`
+    Email string `json:"email"`
+}
+
+// UpdateProfile godoc
+// @Summary      Update profil
+// @Description  Mengubah nama dan email akun yang sedang login
+// @Tags         profile
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body updateProfileRequest true "Data profil baru"
+// @Success      200 {object} handler.MessageResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Router       /profile [put]
+func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    var req updateProfileRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        writeError(w, http.StatusBadRequest, "body tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    if err := h.svc.UpdateProfile(r.Context(), userID, req.Nama, req.Email); err != nil {
+        writeError(w, http.StatusBadRequest, "gagal memperbarui profil", "BAD_REQUEST")
+        return
+    }
+    writeJSON(w, http.StatusOK, map[string]string{"message": "profil berhasil diperbarui"})
+}
+
+type updatePasswordRequest struct {
+    PasswordLama string `json:"password_lama"`
+    PasswordBaru string `json:"password_baru"`
+}
+
+// UpdatePassword godoc
+// @Summary      Update password
+// @Description  Mengubah password akun yang sedang login, wajib menyertakan password lama
+// @Tags         profile
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body updatePasswordRequest true "Password lama dan baru"
+// @Success      200 {object} handler.MessageResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Router       /profile/password [put]
+func (h *AuthHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    var req updatePasswordRequest
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        writeError(w, http.StatusBadRequest, "body tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    err := h.svc.UpdatePassword(r.Context(), userID, req.PasswordLama, req.PasswordBaru)
+    switch {
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, "password lama salah atau password baru terlalu pendek", "BAD_REQUEST")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusOK, map[string]string{"message": "password berhasil diperbarui"})
+    }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/umkm_handler.go</span></div><pre><code>package handler
+
+import (
+    "errors"
+    "net/http"
+    "strconv"
+
+    "umkm-api/internal/domain"
+    "umkm-api/internal/middleware"
+    "umkm-api/internal/service"
+)
+
+type UmkmHandler struct {
+    svc       *service.UmkmService
+    uploadDir string
+}
+
+func NewUmkmHandler(svc *service.UmkmService, uploadDir string) *UmkmHandler {
+    return &UmkmHandler{svc: svc, uploadDir: uploadDir}
+}
+
+// List godoc
+// @Summary      Lihat semua UMKM
+// @Description  Mendukung pagination dan pencarian nama
+// @Tags         umkm
+// @Produce      json
+// @Param        q query string false "Kata kunci pencarian nama UMKM"
+// @Param        page query int false "Halaman (default 1)"
+// @Param        limit query int false "Jumlah data per halaman (default 10, maksimal 100)"
+// @Success      200 {object} handler.DataUmkmListResponse
+// @Router       /umkm [get]
+func (h *UmkmHandler) List(w http.ResponseWriter, r *http.Request) {
+    q := r.URL.Query().Get("q")
+    page, limit := parsePagination(r)
+
+    list, total, usedPage, usedLimit, err := h.svc.List(r.Context(), q, page, limit)
+    if err != nil {
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+        return
+    }
+    writePaginated(w, http.StatusOK, list, usedPage, usedLimit, total)
+}
+
+// Detail godoc
+// @Summary      Detail UMKM
+// @Tags         umkm
+// @Produce      json
+// @Param        id path int true "ID UMKM"
+// @Success      200 {object} handler.DataUmkmResponse
+// @Failure      404 {object} handler.ErrorResponse
+// @Router       /umkm/{id} [get]
+func (h *UmkmHandler) Detail(w http.ResponseWriter, r *http.Request) {
+    id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    umkm, err := h.svc.Detail(r.Context(), id)
+    switch {
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "UMKM tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusOK, umkm)
+    }
+}
+
+// MyUmkm godoc
+// @Summary      Lihat UMKM saya
+// @Tags         umkm
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} handler.DataUmkmResponse
+// @Failure      404 {object} handler.ErrorResponse
+// @Router       /umkm/saya [get]
+func (h *UmkmHandler) MyUmkm(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    umkm, err := h.svc.MyUmkm(r.Context(), userID)
+    switch {
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "Anda belum memiliki UMKM", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusOK, umkm)
+    }
+}
+
+// Create godoc
+// @Summary      Buat UMKM sendiri
+// @Description  1 user hanya boleh punya 1 UMKM. Foto opsional.
+// @Tags         umkm
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        nama formData string true "Nama UMKM"
+// @Param        deskripsi formData string false "Deskripsi UMKM"
+// @Param        alamat formData string false "Alamat UMKM"
+// @Param        foto formData file false "Foto UMKM"
+// @Success      201 {object} handler.DataUmkmResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Failure      409 {object} handler.ErrorResponse
+// @Router       /umkm [post]
+func (h *UmkmHandler) Create(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+
+    r.Body = http.MaxBytesReader(w, r.Body, 5&lt;&lt;20)
+    if err := r.ParseMultipartForm(5 &lt;&lt; 20); err != nil {
+        writeError(w, http.StatusBadRequest, "form tidak valid atau file terlalu besar", "BAD_REQUEST")
+        return
+    }
+
+    nama := r.FormValue("nama")
+    deskripsi := r.FormValue("deskripsi")
+    alamat := r.FormValue("alamat")
+
+    fotoPath, err := saveUploadedFile(r, "foto", h.uploadDir, "umkm")
+    if errors.Is(err, errInvalidFileType) {
+        writeError(w, http.StatusBadRequest, "foto harus berformat jpg/jpeg/png", "BAD_REQUEST")
+        return
+    }
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "gagal menyimpan foto", "BAD_REQUEST")
+        return
+    }
+
+    umkm, err := h.svc.CreateOwn(r.Context(), userID, nama, deskripsi, alamat, fotoPath)
+    switch {
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, "nama UMKM wajib diisi", "BAD_REQUEST")
+    case errors.Is(err, domain.ErrConflict):
+        writeError(w, http.StatusConflict, "Anda sudah memiliki UMKM", "CONFLICT")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusCreated, umkm)
+    }
+}
+
+// Update godoc
+// @Summary      Update UMKM sendiri
+// @Tags         umkm
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID UMKM"
+// @Param        nama formData string true "Nama UMKM"
+// @Param        deskripsi formData string false "Deskripsi UMKM"
+// @Param        alamat formData string false "Alamat UMKM"
+// @Param        foto formData file false "Foto UMKM baru"
+// @Success      200 {object} handler.DataUmkmResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Failure      403 {object} handler.ErrorResponse
+// @Router       /umkm/{id} [put]
+func (h *UmkmHandler) Update(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    r.Body = http.MaxBytesReader(w, r.Body, 5&lt;&lt;20)
+    if err := r.ParseMultipartForm(5 &lt;&lt; 20); err != nil {
+        writeError(w, http.StatusBadRequest, "form tidak valid atau file terlalu besar", "BAD_REQUEST")
+        return
+    }
+
+    nama := r.FormValue("nama")
+    deskripsi := r.FormValue("deskripsi")
+    alamat := r.FormValue("alamat")
+
+    fotoBaru, err := saveUploadedFile(r, "foto", h.uploadDir, "umkm")
+    if errors.Is(err, errInvalidFileType) {
+        writeError(w, http.StatusBadRequest, "foto harus berformat jpg/jpeg/png", "BAD_REQUEST")
+        return
+    }
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "gagal menyimpan foto", "BAD_REQUEST")
+        return
+    }
+
+    umkm, fotoLama, err := h.svc.UpdateOwn(r.Context(), userID, id, nama, deskripsi, alamat, fotoBaru)
+    switch {
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, "nama UMKM wajib diisi", "BAD_REQUEST")
+    case errors.Is(err, domain.ErrForbidden):
+        writeError(w, http.StatusForbidden, "Anda bukan pemilik UMKM ini", "FORBIDDEN")
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "UMKM tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        deleteFile(h.uploadDir, fotoLama)
+        writeJSON(w, http.StatusOK, umkm)
+    }
+}
+
+// Delete godoc
+// @Summary      Hapus UMKM sendiri
+// @Description  Produk pada UMKM ini ikut terhapus otomatis (ON DELETE CASCADE)
+// @Tags         umkm
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID UMKM"
+// @Success      200 {object} handler.MessageResponse
+// @Failure      403 {object} handler.ErrorResponse
+// @Failure      404 {object} handler.ErrorResponse
+// @Router       /umkm/{id} [delete]
+func (h *UmkmHandler) Delete(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    umkm, err := h.svc.DeleteOwn(r.Context(), userID, id)
+    switch {
+    case errors.Is(err, domain.ErrForbidden):
+        writeError(w, http.StatusForbidden, "Anda bukan pemilik UMKM ini", "FORBIDDEN")
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "UMKM tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        deleteFile(h.uploadDir, umkm.Foto)
+        writeJSON(w, http.StatusOK, map[string]string{"message": "UMKM berhasil dihapus"})
+    }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/produk_handler.go</span></div><pre><code>package handler
+
+import (
+    "errors"
+    "net/http"
+    "strconv"
+
+    "umkm-api/internal/domain"
+    "umkm-api/internal/middleware"
+    "umkm-api/internal/service"
+)
+
+type ProdukHandler struct {
+    svc       *service.ProdukService
+    uploadDir string
+}
+
+func NewProdukHandler(svc *service.ProdukService, uploadDir string) *ProdukHandler {
+    return &ProdukHandler{svc: svc, uploadDir: uploadDir}
+}
+
+// Detail godoc
+// @Summary      Detail produk
+// @Tags         produk
+// @Produce      json
+// @Param        id path int true "ID Produk"
+// @Success      200 {object} handler.DataProdukResponse
+// @Failure      404 {object} handler.ErrorResponse
+// @Router       /produk/{id} [get]
+func (h *ProdukHandler) Detail(w http.ResponseWriter, r *http.Request) {
+    id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    produk, err := h.svc.Detail(r.Context(), id)
+    switch {
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "produk tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusOK, produk)
+    }
+}
+
+// ListByUmkm godoc
+// @Summary      Lihat produk pada satu UMKM
+// @Description  Mendukung pagination
+// @Tags         produk
+// @Produce      json
+// @Param        id path int true "ID UMKM"
+// @Param        page query int false "Halaman (default 1)"
+// @Param        limit query int false "Jumlah data per halaman (default 10, maksimal 100)"
+// @Success      200 {object} handler.DataProdukListResponse
+// @Router       /umkm/{id}/produk [get]
+func (h *ProdukHandler) ListByUmkm(w http.ResponseWriter, r *http.Request) {
+    umkmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+    page, limit := parsePagination(r)
+
+    list, total, usedPage, usedLimit, err := h.svc.ListByUmkm(r.Context(), umkmID, page, limit)
+    if err != nil {
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+        return
+    }
+    writePaginated(w, http.StatusOK, list, usedPage, usedLimit, total)
+}
+
+// Create godoc
+// @Summary      Tambah produk pada UMKM sendiri
+// @Tags         produk
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID UMKM"
+// @Param        nama formData string true "Nama produk"
+// @Param        harga formData number true "Harga produk"
+// @Param        deskripsi formData string false "Deskripsi produk"
+// @Param        foto formData file false "Foto produk"
+// @Success      201 {object} handler.DataProdukResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Failure      403 {object} handler.ErrorResponse
+// @Router       /umkm/{id}/produk [post]
+func (h *ProdukHandler) Create(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    umkmID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    r.Body = http.MaxBytesReader(w, r.Body, 5&lt;&lt;20)
+    if err := r.ParseMultipartForm(5 &lt;&lt; 20); err != nil {
+        writeError(w, http.StatusBadRequest, "form tidak valid atau file terlalu besar", "BAD_REQUEST")
+        return
+    }
+
+    nama := r.FormValue("nama")
+    deskripsi := r.FormValue("deskripsi")
+    harga, _ := strconv.ParseFloat(r.FormValue("harga"), 64)
+
+    fotoPath, err := saveUploadedFile(r, "foto", h.uploadDir, "produk")
+    if errors.Is(err, errInvalidFileType) {
+        writeError(w, http.StatusBadRequest, "foto harus berformat jpg/jpeg/png", "BAD_REQUEST")
+        return
+    }
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "gagal menyimpan foto", "BAD_REQUEST")
+        return
+    }
+
+    produk, err := h.svc.CreateForOwnUmkm(r.Context(), userID, umkmID, nama, harga, deskripsi, fotoPath)
+    switch {
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, "nama dan harga produk wajib valid", "BAD_REQUEST")
+    case errors.Is(err, domain.ErrForbidden):
+        writeError(w, http.StatusForbidden, "Anda bukan pemilik UMKM ini", "FORBIDDEN")
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "UMKM tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        writeJSON(w, http.StatusCreated, produk)
+    }
+}
+
+// Update godoc
+// @Summary      Update produk sendiri
+// @Tags         produk
+// @Accept       multipart/form-data
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID Produk"
+// @Param        nama formData string true "Nama produk"
+// @Param        harga formData number true "Harga produk"
+// @Param        deskripsi formData string false "Deskripsi produk"
+// @Param        foto formData file false "Foto produk baru"
+// @Success      200 {object} handler.DataProdukResponse
+// @Failure      400 {object} handler.ErrorResponse
+// @Failure      403 {object} handler.ErrorResponse
+// @Router       /produk/{id} [put]
+func (h *ProdukHandler) Update(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    r.Body = http.MaxBytesReader(w, r.Body, 5&lt;&lt;20)
+    if err := r.ParseMultipartForm(5 &lt;&lt; 20); err != nil {
+        writeError(w, http.StatusBadRequest, "form tidak valid atau file terlalu besar", "BAD_REQUEST")
+        return
+    }
+
+    nama := r.FormValue("nama")
+    deskripsi := r.FormValue("deskripsi")
+    harga, _ := strconv.ParseFloat(r.FormValue("harga"), 64)
+
+    fotoBaru, err := saveUploadedFile(r, "foto", h.uploadDir, "produk")
+    if errors.Is(err, errInvalidFileType) {
+        writeError(w, http.StatusBadRequest, "foto harus berformat jpg/jpeg/png", "BAD_REQUEST")
+        return
+    }
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "gagal menyimpan foto", "BAD_REQUEST")
+        return
+    }
+
+    produk, fotoLama, err := h.svc.UpdateOwn(r.Context(), userID, id, nama, harga, deskripsi, fotoBaru)
+    switch {
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, "nama dan harga produk wajib valid", "BAD_REQUEST")
+    case errors.Is(err, domain.ErrForbidden):
+        writeError(w, http.StatusForbidden, "Anda bukan pemilik produk ini", "FORBIDDEN")
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "produk tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        deleteFile(h.uploadDir, fotoLama)
+        writeJSON(w, http.StatusOK, produk)
+    }
+}
+
+// Delete godoc
+// @Summary      Hapus produk sendiri
+// @Tags         produk
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id path int true "ID Produk"
+// @Success      200 {object} handler.MessageResponse
+// @Failure      403 {object} handler.ErrorResponse
+// @Failure      404 {object} handler.ErrorResponse
+// @Router       /produk/{id} [delete]
+func (h *ProdukHandler) Delete(w http.ResponseWriter, r *http.Request) {
+    userID := middleware.GetUserID(r)
+    id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "id tidak valid", "BAD_REQUEST")
+        return
+    }
+
+    produk, err := h.svc.DeleteOwn(r.Context(), userID, id)
+    switch {
+    case errors.Is(err, domain.ErrForbidden):
+        writeError(w, http.StatusForbidden, "Anda bukan pemilik produk ini", "FORBIDDEN")
+    case errors.Is(err, domain.ErrNotFound):
+        writeError(w, http.StatusNotFound, "produk tidak ditemukan", "NOT_FOUND")
+    case err != nil:
+        writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+    default:
+        deleteFile(h.uploadDir, produk.Foto)
+        writeJSON(w, http.StatusOK, map[string]string{"message": "produk berhasil dihapus"})
+    }
+}</code></pre></div>
+
+    <h3>10.9 Menyatukan Semua Lapisan pada main.go</h3>
+    <p>Router memakai <code>http.ServeMux</code> bawaan Go 1.22 yang sudah mendukung method dan path parameter (<code>{id}</code>) tanpa perlu framework tambahan. Komentar di paling atas berkas (<code>@title</code>, <code>@BasePath</code>, <code>@securityDefinitions...</code>) adalah anotasi Swagger tingkat aplikasi, dijelaskan di Bagian 11.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cmd/api/main.go</span></div><pre><code>// @title           UMKM API
+// @version         1.0
+// @description     REST API untuk pendataan UMKM: registrasi, login, kelola profil, kelola UMKM milik sendiri, dan kelola produk.
+// @BasePath        /api
+//
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 Ketik "Bearer" diikuti spasi dan token JWT. Contoh: "Bearer eyJhbGciOi..."
+package main
+
+import (
+    "context"
+    "log/slog"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/jackc/pgx/v5/pgxpool"
+    httpSwagger "github.com/swaggo/http-swagger/v2"
+    "golang.org/x/time/rate"
+
+    _ "umkm-api/docs"
+    "umkm-api/internal/config"
+    "umkm-api/internal/handler"
+    "umkm-api/internal/middleware"
+    "umkm-api/internal/repository"
+    "umkm-api/internal/service"
+)
+
+func main() {
+    cfg := config.Load()
+
+    ctx := context.Background()
+    db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+    if err != nil {
+        slog.Error("gagal konek ke database", "err", err)
+        os.Exit(1)
+    }
+    defer db.Close()
+
+    if err := db.Ping(ctx); err != nil {
+        slog.Error("database tidak dapat dijangkau", "err", err)
+        os.Exit(1)
+    }
+    slog.Info("berhasil terhubung ke PostgreSQL (Neon)")
+
+    userRepo := repository.NewUserRepository(db)
+    umkmRepo := repository.NewUmkmRepository(db)
+    produkRepo := repository.NewProdukRepository(db)
+
+    authSvc := service.NewAuthService(userRepo, cfg.JWTSecret)
+    umkmSvc := service.NewUmkmService(umkmRepo)
+    produkSvc := service.NewProdukService(produkRepo, umkmRepo)
+
+    authHandler := handler.NewAuthHandler(authSvc)
+    umkmHandler := handler.NewUmkmHandler(umkmSvc, cfg.UploadDir)
+    produkHandler := handler.NewProdukHandler(produkSvc, cfg.UploadDir)
+
+    auth := middleware.RequireAuth(cfg.JWTSecret)
+
+    // maksimal 5 percobaan login per menit per alamat IP, agar brute-force password dibatasi
+    loginLimiter := middleware.RateLimit(rate.Every(time.Minute/5), 5)
+
+    mux := http.NewServeMux()
+
+    // auth
+    mux.HandleFunc("POST /api/auth/register", authHandler.Register)
+    mux.Handle("POST /api/auth/login", loginLimiter(http.HandlerFunc(authHandler.Login)))
+
+    // profile (butuh login)
+    mux.Handle("GET /api/profile", auth(http.HandlerFunc(authHandler.Profile)))
+    mux.Handle("PUT /api/profile", auth(http.HandlerFunc(authHandler.UpdateProfile)))
+    mux.Handle("PUT /api/profile/password", auth(http.HandlerFunc(authHandler.UpdatePassword)))
+
+    // umkm
+    mux.HandleFunc("GET /api/umkm", umkmHandler.List)
+    mux.Handle("GET /api/umkm/saya", auth(http.HandlerFunc(umkmHandler.MyUmkm)))
+    mux.HandleFunc("GET /api/umkm/{id}", umkmHandler.Detail)
+    mux.Handle("POST /api/umkm", auth(http.HandlerFunc(umkmHandler.Create)))
+    mux.Handle("PUT /api/umkm/{id}", auth(http.HandlerFunc(umkmHandler.Update)))
+    mux.Handle("DELETE /api/umkm/{id}", auth(http.HandlerFunc(umkmHandler.Delete)))
+
+    // produk
+    mux.HandleFunc("GET /api/umkm/{id}/produk", produkHandler.ListByUmkm)
+    mux.Handle("POST /api/umkm/{id}/produk", auth(http.HandlerFunc(produkHandler.Create)))
+    mux.HandleFunc("GET /api/produk/{id}", produkHandler.Detail)
+    mux.Handle("PUT /api/produk/{id}", auth(http.HandlerFunc(produkHandler.Update)))
+    mux.Handle("DELETE /api/produk/{id}", auth(http.HandlerFunc(produkHandler.Delete)))
+
+    // static file untuk foto yang sudah diupload
+    mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
+
+    // dokumentasi Swagger
+    mux.Handle("GET /swagger/", httpSwagger.WrapHandler)
+
+    // health check
+    mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusOK)
+    })
+
+    srv := &http.Server{
+        Addr:              ":" + cfg.Port,
+        Handler:           mux,
+        ReadHeaderTimeout: 5 * time.Second,
+        ReadTimeout:       10 * time.Second,
+        WriteTimeout:      10 * time.Second,
+        IdleTimeout:       60 * time.Second,
+    }
+
+    go func() {
+        slog.Info("server berjalan", "port", cfg.Port, "swagger", "/swagger/index.html")
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            slog.Error("server berhenti", "err", err)
+            os.Exit(1)
+        }
+    }()
+
+    // graceful shutdown
+    stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+    defer cancel()
+    <-stop.Done()
+
+    shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer shutdownCancel()
+    _ = srv.Shutdown(shutdownCtx)
+    slog.Info("server dimatikan dengan aman")
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa import docs pakai underscore ( _ )?</span><p><code>_ "umkm-api/docs"</code> berarti package <code>docs</code> (hasil generate <code>swag init</code> pada Bagian 11) diimpor hanya untuk efek sampingnya — package tersebut mendaftarkan spesifikasi Swagger ke memori saat program start, tanpa perlu memanggil fungsi apa pun darinya secara langsung.</p></div>
+
+    <h2 id="s11"><span class="badge">11</span>Dokumentasi API dengan Swagger</h2>
+    <p>Swagger (OpenAPI) menghasilkan halaman dokumentasi interaktif dari kode itu sendiri — setiap kali handler diubah dan anotasinya diperbarui, dokumentasi tinggal di-generate ulang. Ini sangat membantu ketika API dipakai tim Flutter yang berbeda dari yang menulis backend.</p>
+
+    <h3>11.1 Instal Swag CLI</h3>
+    <p><code>swag</code> adalah tool command-line yang membaca komentar anotasi (<code>@Summary</code>, <code>@Param</code>, dst.) pada kode Go dan mengubahnya menjadi berkas spesifikasi OpenAPI.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>go install github.com/swaggo/swag/cmd/swag@latest
+
+# pastikan $GOPATH/bin ada di PATH, lalu cek:
+swag --version</code></pre></div>
+    <div class="note"><span class="lbl">Kalau perintah swag tidak dikenali</span><p>Tambahkan <code>export PATH=$PATH:$(go env GOPATH)/bin</code> ke <code>~/.zshrc</code> / <code>~/.bashrc</code> (macOS/Linux), atau pada Windows tambahkan <code>%USERPROFILE%\go\bin</code> ke Environment Variables → Path.</p></div>
+
+    <h3>11.2 Anotasi Sudah Ditulis di Handler</h3>
+    <p>Perhatikan kembali kode pada Bagian 10.8 — setiap fungsi handler (<code>Register</code>, <code>Login</code>, <code>Create</code>, dst.) sudah memiliki komentar <code>// ... godoc</code> di atasnya. Anotasi tingkat aplikasi (judul, versi, skema keamanan) ditulis satu kali di atas package <code>main</code> pada <code>cmd/api/main.go</code> (Bagian 10.9). Tabel berikut merangkum arti setiap tag yang dipakai:</p>
+    <table>
+      <tr><th>Tag</th><th>Arti</th></tr>
+      <tr><td><code>@Summary</code></td><td>Judul singkat endpoint, tampil di daftar Swagger UI</td></tr>
+      <tr><td><code>@Tags</code></td><td>Mengelompokkan endpoint (auth, profile, umkm, produk)</td></tr>
+      <tr><td><code>@Accept</code> / <code>@Produce</code></td><td>Format request/response: <code>json</code> atau <code>multipart/form-data</code></td></tr>
+      <tr><td><code>@Param</code></td><td>Parameter: <code>path</code> (di URL), <code>formData</code> (multipart), atau <code>body</code> (JSON)</td></tr>
+      <tr><td><code>@Security BearerAuth</code></td><td>Menandai endpoint butuh header <code>Authorization: Bearer</code></td></tr>
+      <tr><td><code>@Success</code> / <code>@Failure</code></td><td>Kode status beserta struct respons yang dikembalikan</td></tr>
+      <tr><td><code>@Router</code></td><td>Path endpoint (relatif ke <code>@BasePath</code>) beserta method HTTP-nya</td></tr>
+    </table>
+
+    <h3>11.3 Generate Dokumentasi</h3>
+    <p>Jalankan <code>swag init</code> dari root project, menunjuk ke berkas yang memuat anotasi <code>@title</code> (yaitu <code>cmd/api/main.go</code>). Perintah ini membuat folder <code>docs/</code> berisi <code>docs.go</code>, <code>swagger.json</code>, dan <code>swagger.yaml</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal, dari root project</span></div><pre><code>swag init -g cmd/api/main.go -o docs</code></pre></div>
+    <div class="note"><span class="lbl">Jalankan ulang setiap kali anotasi berubah</span><p><code>swag init</code> tidak otomatis — setiap kali menambah endpoint baru atau mengubah anotasi <code>@Param</code>/<code>@Success</code>, perintah ini wajib dijalankan ulang agar <code>docs/</code> ikut diperbarui. Folder <code>docs/</code> boleh di-commit ke Git supaya rekan satu tim tidak perlu menjalankan <code>swag init</code> sendiri.</p></div>
+
+    <h3>11.4 Membuka Swagger UI</h3>
+    <p>Setelah <code>docs/</code> ter-generate dan <code>go run ./cmd/api</code> dijalankan, buka browser ke:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>http://localhost:8080/swagger/index.html</code></pre></div>
+    <p>Halaman ini menampilkan seluruh endpoint terkelompok per <code>@Tags</code> (auth, profile, umkm, produk), lengkap dengan tombol <strong>"Try it out"</strong> untuk mengirim request langsung dari browser — termasuk endpoint upload file (<code>multipart/form-data</code>).</p>
+    <ol>
+      <li>Klik endpoint <code>POST /auth/login</code> → <strong>Try it out</strong> → isi email/password → <strong>Execute</strong> → salin <code>token</code> dari respons.</li>
+      <li>Klik tombol <strong>Authorize</strong> di kanan atas halaman, masukkan <code>Bearer &lt;token&gt;</code>, lalu klik <strong>Authorize</strong>.</li>
+      <li>Endpoint yang butuh login (bertanda gembok) kini otomatis menyertakan token tersebut setiap kali dicoba.</li>
+    </ol>
+    <div class="verify">
+      <span class="lbl">✓ Diverifikasi</span>
+      <p>Setelah <code>swag init</code> dijalankan pada project hasil Bagian 10, <code>http://localhost:8080/swagger/index.html</code> menampilkan 9 path (<code>/auth/register</code>, <code>/auth/login</code>, <code>/profile</code>, <code>/profile/password</code>, <code>/umkm</code>, <code>/umkm/saya</code>, <code>/umkm/{id}</code>, <code>/umkm/{id}/produk</code>, <code>/produk/{id}</code>) dengan skema <code>BearerAuth</code> aktif — persis sesuai kontrak endpoint pada Bagian 9.1.</p>
+    </div>
+
+    <h2 id="s12"><span class="badge">12</span>Menjalankan dan Menguji API</h2>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menjalankan server</span></div><pre><code>go run ./cmd/api</code></pre></div>
+    <p>Uji setiap endpoint menggunakan <code>curl</code>, Postman/Thunder Client, atau langsung dari Swagger UI pada Bagian 11.4. Urutan di bawah ini persis seperti yang dipakai saat memverifikasi materi ini.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">register &amp; login</span></div><pre><code>curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"nama":"Asep","email":"asep@mail.com","password":"rahasia123"}'
+
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"asep@mail.com","password":"rahasia123"}'
+# simpan token dari respons untuk request berikutnya</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">profile</span></div><pre><code>curl http://localhost:8080/api/profile -H "Authorization: Bearer &lt;TOKEN&gt;"
+
+curl -X PUT http://localhost:8080/api/profile \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" -H "Content-Type: application/json" \
+  -d '{"nama":"Asep Trisna","email":"asep@mail.com"}'
+
+curl -X PUT http://localhost:8080/api/profile/password \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" -H "Content-Type: application/json" \
+  -d '{"password_lama":"rahasia123","password_baru":"rahasiabaru123"}'</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">membuat, melihat, mengubah, dan menghapus UMKM</span></div><pre><code>curl -X POST http://localhost:8080/api/umkm \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" \
+  -F "nama=Warung Bu Sari" -F "deskripsi=Menjual makanan rumahan" \
+  -F "alamat=Jl. Melati No. 10" -F "foto=@/path/ke/foto.jpg"
+
+curl http://localhost:8080/api/umkm
+curl "http://localhost:8080/api/umkm?page=1&limit=2"
+curl "http://localhost:8080/api/umkm?q=warung"
+curl http://localhost:8080/api/umkm/1
+curl http://localhost:8080/api/umkm/saya -H "Authorization: Bearer &lt;TOKEN&gt;"
+
+curl -X PUT http://localhost:8080/api/umkm/1 \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" \
+  -F "nama=Warung Bu Sari Baru" -F "deskripsi=Update" -F "alamat=Jl. Baru"
+
+curl -X DELETE http://localhost:8080/api/umkm/1 -H "Authorization: Bearer &lt;TOKEN&gt;"</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">CRUD produk pada satu UMKM</span></div><pre><code>curl -X POST http://localhost:8080/api/umkm/1/produk \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" \
+  -F "nama=Nasi Uduk Spesial" -F "harga=15000" \
+  -F "deskripsi=Nasi uduk dengan lauk lengkap" -F "foto=@/path/ke/produk.jpg"
+
+curl http://localhost:8080/api/umkm/1/produk
+curl "http://localhost:8080/api/umkm/1/produk?page=1&limit=5"
+curl http://localhost:8080/api/produk/1
+
+# upload dengan tipe berkas yang tidak didukung (harus 400)
+curl -X POST http://localhost:8080/api/umkm/1/produk \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" \
+  -F "nama=Produk Salah" -F "harga=1000" -F "foto=@/path/ke/dokumen.pdf"
+
+curl -X PUT http://localhost:8080/api/produk/1 \
+  -H "Authorization: Bearer &lt;TOKEN&gt;" \
+  -F "nama=Nasi Uduk Spesial (Update)" -F "harga=17000" \
+  -F "deskripsi=Porsi lebih besar" -F "foto=@/path/ke/foto-baru.jpg"
+
+curl -X DELETE http://localhost:8080/api/produk/1 -H "Authorization: Bearer &lt;TOKEN&gt;"</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">mengakses foto yang sudah diupload</span></div><pre><code># field "foto" pada respons berisi path relatif, misal "umkm/1699999999.jpg"
+# gabungkan dengan base URL + "/uploads/" untuk mendapat URL yang bisa dibuka:
+curl http://localhost:8080/uploads/umkm/1699999999.jpg -o hasil.jpg</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">rate limit pada login (maksimal 5x/menit per IP)</span></div><pre><code>for i in 1 2 3 4 5 6; do
+  curl -s -o /dev/null -w "percobaan $i: %{http_code}\n" \
+    -X POST http://localhost:8080/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"asep@mail.com","password":"salah"}'
+done
+# percobaan 1-5 -&gt; 401 (password salah), percobaan 6 -&gt; 429 (terlalu banyak percobaan)</code></pre></div>
+    <div class="note"><span class="lbl">Daftar kode error yang perlu diuji juga</span><p>Selain jalur sukses, pastikan menguji: register dengan email yang sudah dipakai (409), login dengan password salah (401), akses <code>/api/profile</code> tanpa token (401), membuat UMKM kedua untuk user yang sama (409), menghapus/mengubah produk milik UMKM orang lain (403), upload dengan tipe berkas tidak didukung (400), dan login beruntun melebihi rate limit (429). Semua kasus ini sudah diverifikasi mengembalikan kode status yang benar pada materi ini.</p></div>
+
+    <footer>Struktur berlapis pada tutorial ini (domain → repository → service → handler) memang terasa lebih banyak berkas dibanding menulis semuanya dalam satu file, namun tujuannya agar setiap bagian mudah diuji dan dikembangkan secara terpisah — hal ini akan sangat terasa manfaatnya ketika API mulai dihubungkan dengan aplikasi Flutter pada pertemuan berikutnya. Seluruh kode — termasuk pagination, pencarian, validasi tipe file, dan rate limiting — telah diverifikasi berjalan tanpa error terhadap PostgreSQL sungguhan sebelum materi ini diterbitkan. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const idx = sections.indexOf(e.target);
+        if (idx >= 0) links[idx].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>
