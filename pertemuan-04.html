@@ -137,10 +137,10 @@
       </div>
     </header>
 
-    <div class="verify">
+    <!-- <div class="verify">
       <span class="lbl">✓ Seluruh kode pada materi ini sudah diverifikasi</span>
       <p>Setiap potongan kode di bawah ditulis ulang menjadi project Go yang sesungguhnya, dijalankan dengan <code>go build</code> dan <code>go vet</code> (tanpa error/warning), lalu diuji end-to-end terhadap PostgreSQL sungguhan: register, login, update profil, update password, CRUD UMKM dengan upload foto, dan CRUD produk dengan penggantian/penghapusan foto — semuanya berjalan sesuai ekspektasi. Ikuti urutannya persis dan hasilnya akan sama.</p>
-    </div>
+    </div> -->
 
     <h2 id="s1"><span class="badge">01</span>Apa itu Golang</h2>
     <p><strong>Golang (Go)</strong> adalah bahasa pemrograman yang dikembangkan oleh Google, dirancang untuk membangun aplikasi backend/server yang cepat, sederhana, dan mudah di-deploy. Go bersifat <em>compiled</em> (dikompilasi menjadi satu file binary) sehingga tidak memerlukan runtime tambahan saat dijalankan di server.</p>
@@ -352,6 +352,25 @@ go install github.com/swaggo/swag/cmd/swag@latest</code></pre></div>
 ├── .env.example
 ├── go.mod
 └── go.sum</code></pre></div>
+
+    <h3>8.1 Fungsi Setiap Folder</h3>
+    <p>Sebelum masuk ke implementasi, pahami dulu <strong>tugas masing-masing folder</strong> dan arah ketergantungannya: <code>domain</code> tidak bergantung ke folder mana pun, <code>repository</code> hanya bergantung ke <code>domain</code>, <code>service</code> bergantung ke <code>repository</code> (lewat interface) dan <code>domain</code>, sedangkan <code>handler</code> bergantung ke <code>service</code>. Panahnya selalu mengarah ke dalam — <strong>tidak pernah sebaliknya</strong> (misalnya <code>domain</code> memanggil <code>service</code>). Aturan arah ini yang membuat kode mudah diuji dan mudah ditiru untuk entitas baru.</p>
+    <table>
+      <tr><th>Folder / Berkas</th><th>Tugasnya apa</th></tr>
+      <tr><td><code>cmd/api/main.go</code></td><td>Satu-satunya <em>pintu masuk</em> program. Membuat koneksi database, merakit (meng-<em>inject</em>) semua repository → service → handler, mendaftarkan route, lalu menyalakan server. Tidak ada logika bisnis di sini.</td></tr>
+      <tr><td><code>internal/config</code></td><td>Membaca environment variable (<code>.env</code>) menjadi satu struct <code>Config</code>. Satu-satunya tempat kode lain boleh "bertanya" nilai konfigurasi — tidak ada <code>os.Getenv</code> tersebar di file lain.</td></tr>
+      <tr><td><code>internal/domain</code></td><td>Definisi <em>entitas</em> (<code>User</code>, <code>Umkm</code>, <code>Produk</code>) dan <em>sentinel error</em> bersama (<code>ErrNotFound</code>, dst). Hanya berisi struct dan konstanta — tidak ada query SQL, tidak ada <code>net/http</code>. Kalau nanti butuh entitas baru (misalnya <code>Kategori</code>), mulai dari sini.</td></tr>
+      <tr><td><code>internal/repository</code></td><td>Satu-satunya lapisan yang <em>boleh</em> menulis SQL. Tugasnya murni menerjemahkan struct Go ⇄ baris tabel database. Tidak tahu dan tidak peduli soal aturan bisnis (misalnya "1 user cuma boleh 1 UMKM") — itu tugas <code>service</code>.</td></tr>
+      <tr><td><code>internal/service</code></td><td>Tempat <em>aturan bisnis</em> hidup: validasi input, pengecekan kepemilikan (otorisasi), aturan "1 user 1 UMKM", normalisasi pagination. Service memanggil repository lewat <em>interface</em>, bukan struct konkret, supaya saat unit test bisa diganti dengan repository palsu (fake).</td></tr>
+      <tr><td><code>internal/handler</code></td><td>Jembatan antara dunia HTTP dan dunia Go biasa: membaca <code>r.Body</code>/<code>r.FormValue</code>/<code>r.PathValue</code>, memanggil satu fungsi service, lalu mengubah hasil atau error-nya menjadi response JSON dengan kode status yang tepat. Juga tempat menaruh komentar anotasi Swagger (Bagian 11).</td></tr>
+      <tr><td><code>internal/middleware</code></td><td>Fungsi "pembungkus" yang berjalan <em>sebelum</em> handler asli dipanggil — dipakai lintas banyak endpoint sekaligus, seperti memeriksa token JWT atau membatasi laju request. Tidak ditempel ke satu entitas tertentu.</td></tr>
+      <tr><td><code>docs/</code></td><td>Hasil otomatis perintah <code>swag init</code> (Bagian 11) — berisi <code>swagger.json</code>, dsb. Jangan diedit manual; akan tertimpa setiap kali <code>swag init</code> dijalankan ulang.</td></tr>
+      <tr><td><code>migrations/</code></td><td>Skrip SQL yang mendefinisikan skema tabel. Dijalankan satu kali terhadap database (Neon atau lokal) sebelum API pertama kali dipakai, dan lagi setiap kali ada perubahan skema.</td></tr>
+      <tr><td><code>uploads/</code></td><td>Folder fisik tempat berkas foto yang diunggah pengguna benar-benar disimpan di disk server, dipisah per jenis entitas (<code>umkm/</code>, <code>produk/</code>).</td></tr>
+      <tr><td><code>.env</code> / <code>.env.example</code></td><td><code>.env.example</code> adalah contoh/dokumentasi variabel yang dibutuhkan (boleh di-commit). <code>.env</code> adalah isian asli dengan nilai rahasia milik masing-masing developer (wajib masuk <code>.gitignore</code>, jangan pernah di-commit).</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Kenapa penting dipahami sebelum menulis kode?</span><p>Struktur ini bukan sekadar rapi-rapi folder — ia memaksa pemisahan tanggung jawab. Begitu paham polanya, menambah fitur baru (misalnya CRUD "ulasan" atau "kategori") tinggal mengulang lima langkah yang sama: tambah struct di <code>domain</code>, tambah query di <code>repository</code>, tambah aturan bisnis di <code>service</code>, tambah endpoint di <code>handler</code>, lalu daftarkan route-nya di <code>main.go</code>.</p></div>
+
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">.env.example</span></div><pre><code>DATABASE_URL=postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require
 JWT_SECRET=ganti-dengan-string-acak-yang-panjang
 PORT=8080
@@ -467,6 +486,7 @@ func getOrDefault(key, def string) string {
 }</code></pre></div>
 
     <h3>10.3 Domain — Struktur Data</h3>
+    <p>Berkas pertama yang ditulis di <code>errors.go</code> (di sini digabung dalam <code>user.go</code>) adalah empat <strong><em>sentinel error</em></strong> — nilai error bersama yang dipakai di seluruh aplikasi. Kenapa bukan langsung menulis pesan error di <code>repository</code> atau <code>service</code>? Karena <code>handler</code> perlu <strong>membedakan jenis error</strong> secara terprogram (lewat <code>errors.Is</code>) untuk memilih kode status HTTP yang tepat — "data tidak ditemukan" harus jadi 404, "data sudah ada" harus jadi 409, dan seterusnya. Sentinel error ini yang jadi "jembatan" penerjemah tersebut, dipakai konsisten oleh <code>repository</code> (Bagian 10.4), <code>service</code> (Bagian 10.5), dan dibaca kembali oleh <code>handler</code> (Bagian 10.8).</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/domain/user.go</span></div><pre><code>package domain
 
 import "errors"
@@ -504,9 +524,10 @@ type Produk struct {
     Deskripsi string  `json:"deskripsi"`
     Foto      string  `json:"foto"`
 }</code></pre></div>
+    <div class="note"><span class="lbl">Dua hal yang perlu diperhatikan pada setiap struct domain</span><p>Pertama, tag <code>json:"..."</code> menentukan nama field pada response API — tulis dalam <code>snake_case</code> (misalnya <code>user_id</code>) karena itu konvensi JSON yang dipakai konsisten di seluruh kontrak endpoint (Bagian 9.1), supaya nanti aplikasi Flutter tidak bingung mencocokkan nama field. Kedua, tag <code>json:"-"</code> pada <code>Password</code> berarti field itu <strong>tidak pernah ikut ter-serialize</strong> ke JSON — aturan ini yang mencegah hash password bocor ke response meski struct <code>User</code> yang sama dipakai di banyak tempat. <strong>Pola untuk entitas baru:</strong> kalau membuat entitas lain, misal <code>Kategori</code>, cukup buat struct serupa dengan field dan tag JSON yang sesuai kontrak endpointnya — tidak perlu import apa pun dari <code>repository</code> atau <code>service</code>.</p></div>
 
     <h3>10.4 Repository — Akses Database</h3>
-    <p>Interface repository didefinisikan sesempit mungkin, hanya berisi method yang benar-benar dipakai oleh service.</p>
+    <p>Interface repository didefinisikan sesempit mungkin, hanya berisi method yang benar-benar dipakai oleh service — bukan method generik seperti <code>Save</code>/<code>Delete</code> gaya ORM. Ini supaya saat membaca <code>UserRepository</code>, langsung jelas apa saja yang benar-benar dilakukan sistem terhadap tabel <code>users</code>, dan supaya versi palsunya (<em>fake</em>, dipakai saat unit test service) mudah dibuat karena cuma perlu mengimplementasikan sedikit method.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/repository/user_repository.go</span></div><pre><code>package repository
 
 import (
@@ -761,8 +782,20 @@ func (r *produkRepository) Delete(ctx context.Context, id int64) error {
     _, err := r.db.Exec(ctx, `DELETE FROM produk WHERE id = $1`, id)
     return err
 }</code></pre></div>
+    <div class="note"><span class="lbl">Pola yang berulang di ketiga repository — hafalkan, bukan dihafal per baris kode</span>
+    <p>1. <strong>Parameter selalu <code>$1, $2, ...</code>, tidak pernah digabung string manual (<code>+</code> atau <code>fmt.Sprintf</code>)</strong> pada nilai dari pengguna. <code>pgx</code> mengirim nilai itu terpisah dari teks query ke database, sehingga nilai seperti <code>"'; DROP TABLE users;--"</code> yang diketik di form tetap diperlakukan sebagai teks biasa, bukan perintah SQL — inilah yang mencegah <em>SQL injection</em>.</p>
+    <p>2. <strong>Setiap <code>Find...</code> yang mengembalikan satu baris menerjemahkan <code>pgx.ErrNoRows</code> menjadi <code>domain.ErrNotFound</code></strong> (lihat <code>FindByEmail</code>, <code>FindByID</code>, dst). Tanpa penerjemahan ini, <code>service</code> dan <code>handler</code> di lapisan atas harus tahu detail library <code>pgx</code> — padahal mereka seharusnya cukup kenal error domain yang sudah didefinisikan di Bagian 10.3.</p>
+    <p>3. <strong>Query yang mengembalikan daftar (<code>FindAll</code>, <code>FindByUmkmID</code>) selalu diinisialisasi <code>list := []domain.X{}</code>, bukan <code>var list []domain.X</code></strong>. Slice nil di Go di-encode jadi <code>null</code> pada JSON, sedangkan slice kosong di-encode jadi <code>[]</code> — klien Flutter mengharapkan <code>[]</code> saat datanya kosong, bukan <code>null</code>.</p>
+    <p>4. <strong>Constructor (<code>NewUserRepository</code>, dst.) mengembalikan tipe <em>interface</em>, bukan tipe struct <code>*userRepository</code></strong> — ini yang memungkinkan <code>service</code> (Bagian 10.5) bergantung ke interface tanpa pernah tahu implementasinya memakai <code>pgx</code>.</p>
+    <p><strong>Cara meniru untuk entitas baru:</strong> salin pola <code>umkmRepository</code> (paling lengkap: create, list+count untuk pagination, find by id, update, delete), ganti nama tabel dan kolom sesuai struct domain yang baru dibuat.</p></div>
 
     <h3>10.5 Service — Aturan Bisnis</h3>
+    <p>Lapisan ini menjawab pertanyaan "<em>boleh</em> atau tidak", bukan "<em>bagaimana caranya</em> menyimpan ke database" (itu sudah selesai di <code>repository</code>) dan bukan "<em>bagaimana caranya</em> membaca request HTTP" (itu tugas <code>handler</code> di Bagian 10.7–10.8). Tiga jenis aturan bisnis yang akan berulang di <code>service</code> manapun yang Anda buat sendiri nanti:</p>
+    <ul>
+      <li><strong>Validasi input</strong> — contoh: <code>len(password) &lt; 6</code> pada <code>Register</code>, <code>nama == ""</code> pada <code>CreateOwn</code>. Dilakukan di sini (bukan di <code>handler</code>) karena aturan ini murni soal bisnis, bukan soal format HTTP.</li>
+      <li><strong>Otorisasi kepemilikan</strong> — contoh: <code>if umkm.UserID != userID { return nil, domain.ErrForbidden }</code> pada <code>UpdateOwn</code>/<code>DeleteOwn</code>. Polanya selalu sama: ambil data dulu dari repository, bandingkan pemiliknya dengan <code>userID</code> yang login (didapat dari JWT lewat middleware di Bagian 10.6), baru lanjutkan atau tolak.</li>
+      <li><strong>Aturan unik bisnis</strong> — contoh: "1 user hanya boleh 1 UMKM" dicek di <code>CreateOwn</code> dengan memanggil <code>FindByUserID</code> terlebih dulu sebelum <code>Create</code>.</li>
+    </ul>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/auth_service.go</span></div><pre><code>package service
 
 import (
@@ -1104,9 +1137,13 @@ func (s *ProdukService) DeleteOwn(ctx context.Context, userID, produkID int64) (
     }
     return produk, nil
 }</code></pre></div>
+    <div class="note"><span class="lbl">Dua pola penting di lapisan service untuk ditiru</span>
+    <p><strong>Pagination mengembalikan 5 nilai sekaligus</strong> — lihat tanda tangan <code>List(...) (list []domain.Umkm, total, usedPage, usedLimit int, err error)</code>. Kenapa <code>usedPage</code>/<code>usedLimit</code> ikut dikembalikan, padahal sudah dikirim sebagai parameter <code>page</code>/<code>limit</code>? Karena service menormalisasi nilainya lebih dulu lewat <code>normalizePagination</code> (misalnya <code>limit=0</code> diubah jadi <code>10</code>) — dan <code>handler</code> butuh tahu nilai <em>setelah</em> dinormalisasi itu, supaya <code>meta.page</code>/<code>meta.limit</code> pada response JSON mencerminkan apa yang benar-benar dipakai untuk query, bukan apa yang diketik pengguna di URL.</p>
+    <p><strong>Update yang mengganti foto mengembalikan path foto lama</strong> — lihat tanda tangan <code>UpdateOwn(...) (umkm *domain.Umkm, fotoLama string, err error)</code>. Service sengaja tidak menghapus file lama sendiri (menghapus file adalah urusan I/O, bukan aturan bisnis) — ia hanya memutuskan foto mana yang sudah "usang" lalu melaporkannya ke <code>handler</code>, yang baru menghapus file fisiknya <em>setelah</em> database berhasil di-update (lihat Bagian 10.8). Urutan ini penting: kalau file dihapus duluan lalu update database gagal, foto hilang tanpa alasan.</p>
+    <p><strong>Cara meniru:</strong> service baru untuk entitas lain cukup ikuti tiga daftar aturan di atas paragraf ini (validasi, otorisasi, aturan unik), dan pakai <code>normalizePagination</code> dari <code>pagination.go</code> kalau endpoint-nya berupa daftar.</p></div>
 
     <h3>10.6 Middleware — Autentikasi JWT</h3>
-    <p>Middleware ini memeriksa header <code>Authorization: Bearer &lt;token&gt;</code>, lalu menyisipkan <code>userID</code> ke dalam <code>context</code> agar dapat dibaca oleh handler berikutnya.</p>
+    <p>Middleware ini memeriksa header <code>Authorization: Bearer &lt;token&gt;</code>, lalu menyisipkan <code>userID</code> ke dalam <code>context</code> agar dapat dibaca oleh handler berikutnya. Secara tipe, middleware di Go cukup berupa fungsi dengan tanda tangan <code>func(http.Handler) http.Handler</code> — ia menerima handler "asli", lalu mengembalikan handler baru yang menjalankan kode tambahan (cek token) <em>sebelum</em> memanggil handler asli lewat <code>next.ServeHTTP(...)</code>. Pola "bungkus-memanggil" inilah yang disebut <em>middleware chaining</em>.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go</span></div><pre><code>package middleware
 
 import (
@@ -1265,6 +1302,7 @@ func parsePagination(r *http.Request) (page, limit int) {
     limit, _ = strconv.Atoi(r.URL.Query().Get("limit"))
     return page, limit
 }</code></pre></div>
+    <div class="note"><span class="lbl">Tiga helper ini dipakai di hampir setiap handler — pahami sekali, pakai di mana-mana</span><p><code>writeJSON</code> untuk response sukses satu objek, <code>writePaginated</code> khusus untuk daftar (menambahkan blok <code>meta</code>), dan <code>writeError</code> untuk semua jalur gagal. Karena ketiganya selalu men-set <code>Content-Type</code> dan <code>WriteHeader</code> dengan cara yang sama, handler manapun yang Anda tulis nanti — termasuk untuk entitas baru — tinggal memanggil salah satu dari ketiganya, tidak perlu menulis ulang <code>json.NewEncoder(w).Encode(...)</code> setiap kali. Inilah sebabnya format response di seluruh API konsisten walau ditulis oleh fungsi yang berbeda-beda (bandingkan dengan kontrak format response di Bagian 9.2).</p></div>
     <p>Upload foto ditangani dengan <code>multipart/form-data</code>. Berkas disimpan ke folder lokal, dan yang disimpan ke database hanyalah <strong>path relatif</strong> (<code>umkm/xxx.jpg</code>) — bukan path disk absolut — agar bisa langsung digabung menjadi URL oleh klien maupun dipakai untuk menghapus berkas lama saat update/delete. Hanya berkas berekstensi <code>.jpg</code>/<code>.jpeg</code>/<code>.png</code> yang diterima.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/upload.go</span></div><pre><code>package handler
 
@@ -1337,6 +1375,7 @@ func deleteFile(uploadDir, relPath string) {
     }
     _ = os.Remove(filepath.Join(uploadDir, relPath))
 }</code></pre></div>
+    <div class="note"><span class="lbl">Alur lengkap satu file upload, dari form sampai database</span><p>1) Handler memanggil <code>saveUploadedFile(r, "foto", uploadDir, "umkm")</code> → file disimpan ke disk di <code>uploads/umkm/&lt;timestamp&gt;.jpg</code>, mengembalikan path relatif <code>"umkm/&lt;timestamp&gt;.jpg"</code>. 2) Path relatif itu (bukan file-nya) yang diteruskan ke <code>service</code> lalu disimpan sebagai kolom <code>foto</code> di database. 3) Saat ditampilkan kembali lewat API, path relatif ini yang dikirim ke klien (lihat catatan "Field foto" di Bagian 9.2) — klien yang menggabungkannya dengan <code>base_url</code>. <strong>Kenapa nama file pakai <code>time.Now().UnixNano()</code>?</strong> Supaya setiap upload punya nama unik walau dua pengguna mengunggah file dengan nama asli yang sama persis (misalnya sama-sama <code>foto.jpg</code>), tanpa perlu mengecek tabrakan nama ke database.</p></div>
 
     <h3>10.8 Handler — Auth, Profile, UMKM, Produk (dengan Anotasi Swagger)</h3>
     <p>Komentar berformat <code>@Summary</code>, <code>@Param</code>, <code>@Success</code>, dsb. di atas setiap fungsi bukan komentar biasa — ini adalah <strong>anotasi Swagger</strong> yang akan dibaca oleh tool <code>swag</code> pada Bagian 11 untuk menghasilkan dokumentasi otomatis. Untuk anotasi tersebut merujuk ke tipe respons, tambahkan dahulu berkas berikut:</p>
@@ -1383,6 +1422,7 @@ type ErrorResponse struct {
         Code    string `json:"code"`
     } `json:"error"`
 }</code></pre></div>
+    <div class="note"><span class="lbl">Pola yang sama berulang di setiap fungsi handler di bawah ini</span><p>Perhatikan setiap fungsi seperti <code>Register</code>, <code>Login</code>, <code>Create</code>, dst. — semuanya mengikuti tiga langkah yang sama: <strong>(1) baca input</strong> dari <code>r.Body</code> (JSON) atau <code>r.FormValue</code>/<code>r.PathValue</code> (form/path), <strong>(2) panggil satu fungsi service</strong>, lalu <strong>(3) terjemahkan hasilnya</strong> lewat blok <code>switch { case errors.Is(err, domain.ErrXxx): ... }</code> menjadi kode status HTTP yang sesuai. Urutan <code>case</code> dalam <code>switch</code> ini tidak sembarangan — error domain paling spesifik dicek lebih dulu (<code>ErrInvalidInput</code>, <code>ErrConflict</code>, <code>ErrForbidden</code>, <code>ErrNotFound</code>), baru <code>case err != nil</code> sebagai jaring pengaman terakhir untuk error tak terduga (dipetakan ke <code>500 Internal Server Error</code> — pesannya sengaja digeneralisasi "kesalahan server" agar detail internal, misalnya pesan error asli dari database, tidak bocor ke klien). <strong>Kalau membuat handler untuk entitas baru, tiru persis struktur tiga langkah ini.</strong></p></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/auth_handler.go</span></div><pre><code>package handler
 
 import (
@@ -2144,6 +2184,11 @@ func main() {
     slog.Info("server dimatikan dengan aman")
 }</code></pre></div>
     <div class="note"><span class="lbl">Kenapa import docs pakai underscore ( _ )?</span><p><code>_ "umkm-api/docs"</code> berarti package <code>docs</code> (hasil generate <code>swag init</code> pada Bagian 11) diimpor hanya untuk efek sampingnya — package tersebut mendaftarkan spesifikasi Swagger ke memori saat program start, tanpa perlu memanggil fungsi apa pun darinya secara langsung.</p></div>
+    <div class="note"><span class="lbl">main.go membaca dari bawah ke atas: urutan wiring ini bukan kebetulan</span>
+    <p><strong>1. Koneksi database dibuat lebih dulu</strong> (<code>pgxpool.New</code> + <code>db.Ping</code>) sebelum apa pun lain — kalau database tidak bisa dijangkau, program langsung berhenti (<code>os.Exit(1)</code>) daripada menyalakan server yang pasti akan gagal di setiap request.</p>
+    <p><strong>2. Setiap repository dibuat dari <code>db</code>, setiap service dibuat dari repository-nya, setiap handler dibuat dari service-nya</strong> — persis mengikuti arah ketergantungan yang sudah dijelaskan di Bagian 8.1 (<code>domain ← repository ← service ← handler</code>). <code>main.go</code> adalah satu-satunya tempat ketiga layer ini "bertemu" dan dirakit — dependency injection manual tanpa framework DI.</p>
+    <p><strong>3. Route didaftarkan dengan pola <code>"METHOD /path"</code></strong> (fitur <code>http.ServeMux</code> sejak Go 1.22) — <code>mux.HandleFunc(...)</code> untuk endpoint publik, dibungkus <code>auth(...)</code> untuk endpoint yang wajib login. Perhatikan path dengan parameter seperti <code>{id}</code> langsung dibaca di handler lewat <code>r.PathValue("id")</code> (lihat Bagian 10.8), tanpa router pihak ketiga.</p>
+    <p><strong>Cara menambah endpoint baru:</strong> setelah entitas baru selesai dibuat di keempat layer (Bagian 8.1), baris terakhir yang ditambahkan selalu di sini — satu baris <code>mux.HandleFunc(...)</code> atau <code>mux.Handle(...)</code> per endpoint, mengikuti pola yang sudah ada.</p></div>
 
     <h2 id="s11"><span class="badge">11</span>Dokumentasi API dengan Swagger</h2>
     <p>Swagger (OpenAPI) menghasilkan halaman dokumentasi interaktif dari kode itu sendiri — setiap kali handler diubah dan anotasinya diperbarui, dokumentasi tinggal di-generate ulang. Ini sangat membantu ketika API dipakai tim Flutter yang berbeda dari yang menulis backend.</p>
