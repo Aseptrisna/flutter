@@ -340,15 +340,19 @@ class ApiService {
     return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
   }
 
-  Future&lt;List&lt;Produk&gt;&gt; getProdukByUmkm(int umkmId) async {
-    final response = await http.get(Uri.parse('$baseUrl/umkm/$umkmId/produk'));
+  Future&lt;PaginatedResult&lt;Produk&gt;&gt; getProdukByUmkm(int umkmId, {int page = 1}) async {
+    final uri = Uri.parse('$baseUrl/umkm/$umkmId/produk').replace(queryParameters: {
+      'page': '$page',
+      'limit': '10',
+    });
+
+    final response = await http.get(uri);
     final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
 
     if (response.statusCode != 200) {
       throw ApiException(body['error']?['message'] ?? 'Gagal memuat produk');
     }
-    final items = (body['data'] as List&lt;dynamic&gt;? ?? []);
-    return items.map((e) =&gt; Produk.fromJson(e as Map&lt;String, dynamic&gt;)).toList();
+    return PaginatedResult.fromJson(body, Produk.fromJson);
   }
 
   static String fotoUrl(String relativePath) {
@@ -454,13 +458,14 @@ Future&lt;void&gt; _muatProduk() async {
   });
   try {
     final hasil = await _apiService.getProdukByUmkm(widget.umkmId);
-    setState(() =&gt; _produk = hasil);
+    setState(() =&gt; _produk = hasil.data); // ambil .data, meta (page/limit/total) diabaikan di sini
   } on ApiException catch (e) {
     setState(() =&gt; _error = e.message);
   } finally {
     setState(() =&gt; _loading = false);
   }
 }</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa cuma ambil .data, bukan seluruh PaginatedResult&lt;Produk&gt;?</span><p>Sejak Bagian 06, <code>getProdukByUmkm</code> sudah mengembalikan <code>PaginatedResult&lt;Produk&gt;</code> (bukan <code>List&lt;Produk&gt;</code>) — persis seperti <code>getUmkmList</code> — karena endpoint <code>/api/umkm/{id}/produk</code> di API Golang memang mengirim <code>meta</code> (page/limit/total) juga. Halaman ini sengaja cuma menyimpan <code>.data</code>-nya ke <code>List&lt;Produk&gt;</code> karena belum butuh tombol "muat halaman berikutnya" untuk produk. Kalau nanti butuh paginasi produk juga, ganti tipe variabel state-nya jadi <code>PaginatedResult&lt;Produk&gt;</code>, sama persis seperti pola <code>_futureUmkm</code> di Bagian 08 dan 12.</p></div>
     <table>
       <tr><th>Pola</th><th>Kapan dipakai</th></tr>
       <tr><td><code>FutureBuilder</code></td><td>Pemanggilan sederhana, sekali per halaman, tidak butuh tombol muat ulang manual</td></tr>
