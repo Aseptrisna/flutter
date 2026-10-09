@@ -345,7 +345,8 @@ go install github.com/swaggo/swag/cmd/swag@latest</code></pre></div>
 │       └── ratelimit.go
 ├── docs/                  # hasil generate "swag init" (Bagian 11)
 ├── migrations/
-│   └── 001_init.sql
+│   ├── 000001_init.up.sql
+│   └── 000001_init.down.sql
 ├── uploads/
 │   ├── umkm/
 │   └── produk/
@@ -365,7 +366,7 @@ go install github.com/swaggo/swag/cmd/swag@latest</code></pre></div>
       <tr><td><code>internal/handler</code></td><td>Jembatan antara dunia HTTP dan dunia Go biasa: membaca <code>r.Body</code>/<code>r.FormValue</code>/<code>r.PathValue</code>, memanggil satu fungsi service, lalu mengubah hasil atau error-nya menjadi response JSON dengan kode status yang tepat. Juga tempat menaruh komentar anotasi Swagger (Bagian 11).</td></tr>
       <tr><td><code>internal/middleware</code></td><td>Fungsi "pembungkus" yang berjalan <em>sebelum</em> handler asli dipanggil — dipakai lintas banyak endpoint sekaligus, seperti memeriksa token JWT atau membatasi laju request. Tidak ditempel ke satu entitas tertentu.</td></tr>
       <tr><td><code>docs/</code></td><td>Hasil otomatis perintah <code>swag init</code> (Bagian 11) — berisi <code>swagger.json</code>, dsb. Jangan diedit manual; akan tertimpa setiap kali <code>swag init</code> dijalankan ulang.</td></tr>
-      <tr><td><code>migrations/</code></td><td>Skrip SQL yang mendefinisikan skema tabel. Dijalankan satu kali terhadap database (Neon atau lokal) sebelum API pertama kali dipakai, dan lagi setiap kali ada perubahan skema.</td></tr>
+      <tr><td><code>migrations/</code></td><td>Skrip SQL yang mendefinisikan skema tabel, dikelola dengan CLI <code>golang-migrate</code> (pasangan berkas <code>*.up.sql</code>/<code>*.down.sql</code> bernomor urut). Dijalankan terhadap database (Neon atau lokal) sebelum API pertama kali dipakai, dan lagi setiap kali ada perubahan skema.</td></tr>
       <tr><td><code>uploads/</code></td><td>Folder fisik tempat berkas foto yang diunggah pengguna benar-benar disimpan di disk server, dipisah per jenis entitas (<code>umkm/</code>, <code>produk/</code>).</td></tr>
       <tr><td><code>.env</code> / <code>.env.example</code></td><td><code>.env.example</code> adalah contoh/dokumentasi variabel yang dibutuhkan (boleh di-commit). <code>.env</code> adalah isian asli dengan nilai rahasia milik masing-masing developer (wajib masuk <code>.gitignore</code>, jangan pernah di-commit).</td></tr>
     </table>
@@ -421,7 +422,18 @@ UPLOAD_DIR=./uploads</code></pre></div>
     <p>Kode disusun berlapis: <code>domain</code> (struktur data) → <code>repository</code> (akses database) → <code>service</code> (aturan bisnis) → <code>handler</code> (menerima HTTP request) → <code>middleware</code> + <code>main.go</code> (menyatukan semuanya).</p>
 
     <h3>10.1 Migration — Membuat Tabel</h3>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/001_init.sql</span></div><pre><code>CREATE TABLE users (
+    <p>Migration dikelola dengan CLI <a href="https://github.com/golang-migrate/migrate" target="_blank" rel="noopener">golang-migrate</a>, bukan menjalankan file <code>.sql</code> manual satu per satu. Setiap migration terdiri dari <strong>dua berkas berpasangan</strong>: <code>*.up.sql</code> (menerapkan perubahan) dan <code>*.down.sql</code> (membatalkannya), diberi nomor urut di depan nama supaya urutan eksekusinya jelas dan bisa di-rollback.</p>
+
+    <h4>Instal CLI golang-migrate</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS (Homebrew)</span></div><pre><code>brew install golang-migrate</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Linux / Windows (lewat Go)</span></div><pre><code>go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest</code></pre></div>
+    <p>Pastikan <code>$GOPATH/bin</code> (biasanya <code>~/go/bin</code>) sudah masuk <code>PATH</code> supaya perintah <code>migrate</code> bisa dipanggil langsung dari terminal. Cek dengan <code>migrate -version</code>.</p>
+
+    <h4>Membuat berkas migration baru</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>migrate create -ext sql -dir migrations -seq init</code></pre></div>
+    <p>Perintah di atas menghasilkan dua berkas kosong: <code>migrations/000001_init.up.sql</code> dan <code>migrations/000001_init.down.sql</code>. Isi keduanya seperti berikut.</p>
+
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_init.up.sql</span></div><pre><code>CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
@@ -448,8 +460,20 @@ CREATE TABLE produk (
     foto VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );</code></pre></div>
-    <p><code>user_id UNIQUE</code> pada tabel <code>umkm</code> memaksa di level database bahwa satu user hanya boleh punya satu baris UMKM — lapisan pertahanan tambahan selain pengecekan di service. Jalankan berkas ini ke database Neon melalui <code>psql</code> atau SQL editor pada dashboard Neon:</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>psql "postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require" -f migrations/001_init.sql</code></pre></div>
+    <p><code>user_id UNIQUE</code> pada tabel <code>umkm</code> memaksa di level database bahwa satu user hanya boleh punya satu baris UMKM — lapisan pertahanan tambahan selain pengecekan di service.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_init.down.sql</span></div><pre><code>DROP TABLE IF EXISTS produk;
+DROP TABLE IF EXISTS umkm;
+DROP TABLE IF EXISTS users;</code></pre></div>
+    <p>Urutan <code>DROP TABLE</code> di berkas down sengaja dibalik (anak dulu baru induk) karena foreign key <code>umkm → users</code> dan <code>produk → umkm</code> akan menolak tabel induknya dihapus duluan selama masih ada tabel anak yang mereferensikannya.</p>
+
+    <h4>Menjalankan migration</h4>
+    <div class="note"><span class="lbl">Simpan connection string sebagai variabel</span><p>Supaya tidak perlu menulis ulang connection string Neon di setiap perintah, simpan dulu ke variabel environment:</p></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS / Linux</span></div><pre><code>export DATABASE_URL="postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require"</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Windows (PowerShell)</span></div><pre><code>$env:DATABASE_URL="postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require"</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menerapkan migration (up)</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">membatalkan 1 migration terakhir (down)</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" down 1</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi migration yang sedang aktif</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" version</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa pakai golang-migrate, bukan psql manual?</span><p>Dengan <code>psql -f file.sql</code>, kamu harus ingat sendiri file mana yang sudah/belum dijalankan dan tidak ada cara mudah untuk <em>rollback</em>. <code>golang-migrate</code> mencatat nomor versi migration terakhir di tabel <code>schema_migrations</code> pada database itu sendiri, jadi perintah <code>up</code> hanya menjalankan migration yang belum diterapkan, dan <code>down</code> bisa membatalkan perubahan secara terurut. Setiap kali ada perubahan skema baru (misalnya tambah kolom), cukup jalankan <code>migrate create -ext sql -dir migrations -seq nama_perubahan</code> lagi — jangan edit ulang file migration yang sudah pernah dijalankan ke database manapun.</p></div>
 
     <h3>10.2 Konfigurasi dan Koneksi Database</h3>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/config/config.go</span></div><pre><code>package config
@@ -2234,6 +2258,8 @@ swag --version</code></pre></div>
     </div>
 
     <h2 id="s12"><span class="badge">12</span>Menjalankan dan Menguji API</h2>
+    <p>Sebelum menjalankan server, pastikan migration sudah diterapkan ke database (lihat <a href="#s10">Bagian 10.1</a>):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrate -path migrations -database "$DATABASE_URL" up</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menjalankan server</span></div><pre><code>go run ./cmd/api</code></pre></div>
     <p>Uji setiap endpoint menggunakan <code>curl</code>, Postman/Thunder Client, atau langsung dari Swagger UI pada Bagian 11.4. Urutan di bawah ini persis seperti yang dipakai saat memverifikasi materi ini.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">register &amp; login</span></div><pre><code>curl -X POST http://localhost:8080/api/auth/register \
