@@ -482,12 +482,57 @@ DROP TABLE IF EXISTS users;</code></pre></div>
 
     <div class="note"><span class="lbl">File <code>000001_init.up.sql</code>/<code>.down.sql</code> sudah ada isinya dari Bagian 10.1? Lewati langkah "membuat berkas migration baru"</span><p>Perintah <code>migrate create -ext sql -dir migrations -seq init</code> di Bagian 10.1 hanya dijalankan <strong>sekali</strong>, waktu folder <code>migrations/</code> belum ada sama sekali — tujuannya cuma untuk membuat dua berkas kosong yang isinya lalu diketik manual sendiri. Kalau kamu melanjutkan coding di sesi/hari berikutnya dan <code>migrations/000001_init.up.sql</code> serta <code>.down.sql</code> sudah ada dan sudah terisi dari sebelumnya, <strong>jangan jalankan <code>migrate create</code> lagi</strong> — langsung ke langkah 1 di bawah. Menjalankan ulang perintah itu cuma akan membuat sepasang berkas kosong baru bernomor <code>000002_init...</code> yang tidak perlu kamu isi dan cuma bikin bingung.</p></div>
 
-    <h4>Langkah cepat diagnosa (urutkan dari atas)</h4>
-    <ol>
-      <li><strong>Pastikan CLI-nya kebaca dulu:</strong> jalankan <code>migrate -version</code>. Kalau error <code>command not found</code>, benahi instalasi/PATH-nya dulu sebelum lanjut (lihat baris pertama tabel).</li>
-      <li><strong>Pastikan <code>DATABASE_URL</code> benar-benar ter-set di terminal yang sama:</strong> jalankan <code>echo $DATABASE_URL</code> (macOS/Linux) atau <code>echo $env:DATABASE_URL</code> (PowerShell). Kalau hasilnya kosong, berarti belum di-<code>export</code> — isi `.env` tidak otomatis kebaca oleh perintah <code>migrate</code>.</li>
-      <li><strong>Baru jalankan migration-nya</strong>: <code>migrate -path migrations -database "$DATABASE_URL" up</code>, lalu cocokkan pesan errornya (kalau ada) dengan tabel di bawah.</li>
-    </ol>
+    <h4>Langkah 1 — Pastikan isi berkas migration persis seperti ini</h4>
+    <p>Penyebab error yang paling sering luput dicek: isi <code>migrations/000001_init.up.sql</code> atau <code>.down.sql</code> ada yang salah ketik (titik koma hilang, nama kolom beda, urutan tabel tertukar). Buka kedua berkas itu dan <strong>samakan persis</strong> dengan isi berikut sebelum lanjut ke langkah berikutnya:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_init.up.sql</span></div><pre><code>CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE umkm (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    deskripsi TEXT,
+    alamat VARCHAR(255),
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE produk (
+    id SERIAL PRIMARY KEY,
+    umkm_id INTEGER NOT NULL REFERENCES umkm(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    harga NUMERIC(12,2) NOT NULL DEFAULT 0,
+    deskripsi TEXT,
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_init.down.sql</span></div><pre><code>DROP TABLE IF EXISTS produk;
+DROP TABLE IF EXISTS umkm;
+DROP TABLE IF EXISTS users;</code></pre></div>
+    <p>Tiga hal yang wajib persis: (1) urutan <code>CREATE TABLE</code> di <code>up.sql</code> harus <code>users</code> → <code>umkm</code> → <code>produk</code>, karena <code>umkm</code> mereferensikan <code>users</code> dan <code>produk</code> mereferensikan <code>umkm</code> lewat <code>REFERENCES</code> — kalau urutannya dibalik, Postgres akan menolak dengan error <em>relation "users" does not exist</em>; (2) urutan <code>DROP TABLE</code> di <code>down.sql</code> harus kebalikannya (<code>produk</code> dulu baru <code>umkm</code>, baru <code>users</code>); (3) setiap pernyataan SQL diakhiri titik koma <code>;</code> — satu titik koma hilang bisa membuat <code>golang-migrate</code> gagal mem-parsing berkas dengan pesan error yang kadang tidak jelas menunjuk ke baris mana.</p>
+
+    <h4>Langkah 2 — Pastikan CLI <code>migrate</code> benar-benar terpasang</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi CLI</span></div><pre><code>migrate -version</code></pre></div>
+    <p>Harus keluar versi seperti <code>v4.17.0</code> atau lebih baru. Kalau keluar <code>command not found</code> / <code>'migrate' is not recognized</code>, instalasinya belum benar atau <code>PATH</code> belum menunjuk ke foldernya — perbaiki dulu pakai baris pertama tabel di bawah sebelum lanjut.</p>
+
+    <h4>Langkah 3 — Pastikan <code>DATABASE_URL</code> benar-benar ter-set di terminal yang sama</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS / Linux — set lalu cek</span></div><pre><code>export DATABASE_URL="postgresql://postgres:12345678@localhost:5432/umkm_db?sslmode=disable"
+echo $DATABASE_URL</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Windows (PowerShell) — set lalu cek</span></div><pre><code>$env:DATABASE_URL="postgresql://postgres:12345678@localhost:5432/umkm_db?sslmode=disable"
+echo $env:DATABASE_URL</code></pre></div>
+    <p>Ganti connection string di atas dengan milikmu sendiri (Neon atau Postgres lokal, lihat <code>.env</code>). Perintah <code>echo</code> harus menampilkan connection string yang sama persis — kalau hasilnya kosong, berarti <code>export</code>/<code>$env:</code> belum dijalankan di terminal yang sedang dipakai, atau kamu pindah ke tab/jendela terminal lain setelahnya (variabel environment hanya berlaku di sesi terminal tempat ia di-set).</p>
+
+    <h4>Langkah 4 — Jalankan migration, lalu verifikasi tabelnya benar-benar terbentuk</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terapkan migration</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
+    <p>Kalau berhasil, akan muncul <code>1/u init (xx.xxxxxxxx)</code> tanpa pesan error. Jangan berhenti di sini — <strong>verifikasi langsung ke database</strong> memakai <code>psql</code> supaya yakin tabelnya benar-benar ada, bukan cuma percaya output <code>migrate</code>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek tabel lewat psql</span></div><pre><code>psql "$DATABASE_URL" -c "\dt"</code></pre></div>
+    <p>Hasilnya harus menampilkan empat tabel: <code>users</code>, <code>umkm</code>, <code>produk</code>, dan <code>schema_migrations</code> (tabel internal milik <code>golang-migrate</code> untuk mencatat versi). Kalau <code>migrate up</code> sukses tapi salah satu dari keempat tabel itu tidak muncul, kemungkinan besar <code>DATABASE_URL</code> yang dipakai saat <code>migrate up</code> mengarah ke database yang berbeda dengan yang dicek lewat <code>psql</code> (misalnya satu ke Neon, satu ke Postgres lokal) — samakan dulu connection string di kedua perintah.</p>
+    <p>Kalau sampai langkah ini masih ada error, baru cocokkan pesan errornya persis dengan tabel di bawah.</p>
 
     <h4>Tabel error yang sering muncul</h4>
     <table>
