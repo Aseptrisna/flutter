@@ -424,16 +424,17 @@ UPLOAD_DIR=./uploads</code></pre></div>
     <p>Kode disusun berlapis: <code>domain</code> (struktur data) → <code>repository</code> (akses database) → <code>service</code> (aturan bisnis) → <code>handler</code> (menerima HTTP request) → <code>middleware</code> + <code>main.go</code> (menyatukan semuanya).</p>
 
     <h3>10.1 Migration — Membuat Tabel</h3>
-    <p>Migration dikelola dengan CLI <a href="https://github.com/golang-migrate/migrate" target="_blank" rel="noopener">golang-migrate</a>, bukan menjalankan file <code>.sql</code> manual satu per satu. Setiap migration terdiri dari <strong>dua berkas berpasangan</strong>: <code>*.up.sql</code> (menerapkan perubahan) dan <code>*.down.sql</code> (membatalkannya), diberi nomor urut di depan nama supaya urutan eksekusinya jelas dan bisa di-rollback.</p>
+    <p>Migration dikelola dengan <a href="https://github.com/golang-migrate/migrate" target="_blank" rel="noopener">golang-migrate</a>, tapi dipakai sebagai <strong>library Go biasa</strong> lewat satu tool kecil (<code>cmd/migrate</code>) yang kita tulis sendiri — <strong>bukan</strong> CLI eksternal yang harus diinstal terpisah. Keuntungannya: perintahnya persis sama di Windows, macOS, maupun Linux (<code>go run ./cmd/migrate ...</code>), tidak perlu mengatur <code>PATH</code> tambahan, dan tidak perlu <code>export</code> environment variable manual — sama seperti menjalankan <code>go run ./cmd/api</code> yang sudah terbiasa dipakai. Setiap migration terdiri dari <strong>dua berkas berpasangan</strong>: <code>*.up.sql</code> (menerapkan perubahan) dan <code>*.down.sql</code> (membatalkannya), diberi nomor urut di depan nama supaya urutan eksekusinya jelas dan bisa di-rollback.</p>
 
-    <h4>Instal CLI golang-migrate</h4>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS (Homebrew)</span></div><pre><code>brew install golang-migrate</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Linux / Windows (lewat Go)</span></div><pre><code>go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest</code></pre></div>
-    <p>Pastikan <code>$GOPATH/bin</code> (biasanya <code>~/go/bin</code>) sudah masuk <code>PATH</code> supaya perintah <code>migrate</code> bisa dipanggil langsung dari terminal. Cek dengan <code>migrate -version</code>.</p>
+    <h4>Tambahkan dependency golang-migrate</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal VS Code, dari root project umkm-api</span></div><pre><code>go get github.com/golang-migrate/migrate/v4
+go get github.com/golang-migrate/migrate/v4/database/postgres</code></pre></div>
 
-    <h4>Membuat berkas migration baru</h4>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>migrate create -ext sql -dir migrations -seq init</code></pre></div>
-    <p>Perintah di atas menghasilkan dua berkas kosong: <code>migrations/000001_init.up.sql</code> dan <code>migrations/000001_init.down.sql</code>. Isi keduanya seperti berikut.</p>
+    <h4>Buat folder dan berkas migration</h4>
+    <p>Buat folder <code>migrations/</code> di root project, lalu buat dua berkas kosong di dalamnya dengan nama persis seperti ini (lewat VS Code biasa, klik kanan folder → New File):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>migrations/000001_init.up.sql
+migrations/000001_init.down.sql</code></pre></div>
+    <p>Penomoran <code>000001_</code> di depan nama penting — itu yang dipakai <code>golang-migrate</code> untuk menentukan urutan eksekusi. Migration berikutnya (misalnya nanti menambah kolom) dibuat dengan nomor urut lanjutannya, misal <code>000002_tambah_kolom.up.sql</code>. Isi kedua berkas <code>000001</code> seperti berikut.</p>
 
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_init.up.sql</span></div><pre><code>CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -468,50 +469,86 @@ DROP TABLE IF EXISTS umkm;
 DROP TABLE IF EXISTS users;</code></pre></div>
     <p>Urutan <code>DROP TABLE</code> di berkas down sengaja dibalik (anak dulu baru induk) karena foreign key <code>umkm → users</code> dan <code>produk → umkm</code> akan menolak tabel induknya dihapus duluan selama masih ada tabel anak yang mereferensikannya.</p>
 
-    <h4>Menjalankan migration — cara simpel pakai Makefile (macOS/Linux)</h4>
-    <p>Daripada mengetik ulang <code>export DATABASE_URL="..."</code> setiap buka terminal baru (dan rawan typo), buat satu berkas <code>Makefile</code> di root project yang otomatis membaca <code>.env</code>:</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Makefile</span></div><pre><code>include .env
-export
+    <h4>Tool migration sendiri — cmd/migrate/main.go</h4>
+    <p>Daripada menginstal CLI <code>migrate</code> terpisah (yang caranya beda-beda per OS dan sering gagal karena isu <code>PATH</code>/tag driver), buat satu program Go kecil yang membungkus <em>library</em> <code>golang-migrate</code> dan membaca <code>.env</code> otomatis lewat <code>godotenv</code> — persis seperti yang sudah dilakukan <code>cmd/api/main.go</code>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cmd/migrate/main.go</span></div><pre><code>package main
 
-migrate-up:
-	migrate -path migrations -database "$(DATABASE_URL)" up
+import (
+    "errors"
+    "fmt"
+    "log"
+    "os"
+    "strconv"
 
-migrate-down:
-	migrate -path migrations -database "$(DATABASE_URL)" down 1
+    "github.com/golang-migrate/migrate/v4"
+    _ "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/file"
+    "github.com/joho/godotenv"
+)
 
-migrate-version:
-	migrate -path migrations -database "$(DATABASE_URL)" version
+func main() {
+    _ = godotenv.Load()
 
-# contoh: make migrate-force V=1
-migrate-force:
-	migrate -path migrations -database "$(DATABASE_URL)" force $(V)
+    dbURL := os.Getenv("DATABASE_URL")
+    if dbURL == "" {
+        log.Fatal("DATABASE_URL belum diatur di berkas .env")
+    }
 
-run:
-	go run ./cmd/api</code></pre></div>
-    <div class="note"><span class="lbl">Baris sebelum setiap target wajib diawali karakter TAB, bukan spasi</span><p>Ini aturan baku sintaks <code>Makefile</code>, bukan gaya penulisan bebas — kalau editor otomatis mengganti tab jadi spasi (beberapa pengaturan VS Code melakukan ini), <code>make</code> akan gagal dengan error <code>missing separator</code>. Cek pengaturan <code>editor.insertSpaces</code> khusus untuk berkas bernama <code>Makefile</code> kalau ini terjadi.</p></div>
-    <p>Setelah itu, migration cukup dijalankan dengan satu perintah pendek, dari direktori manapun di dalam project, di terminal manapun (tidak perlu <code>export</code> manual lagi karena <code>Makefile</code> yang membaca <code>.env</code>):</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menerapkan migration</span></div><pre><code>make migrate-up</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">membatalkan 1 migration terakhir</span></div><pre><code>make migrate-down</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi migration yang sedang aktif</span></div><pre><code>make migrate-version</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menjalankan API (bonus, menggantikan go run ./cmd/api)</span></div><pre><code>make run</code></pre></div>
+    if len(os.Args) < 2 {
+        log.Fatal("penggunaan: go run ./cmd/migrate <up|down|version|force> [angka versi]")
+    }
+
+    m, err := migrate.New("file://migrations", dbURL)
+    if err != nil {
+        log.Fatalf("gagal membuka migrations: %v", err)
+    }
+
+    switch os.Args[1] {
+    case "up":
+        err = m.Up()
+    case "down":
+        err = m.Steps(-1)
+    case "version":
+        version, dirty, verErr := m.Version()
+        if verErr != nil {
+            log.Fatalf("gagal membaca versi: %v", verErr)
+        }
+        fmt.Printf("versi migration saat ini: %d (dirty: %v)\n", version, dirty)
+        return
+    case "force":
+        if len(os.Args) < 3 {
+            log.Fatal("penggunaan: go run ./cmd/migrate force <angka versi>")
+        }
+        version, convErr := strconv.Atoi(os.Args[2])
+        if convErr != nil {
+            log.Fatalf("angka versi tidak valid: %v", convErr)
+        }
+        err = m.Force(version)
+    default:
+        log.Fatalf("perintah tidak dikenal: %q (pakai up/down/version/force)", os.Args[1])
+    }
+
+    if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+        log.Fatalf("migration gagal: %v", err)
+    }
+    fmt.Println("selesai")
+}</code></pre></div>
+    <p>Dua baris <code>_ "github.com/golang-migrate/migrate/v4/database/postgres"</code> dan <code>_ "github.com/golang-migrate/migrate/v4/source/file"</code> adalah <em>blank import</em> — hanya menjalankan efek sampingnya (mendaftarkan driver Postgres dan pembaca berkas <code>.sql</code> dari folder lokal ke dalam <code>golang-migrate</code>) tanpa memanggil fungsi apa pun darinya secara langsung, makanya namanya diganti <code>_</code>.</p>
+
+    <h4>Menjalankan migration</h4>
+    <p>Begini cara makainya — <strong>sama persis</strong> di Windows (CMD maupun PowerShell), macOS, dan Linux, dari root project <code>umkm-api</code>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menerapkan migration (up)</span></div><pre><code>go run ./cmd/migrate up</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">membatalkan 1 migration terakhir (down)</span></div><pre><code>go run ./cmd/migrate down</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi migration yang sedang aktif</span></div><pre><code>go run ./cmd/migrate version</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">memperbaiki status "dirty" (lihat Bagian 10.2)</span></div><pre><code>go run ./cmd/migrate force 1</code></pre></div>
     <div class="verify">
       <span class="lbl">✓ Diverifikasi</span>
-      <p>Seluruh target <code>Makefile</code> di atas sudah dicoba langsung terhadap Postgres lokal sungguhan: <code>make migrate-up</code> berhasil membuat tabel, <code>make migrate-version</code> menampilkan versi yang benar tanpa perlu <code>export</code> apa pun lebih dulu, dan <code>make run</code> menyalakan server yang langsung bisa diakses.</p>
+      <p>Seluruh perintah di atas sudah dicoba langsung terhadap Postgres lokal sungguhan dari kondisi database kosong: <code>go run ./cmd/migrate up</code> berhasil membuat 4 tabel (<code>users</code>, <code>umkm</code>, <code>produk</code>, <code>schema_migrations</code>) tanpa perlu <code>export</code> apa pun lebih dulu, <code>go run ./cmd/migrate version</code> menampilkan <code>versi migration saat ini: 1 (dirty: false)</code>, dan <code>go run ./cmd/migrate down</code> berhasil mengembalikan ke kondisi semula.</p>
     </div>
-
-    <h4>Cara manual tanpa Makefile (Windows tanpa WSL, atau kalau mau paham prosesnya)</h4>
-    <p><code>make</code> sudah tersedia bawaan di macOS dan Linux, tapi tidak ada secara default di Windows (CMD/PowerShell biasa). Kalau tidak pakai WSL/Git Bash dengan <code>make</code> ter-install, pakai cara manual berikut — isinya persis sama dengan yang dikerjakan <code>Makefile</code> di atas, cuma harus di-export ulang setiap buka terminal baru:</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS / Linux</span></div><pre><code>export DATABASE_URL="postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require"</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Windows (PowerShell)</span></div><pre><code>$env:DATABASE_URL="postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require"</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menerapkan migration (up)</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">membatalkan 1 migration terakhir (down)</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" down 1</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi migration yang sedang aktif</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" version</code></pre></div>
-    <div class="note"><span class="lbl">Kenapa pakai golang-migrate, bukan psql manual?</span><p>Dengan <code>psql -f file.sql</code>, kamu harus ingat sendiri file mana yang sudah/belum dijalankan dan tidak ada cara mudah untuk <em>rollback</em>. <code>golang-migrate</code> mencatat nomor versi migration terakhir di tabel <code>schema_migrations</code> pada database itu sendiri, jadi perintah <code>up</code> hanya menjalankan migration yang belum diterapkan, dan <code>down</code> bisa membatalkan perubahan secara terurut. Setiap kali ada perubahan skema baru (misalnya tambah kolom), cukup jalankan <code>migrate create -ext sql -dir migrations -seq nama_perubahan</code> lagi — jangan edit ulang file migration yang sudah pernah dijalankan ke database manapun.</p></div>
+    <div class="note"><span class="lbl">Kenapa pakai golang-migrate, bukan psql manual?</span><p>Dengan <code>psql -f file.sql</code>, kamu harus ingat sendiri file mana yang sudah/belum dijalankan dan tidak ada cara mudah untuk <em>rollback</em>. <code>golang-migrate</code> mencatat nomor versi migration terakhir di tabel <code>schema_migrations</code> pada database itu sendiri, jadi perintah <code>up</code> hanya menjalankan migration yang belum diterapkan, dan <code>down</code> bisa membatalkan perubahan secara terurut. Setiap kali ada perubahan skema baru (misalnya tambah kolom), cukup buat sepasang berkas baru dengan nomor urut lanjutannya (lihat "Buat folder dan berkas migration" di atas) — jangan edit ulang file migration yang sudah pernah dijalankan ke database manapun.</p></div>
 
     <h3 id="s10-2">10.2 Mengatasi Error Migration</h3>
-    <p>Bagian ini bagian "P3K" migration — kumpulkan di sini supaya kalau <code>migrate ... up</code> gagal, kamu tidak perlu scroll ke atas mencari-cari, cukup cocokkan pesan errornya dengan tabel di bawah.</p>
-
-    <div class="note"><span class="lbl">File <code>000001_init.up.sql</code>/<code>.down.sql</code> sudah ada isinya dari Bagian 10.1? Lewati langkah "membuat berkas migration baru"</span><p>Perintah <code>migrate create -ext sql -dir migrations -seq init</code> di Bagian 10.1 hanya dijalankan <strong>sekali</strong>, waktu folder <code>migrations/</code> belum ada sama sekali — tujuannya cuma untuk membuat dua berkas kosong yang isinya lalu diketik manual sendiri. Kalau kamu melanjutkan coding di sesi/hari berikutnya dan <code>migrations/000001_init.up.sql</code> serta <code>.down.sql</code> sudah ada dan sudah terisi dari sebelumnya, <strong>jangan jalankan <code>migrate create</code> lagi</strong> — langsung ke langkah 1 di bawah. Menjalankan ulang perintah itu cuma akan membuat sepasang berkas kosong baru bernomor <code>000002_init...</code> yang tidak perlu kamu isi dan cuma bikin bingung.</p></div>
+    <p>Bagian ini bagian "P3K" migration — kumpulkan di sini supaya kalau <code>go run ./cmd/migrate up</code> gagal, kamu tidak perlu scroll ke atas mencari-cari, cukup cocokkan pesan errornya dengan tabel di bawah.</p>
 
     <h4>Langkah 1 — Pastikan isi berkas migration persis seperti ini</h4>
     <p>Penyebab error yang paling sering luput dicek: isi <code>migrations/000001_init.up.sql</code> atau <code>.down.sql</code> ada yang salah ketik (titik koma hilang, nama kolom beda, urutan tabel tertukar). Buka kedua berkas itu dan <strong>samakan persis</strong> dengan isi berikut sebelum lanjut ke langkah berikutnya:</p>
@@ -547,44 +584,31 @@ DROP TABLE IF EXISTS umkm;
 DROP TABLE IF EXISTS users;</code></pre></div>
     <p>Tiga hal yang wajib persis: (1) urutan <code>CREATE TABLE</code> di <code>up.sql</code> harus <code>users</code> → <code>umkm</code> → <code>produk</code>, karena <code>umkm</code> mereferensikan <code>users</code> dan <code>produk</code> mereferensikan <code>umkm</code> lewat <code>REFERENCES</code> — kalau urutannya dibalik, Postgres akan menolak dengan error <em>relation "users" does not exist</em>; (2) urutan <code>DROP TABLE</code> di <code>down.sql</code> harus kebalikannya (<code>produk</code> dulu baru <code>umkm</code>, baru <code>users</code>); (3) setiap pernyataan SQL diakhiri titik koma <code>;</code> — satu titik koma hilang bisa membuat <code>golang-migrate</code> gagal mem-parsing berkas dengan pesan error yang kadang tidak jelas menunjuk ke baris mana.</p>
 
-    <h4>Langkah 2 — Pastikan CLI <code>migrate</code> benar-benar terpasang</h4>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi CLI</span></div><pre><code>migrate -version</code></pre></div>
-    <p>Harus keluar versi seperti <code>v4.17.0</code> atau lebih baru. Kalau keluar <code>command not found</code> / <code>'migrate' is not recognized</code>, instalasinya belum benar atau <code>PATH</code> belum menunjuk ke foldernya — perbaiki dulu pakai baris pertama tabel di bawah sebelum lanjut.</p>
+    <h4>Langkah 2 — Pastikan dependency-nya ter-pasang dan tool-nya bisa di-build</h4>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek build tanpa menjalankan</span></div><pre><code>go build ./cmd/migrate</code></pre></div>
+    <p>Kalau muncul error <code>missing go.sum entry</code>, berarti ada dependency yang belum lengkap ter-download — jalankan <code>go mod tidy</code> lalu ulangi. Kalau muncul <code>package github.com/golang-migrate/migrate/v4 is not in std</code> atau sejenisnya, berarti langkah <code>go get</code> di Bagian 10.1 belum dijalankan atau gagal — ulangi lagi sambil pastikan koneksi internet lancar.</p>
 
-    <h4>Langkah 3 — Pastikan <code>DATABASE_URL</code> benar-benar ter-set di terminal yang sama</h4>
-    <p>Kalau sudah pakai <code>Makefile</code> (Bagian 10.1), langkah ini otomatis ditangani lewat <code>include .env</code> — cukup pastikan isi <code>.env</code> benar lalu lanjut ke Langkah 4. Kalau masih pakai cara manual, set dan cek dulu:</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS / Linux — set lalu cek</span></div><pre><code>export DATABASE_URL="postgresql://postgres:12345678@localhost:5432/umkm_db?sslmode=disable"
-echo $DATABASE_URL</code></pre></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Windows (PowerShell) — set lalu cek</span></div><pre><code>$env:DATABASE_URL="postgresql://postgres:12345678@localhost:5432/umkm_db?sslmode=disable"
-echo $env:DATABASE_URL</code></pre></div>
-    <p>Ganti connection string di atas dengan milikmu sendiri (Neon atau Postgres lokal, lihat <code>.env</code>). Perintah <code>echo</code> harus menampilkan connection string yang sama persis — kalau hasilnya kosong, berarti <code>export</code>/<code>$env:</code> belum dijalankan di terminal yang sedang dipakai, atau kamu pindah ke tab/jendela terminal lain setelahnya (variabel environment hanya berlaku di sesi terminal tempat ia di-set).</p>
+    <h4>Langkah 3 — Pastikan <code>.env</code> berisi <code>DATABASE_URL</code> yang benar</h4>
+    <p>Karena tool <code>cmd/migrate</code> membaca <code>.env</code> otomatis lewat <code>godotenv</code> (sama seperti <code>cmd/api</code>), <strong>tidak perlu <code>export</code> manual sama sekali</strong> di langkah ini — beda dengan CLI <code>migrate</code> eksternal yang mengharuskan environment variable di-set di shell. Cukup buka <code>.env</code> dan pastikan baris <code>DATABASE_URL=...</code> ada isinya dan sesuai (Neon pakai <code>?sslmode=require</code>, Postgres lokal pakai <code>?sslmode=disable</code>). Kalau <code>.env</code> tidak ada sama sekali atau baris itu kosong, tool akan berhenti dengan pesan jelas: <code>DATABASE_URL belum diatur di berkas .env</code>.</p>
 
     <h4>Langkah 4 — Jalankan migration, lalu verifikasi tabelnya benar-benar terbentuk</h4>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terapkan migration (pilih salah satu)</span></div><pre><code># pakai Makefile
-make migrate-up
-
-# atau cara manual
-migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
-    <p>Kalau berhasil, akan muncul <code>1/u init (xx.xxxxxxxx)</code> tanpa pesan error. Jangan berhenti di sini — <strong>verifikasi langsung ke database</strong> memakai <code>psql</code> supaya yakin tabelnya benar-benar ada, bukan cuma percaya output <code>migrate</code>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terapkan migration</span></div><pre><code>go run ./cmd/migrate up</code></pre></div>
+    <p>Kalau berhasil, akan muncul tulisan <code>selesai</code> tanpa pesan error di atasnya. Jangan berhenti di sini — <strong>verifikasi langsung ke database</strong> memakai <code>psql</code> supaya yakin tabelnya benar-benar ada, bukan cuma percaya output program:</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek tabel lewat psql</span></div><pre><code>psql "$DATABASE_URL" -c "\dt"</code></pre></div>
-    <p>Hasilnya harus menampilkan empat tabel: <code>users</code>, <code>umkm</code>, <code>produk</code>, dan <code>schema_migrations</code> (tabel internal milik <code>golang-migrate</code> untuk mencatat versi). Kalau <code>migrate up</code> sukses tapi salah satu dari keempat tabel itu tidak muncul, kemungkinan besar <code>DATABASE_URL</code> yang dipakai saat <code>migrate up</code> mengarah ke database yang berbeda dengan yang dicek lewat <code>psql</code> (misalnya satu ke Neon, satu ke Postgres lokal) — samakan dulu connection string di kedua perintah.</p>
-    <p>Kalau sampai langkah ini masih ada error, baru cocokkan pesan errornya persis dengan tabel di bawah.</p>
+    <p>Hasilnya harus menampilkan empat tabel: <code>users</code>, <code>umkm</code>, <code>produk</code>, dan <code>schema_migrations</code> (tabel internal milik <code>golang-migrate</code> untuk mencatat versi). Kalau sampai langkah ini masih ada error, baru cocokkan pesan errornya persis dengan tabel di bawah.</p>
 
     <h4>Tabel error yang sering muncul</h4>
     <table>
       <tr><th>Pesan error</th><th>Penyebab</th><th>Perbaikan</th></tr>
-      <tr><td><code>command not found: migrate</code> / <code>'migrate' is not recognized</code></td><td>CLI <code>migrate</code> belum ter-install, atau ter-install tapi foldernya belum masuk <code>PATH</code>.</td><td>Jalankan ulang <code>brew install golang-migrate</code> (macOS) atau cek <code>echo $PATH</code> memuat <code>~/go/bin</code> (Linux, lewat <code>go install</code>). Tutup-buka ulang terminal setelah menambah <code>PATH</code>, lalu cek dengan <code>migrate -version</code>.</td></tr>
-      <tr><td><code>Unknown driver "postgres" (forgotten import?)</code></td><td>Binary <code>migrate</code> di-install lewat <code>go install</code> <strong>tanpa</strong> <code>-tags 'postgres'</code>, jadi driver database-nya tidak ikut ter-compile.</td><td>Install ulang persis dengan tag-nya: <code>go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest</code>.</td></tr>
-      <tr><td><code>database URL empty</code> / <code>$DATABASE_URL: parameter not set</code></td><td><code>DATABASE_URL</code> hanya ditulis di file <code>.env</code>, tapi <strong>belum di-export ke shell</strong>. File <code>.env</code> cuma dibaca otomatis oleh aplikasi Go (lewat <code>godotenv</code>) saat <code>go run</code>, bukan oleh perintah <code>migrate</code> di terminal.</td><td>Jalankan perintah <code>export DATABASE_URL="..."</code> (atau <code>$env:DATABASE_URL="..."</code> di PowerShell) di terminal yang sama, persis sebelum menjalankan <code>migrate ... up</code>. Pastikan juga tanda kutip <code>"</code> dipakai utuh, dan kalau password mengandung karakter spesial seperti <code>@ # % :</code>, ganti dengan kode URL-nya (misalnya <code>@</code> → <code>%40</code>) supaya tidak salah dibaca sebagai pemisah alamat.</td></tr>
-      <tr><td>CMD Windows (bukan PowerShell) tidak menerima <code>$env:DATABASE_URL=...</code></td><td>Sintaks <code>$env:</code> hanya berlaku di PowerShell.</td><td>Di Command Prompt biasa pakai <code>set DATABASE_URL=...</code> (tanpa tanda kutip di sekelilingnya), lalu jalankan <code>migrate -path migrations -database "%DATABASE_URL%" up</code>.</td></tr>
-      <tr><td><code>Dirty database version 1. Fix and force version.</code></td><td>Migration sempat gagal di tengah jalan (misalnya koneksi putus atau ada typo SQL), jadi <code>golang-migrate</code> berhenti dan menandai versi itu "kotor" supaya tidak dijalankan ulang begitu saja.</td><td>Perbaiki dulu penyebab SQL-nya kalau ada, lalu paksa versi tracking kembali bersih dengan <code>migrate -path migrations -database "$DATABASE_URL" force 1</code> (angka sesuai nomor migration terakhir), baru jalankan <code>up</code> lagi. Kalau database masih kosong/percobaan, cara tercepat: drop semua tabel manual lewat <code>psql</code> termasuk tabel <code>schema_migrations</code>, lalu mulai dari <code>up</code> lagi.</td></tr>
-      <tr><td><code>relation "users" already exists</code></td><td>Tabelnya sudah pernah dibuat manual (misalnya lewat <code>psql -f</code> sebelum pindah ke <code>golang-migrate</code>), tapi <code>golang-migrate</code> belum tahu soal itu karena tabel <code>schema_migrations</code> belum ada/masih versi 0.</td><td>Kalau datanya boleh hilang (database latihan): <code>DROP TABLE</code> semua tabel lalu jalankan <code>migrate ... up</code> dari nol. Kalau datanya mau dipertahankan: tandai migration 1 sebagai "sudah diterapkan" tanpa dijalankan ulang dengan <code>migrate -path migrations -database "$DATABASE_URL" force 1</code>.</td></tr>
+      <tr><td><code>DATABASE_URL belum diatur di berkas .env</code></td><td>Berkas <code>.env</code> tidak ada di root project, atau ada tapi baris <code>DATABASE_URL=...</code> kosong/salah ketik nama variabelnya.</td><td>Pastikan ada berkas bernama persis <code>.env</code> (bukan <code>.env.txt</code> atau <code>env</code>) di folder yang sama dengan <code>go.mod</code>, isinya ada baris <code>DATABASE_URL=postgresql://...</code> tanpa spasi di sekitar tanda <code>=</code>.</td></tr>
+      <tr><td><code>missing go.sum entry for module providing package github.com/lib/pq</code></td><td>Dependency driver Postgres untuk <code>golang-migrate</code> belum lengkap ter-download ke <code>go.sum</code>.</td><td>Jalankan <code>go get github.com/golang-migrate/migrate/v4/database/postgres</code> lagi (lihat Bagian 10.1), atau jalankan <code>go mod tidy</code>.</td></tr>
+      <tr><td><code>dial tcp 127.0.0.1:5432: connect: connection refused</code></td><td><code>DATABASE_URL</code> menunjuk ke Postgres lokal (<code>localhost:5432</code>), tapi servernya belum menyala.</td><td>Nyalakan Postgres lokal dulu (lihat Bagian 05), atau pastikan <code>DATABASE_URL</code> memang seharusnya menunjuk ke Neon kalau tidak pakai Postgres lokal.</td></tr>
+      <tr><td><code>Dirty database version 1. Fix and force version.</code></td><td>Migration sempat gagal di tengah jalan (misalnya koneksi putus atau ada typo SQL), jadi <code>golang-migrate</code> berhenti dan menandai versi itu "kotor" supaya tidak dijalankan ulang begitu saja.</td><td>Perbaiki dulu penyebab SQL-nya kalau ada, lalu paksa versi tracking kembali bersih dengan <code>go run ./cmd/migrate force 1</code> (angka sesuai nomor migration terakhir), baru jalankan <code>up</code> lagi. Kalau database masih kosong/percobaan, cara tercepat: drop semua tabel manual lewat <code>psql</code> termasuk tabel <code>schema_migrations</code>, lalu mulai dari <code>up</code> lagi.</td></tr>
+      <tr><td><code>relation "users" already exists</code></td><td>Tabelnya sudah pernah dibuat manual (misalnya lewat <code>psql -f</code> sebelum pindah ke <code>golang-migrate</code>), tapi <code>golang-migrate</code> belum tahu soal itu karena tabel <code>schema_migrations</code> belum ada/masih versi 0.</td><td>Kalau datanya boleh hilang (database latihan): <code>DROP TABLE</code> semua tabel lalu jalankan <code>up</code> dari nol. Kalau datanya mau dipertahankan: tandai migration 1 sebagai "sudah diterapkan" tanpa dijalankan ulang dengan <code>go run ./cmd/migrate force 1</code>.</td></tr>
       <tr><td>Koneksi ke Neon gagal / <code>x509</code> / timeout, tapi ke Postgres lokal normal</td><td><code>sslmode</code> tertukar — Neon (cloud) butuh <code>sslmode=require</code>, Postgres lokal biasanya <code>sslmode=disable</code>. <code>.env.example</code> dan <code>.env</code> isinya harus disesuaikan dengan database mana yang sedang dipakai.</td><td>Cek ulang query string di akhir <code>DATABASE_URL</code>: pakai <code>?sslmode=require</code> untuk Neon, <code>?sslmode=disable</code> untuk Postgres lokal. Jangan asal copy salah satu contoh.</td></tr>
-      <tr><td><code>no migration found for version X</code> / folder <code>migrations</code> kosong saat <code>up</code></td><td>Perintah <code>migrate</code> dijalankan dari direktori yang salah, jadi <code>-path migrations</code> menunjuk ke folder yang tidak ada/kosong.</td><td>Pastikan kamu berada di root proyek <code>umkm-api</code> (folder yang berisi <code>go.mod</code>) saat menjalankan perintah <code>migrate</code>, atau tulis path absolut/relatif yang benar di flag <code>-path</code>.</td></tr>
-      <tr><td><code>make: command not found</code> / <code>'make' is not recognized</code></td><td><code>make</code> tidak ter-install, paling sering terjadi di Windows (CMD/PowerShell) karena <code>make</code> bukan bawaan Windows.</td><td>Pakai cara manual tanpa Makefile (lihat Bagian 10.1), atau install <code>make</code> lewat WSL/Git Bash/Chocolatey (<code>choco install make</code>) kalau mau tetap pakai Makefile.</td></tr>
-      <tr><td><code>Makefile:4: *** missing separator. Stop.</code></td><td>Baris perintah di bawah nama target (misalnya <code>migrate-up:</code>) harus diawali karakter <strong>TAB</strong>, bukan spasi. Editor yang otomatis mengganti tab jadi spasi akan merusak ini.</td><td>Buka ulang <code>Makefile</code>, hapus indentasi di baris yang error, lalu ketik ulang pakai tombol Tab (bukan 4× spasi). Di VS Code, cek pojok kanan bawah status bar menampilkan "Spaces" atau "Tab Size" saat kursor ada di baris itu.</td></tr>
+      <tr><td><code>open migrations: no such file or directory</code></td><td>Perintah <code>go run ./cmd/migrate</code> dijalankan dari direktori yang salah — tool ini mencari folder <code>migrations/</code> relatif terhadap direktori tempat perintah dijalankan, bukan relatif terhadap lokasi <code>main.go</code>.</td><td>Pastikan kamu berada di root proyek <code>umkm-api</code> (folder yang berisi <code>go.mod</code> dan folder <code>migrations/</code>) saat menjalankan <code>go run ./cmd/migrate ...</code>.</td></tr>
     </table>
-    <div class="note"><span class="lbl">Masih gagal setelah dicoba semua di atas?</span><p>Siapkan tiga info ini sebelum bertanya ke dosen/asisten supaya cepat dibantu: (1) <strong>pesan error lengkap</strong> dari terminal (jangan diringkas), (2) output <code>migrate -version</code>, dan (3) <code>DATABASE_URL</code> milikmu dengan <strong>password disensor</strong> (ganti jadi <code>***</code>) supaya strukturnya tetap kelihatan tanpa membocorkan kredensial.</p></div>
+    <div class="note"><span class="lbl">Masih gagal setelah dicoba semua di atas?</span><p>Siapkan tiga info ini sebelum bertanya ke dosen/asisten supaya cepat dibantu: (1) <strong>pesan error lengkap</strong> dari terminal (jangan diringkas), (2) output <code>go run ./cmd/migrate version</code>, dan (3) <code>DATABASE_URL</code> milikmu dengan <strong>password disensor</strong> (ganti jadi <code>***</code>) supaya strukturnya tetap kelihatan tanpa membocorkan kredensial.</p></div>
 
     <h3>10.3 Konfigurasi dan Koneksi Database</h3>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/config/config.go</span></div><pre><code>package config
