@@ -38,6 +38,7 @@
   }
   nav.side a:hover{color:var(--text);}
   nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  nav.side li.sub a{padding-left:28px; font-size:12.5px;}
 
   main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
 
@@ -114,6 +115,7 @@
       <li><a href="#s3">Menyimpan Token Login</a></li>
       <li><a href="#s4">Model User & ApiService Auth</a></li>
       <li><a href="#s5">ApiService: Kirim Foto (Multipart)</a></li>
+      <li class="sub"><a href="#s5-full">↳ ApiService Lengkap</a></li>
       <li><a href="#s6">Memperbaiki Routing main.dart</a></li>
       <li><a href="#s7">SplashScreen: Auto-Login</a></li>
       <li><a href="#s8">Login & Register Tersambung API</a></li>
@@ -359,6 +361,232 @@ Future&lt;void&gt; hapusProduk(int id) async {
 }</code></pre></div>
     <div class="note"><span class="lbl">Satu fungsi simpanUmkm untuk create DAN update — kenapa?</span><p>Perbedaan <code>POST /umkm</code> (buat baru) dan <code>PUT /umkm/{id}</code> (ubah) di sisi Golang cuma soal method HTTP dan ada/tidaknya <code>{id}</code> di path (Pertemuan 4 Bagian 10.8) — field yang dikirim persis sama. Menyatukannya jadi satu method dengan parameter opsional <code>id</code> menghindari duplikasi kode di <code>ApiService</code>, dan di sisi UI nanti satu <code>UmkmFormScreen</code> (Bagian 13) juga dipakai untuk kedua mode (buat/edit) dengan pola yang sama.</p></div>
     <div class="note"><span class="lbl">fotoPath null berarti "tidak ganti foto", bukan "hapus foto"</span><p>Sama seperti di backend (Pertemuan 4 Bagian 10.5: <code>fotoBaru != "" { umkm.Foto = fotoBaru }</code>) — kalau <code>fotoPath</code> tidak dikirim sama sekali, field <code>foto</code> yang sudah tersimpan di database tidak diubah. Ini dipakai saat mode edit dan pengguna tidak mengganti foto: cukup tidak memanggil <code>request.files.add(...)</code>.</p></div>
+
+    <h3 id="s5-full">ApiService Lengkap — Setelah Bagian 04 &amp; 05</h3>
+    <p>Supaya tidak perlu menyusun sendiri potongan-potongan di atas, berikut <code>lib/services/api_service.dart</code> secara <strong>utuh</strong> — gabungan base dari Pertemuan 6 (Bagian 06) ditambah semua method auth (Bagian 04) dan method UMKM/Produk multipart (Bagian 05). Timpa seluruh isi berkas <code>api_service.dart</code> milikmu dengan ini:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/services/api_service.dart — LENGKAP</span></div><pre><code>import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import '../models/umkm_model.dart';
+import '../models/produk_model.dart';
+import '../models/paginated_result.dart';
+import '../models/user_model.dart';
+import 'token_storage.dart';
+
+class ApiException implements Exception {
+  final String message;
+  ApiException(this.message);
+
+  @override
+  String toString() =&gt; message;
+}
+
+class ApiService {
+  static const String baseUrl = 'http://10.0.2.2:8080/api';
+
+  Future&lt;PaginatedResult&lt;Umkm&gt;&gt; getUmkmList({String q = '', int page = 1}) async {
+    final uri = Uri.parse('$baseUrl/umkm').replace(queryParameters: {
+      if (q.isNotEmpty) 'q': q,
+      'page': '$page',
+      'limit': '10',
+    });
+
+    final response = await http.get(uri);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat data UMKM');
+    }
+    return PaginatedResult.fromJson(body, Umkm.fromJson);
+  }
+
+  Future&lt;Umkm&gt; getUmkmDetail(int id) async {
+    final response = await http.get(Uri.parse('$baseUrl/umkm/$id'));
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'UMKM tidak ditemukan');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;PaginatedResult&lt;Produk&gt;&gt; getProdukByUmkm(int umkmId, {int page = 1}) async {
+    final uri = Uri.parse('$baseUrl/umkm/$umkmId/produk').replace(queryParameters: {
+      'page': '$page',
+      'limit': '10',
+    });
+
+    final response = await http.get(uri);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat produk');
+    }
+    return PaginatedResult.fromJson(body, Produk.fromJson);
+  }
+
+  /// Header Authorization yang disisipkan ke setiap request yang butuh login.
+  Future&lt;Map&lt;String, String&gt;&gt; _authHeaders() async {
+    final token = await TokenStorage.ambil();
+    return {'Authorization': 'Bearer $token'};
+  }
+
+  Future&lt;User&gt; register(String nama, String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'nama': nama, 'email': email, 'password': password}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 201) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal mendaftar');
+    }
+    return User.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; login(String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Email atau password salah');
+    }
+    final token = body['data']['token'] as String;
+    await TokenStorage.simpan(token);
+  }
+
+  Future&lt;void&gt; logout() =&gt; TokenStorage.hapus();
+
+  Future&lt;User&gt; getProfile() async {
+    final response = await http.get(Uri.parse('$baseUrl/profile'), headers: await _authHeaders());
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat profil');
+    }
+    return User.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; updateProfile(String nama, String email) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/profile'),
+      headers: {...await _authHeaders(), 'Content-Type': 'application/json'},
+      body: jsonEncode({'nama': nama, 'email': email}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memperbarui profil');
+    }
+  }
+
+  Future&lt;void&gt; updatePassword(String lama, String baru) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/profile/password'),
+      headers: {...await _authHeaders(), 'Content-Type': 'application/json'},
+      body: jsonEncode({'password_lama': lama, 'password_baru': baru}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memperbarui password');
+    }
+  }
+
+  Future&lt;Umkm?&gt; getUmkmSaya() async {
+    final response = await http.get(Uri.parse('$baseUrl/umkm/saya'), headers: await _authHeaders());
+    if (response.statusCode == 404) return null;
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat UMKM saya');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  /// id == null -&gt; membuat UMKM baru (POST /umkm).
+  /// id terisi -&gt; mengubah UMKM yang sudah ada (PUT /umkm/{id}).
+  Future&lt;Umkm&gt; simpanUmkm({
+    int? id,
+    required String nama,
+    String deskripsi = '',
+    String alamat = '',
+    String? fotoPath,
+  }) async {
+    final uri = id == null ? Uri.parse('$baseUrl/umkm') : Uri.parse('$baseUrl/umkm/$id');
+    final request = http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)
+      ..headers.addAll(await _authHeaders())
+      ..fields['nama'] = nama
+      ..fields['deskripsi'] = deskripsi
+      ..fields['alamat'] = alamat;
+    if (fotoPath != null) {
+      request.files.add(await http.MultipartFile.fromPath('foto', fotoPath));
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200 &amp;&amp; response.statusCode != 201) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menyimpan UMKM');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; hapusUmkm(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/umkm/$id'), headers: await _authHeaders());
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menghapus UMKM');
+    }
+  }
+
+  /// id == null -&gt; tambah produk baru pada UMKM `umkmId` (POST /umkm/{umkmId}/produk).
+  /// id terisi -&gt; ubah produk yang sudah ada (PUT /produk/{id}), `umkmId` diabaikan.
+  Future&lt;Produk&gt; simpanProduk({
+    int? id,
+    int? umkmId,
+    required String nama,
+    required double harga,
+    String deskripsi = '',
+    String? fotoPath,
+  }) async {
+    final uri = id == null
+        ? Uri.parse('$baseUrl/umkm/$umkmId/produk')
+        : Uri.parse('$baseUrl/produk/$id');
+    final request = http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)
+      ..headers.addAll(await _authHeaders())
+      ..fields['nama'] = nama
+      ..fields['harga'] = '$harga'
+      ..fields['deskripsi'] = deskripsi;
+    if (fotoPath != null) {
+      request.files.add(await http.MultipartFile.fromPath('foto', fotoPath));
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200 &amp;&amp; response.statusCode != 201) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menyimpan produk');
+    }
+    return Produk.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; hapusProduk(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/produk/$id'), headers: await _authHeaders());
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menghapus produk');
+    }
+  }
+
+  static String fotoUrl(String relativePath) {
+    final origin = baseUrl.replaceFirst('/api', '');
+    return '$origin/uploads/$relativePath';
+  }
+}</code></pre></div>
+    <div class="verify">
+      <span class="lbl">✓ Diverifikasi</span>
+      <p>Berkas ini sudah dicoba <code>flutter analyze</code> dalam project nyata bersama seluruh model (<code>umkm_model.dart</code>, <code>produk_model.dart</code>, <code>paginated_result.dart</code>, <code>user_model.dart</code>) dan <code>token_storage.dart</code> dari tutorial ini — hasilnya <code>No issues found!</code>, tidak ada error maupun warning.</p>
+    </div>
 
     <h2 id="s6"><span class="badge">06</span>Memperbaiki Routing di main.dart</h2>
     <p>Sebelum menyambungkan layar ke API sungguhan, ada satu bug di <code>main.dart</code> starter project yang perlu diperbaiki lebih dulu: route <code>/login</code> dan <code>/register</code> tertukar arahnya ke class yang salah.</p>
@@ -939,12 +1167,94 @@ class _UmkmDetailScreenState extends State&lt;UmkmDetailScreen&gt; {
     );
   }
 }</code></pre></div>
-    <p>Lalu di <code>umkm_list_screen.dart</code> (Pertemuan 6), ganti komentar kosong pada <code>onTap</code> dengan navigasi sungguhan:</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_list_screen.dart — ganti bagian onTap</span></div><pre><code>onTap: () =&gt; Navigator.push(
-  context,
-  MaterialPageRoute(builder: (_) =&gt; UmkmDetailScreen(umkmId: umkm.id)),
-),</code></pre></div>
-    <p>(jangan lupa tambahkan <code>import 'umkm_detail_screen.dart';</code> di bagian atas berkas tersebut.)</p>
+    <p><code>umkm_list_screen.dart</code> yang dibuat di Pertemuan 6 perlu diubah: komentar kosong pada <code>onTap</code> diganti navigasi sungguhan ke <code>UmkmDetailScreen</code>, dan ditambah satu import baru. Berikut berkasnya secara <strong>utuh</strong> setelah perubahan — timpa seluruh isi <code>umkm_list_screen.dart</code> milikmu dengan ini (baris import baru dan <code>onTap</code> yang berubah ditandai lewat teks di bawah kode):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_list_screen.dart — LENGKAP (update dari Pertemuan 6)</span></div><pre><code>import 'package:flutter/material.dart';
+
+import '../../../models/paginated_result.dart';
+import '../../../models/umkm_model.dart';
+import '../../../services/api_service.dart';
+import 'umkm_detail_screen.dart';
+
+class UmkmListScreen extends StatefulWidget {
+  const UmkmListScreen({super.key});
+
+  @override
+  State&lt;UmkmListScreen&gt; createState() =&gt; _UmkmListScreenState();
+}
+
+class _UmkmListScreenState extends State&lt;UmkmListScreen&gt; {
+  final _apiService = ApiService();
+  late Future&lt;PaginatedResult&lt;Umkm&gt;&gt; _futureUmkm;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureUmkm = _apiService.getUmkmList();
+  }
+
+  Future&lt;void&gt; _muatUlang() async {
+    setState(() {
+      _futureUmkm = _apiService.getUmkmList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Semua UMKM')),
+      body: FutureBuilder&lt;PaginatedResult&lt;Umkm&gt;&gt;(
+        future: _futureUmkm,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Gagal memuat data: ${snapshot.error}'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(onPressed: _muatUlang, child: const Text('Coba Lagi')),
+                ],
+              ),
+            );
+          }
+
+          final hasil = snapshot.data!;
+          if (hasil.data.isEmpty) {
+            return const Center(child: Text('Belum ada UMKM yang terdaftar'));
+          }
+
+          return RefreshIndicator(
+            onRefresh: _muatUlang,
+            child: ListView.builder(
+              itemCount: hasil.data.length,
+              itemBuilder: (context, i) {
+                final umkm = hasil.data[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: umkm.punyaFoto
+                        ? NetworkImage(ApiService.fotoUrl(umkm.foto))
+                        : null,
+                    child: umkm.punyaFoto ? null : Text(umkm.nama[0]),
+                  ),
+                  title: Text(umkm.nama),
+                  subtitle: Text(umkm.alamat),
+                  onTap: () =&gt; Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) =&gt; UmkmDetailScreen(umkmId: umkm.id)),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</code></pre></div>
+    <p>Dua perubahan dari versi Pertemuan 6: (1) tambahan <code>import 'umkm_detail_screen.dart';</code> di baris import, dan (2) isi <code>onTap</code> yang tadinya komentar kosong sekarang memanggil <code>Navigator.push</code> menuju <code>UmkmDetailScreen(umkmId: umkm.id)</code>.</p>
 
     <h2 id="s12"><span class="badge">12</span>MyUmkmScreen: Lihat, Buat, Edit, Hapus UMKM Sendiri</h2>
     <p>Layar ini punya tiga kondisi yang lebih kaya dari sekadar loading/error/data: <strong>belum punya UMKM</strong> (tampilkan tombol "Buat UMKM"), <strong>sudah punya</strong> (tampilkan detail + tombol edit/hapus + daftar produknya).</p>
