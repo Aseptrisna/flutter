@@ -123,8 +123,9 @@
       <li><a href="#s12">UMKM Saya: Lihat, Buat, Edit, Hapus</a></li>
       <li><a href="#s13">Form UMKM & Form Produk</a></li>
       <li><a href="#s14">Logout</a></li>
-      <li><a href="#s15">Struktur Folder Final</a></li>
-      <li><a href="#s16">Latihan</a></li>
+      <li><a href="#s15">Troubleshooting 401 Unauthorized</a></li>
+      <li><a href="#s16">Struktur Folder Final</a></li>
+      <li><a href="#s17">Latihan</a></li>
     </ol>
   </nav>
 
@@ -1400,7 +1401,34 @@ class _ProdukFormScreenState extends State&lt;ProdukFormScreen&gt; {
     <p>Logout sudah terpasang di <code>ProfileScreen</code> (Bagian 10): memanggil <code>ApiService().logout()</code> (yang menghapus token dari <code>TokenStorage</code>, Bagian 04), lalu <code>Navigator.pushNamedAndRemoveUntil(context, '/login', (route) =&gt; false)</code>.</p>
     <div class="note"><span class="lbl">pushNamedAndRemoveUntil, bukan pushReplacementNamed</span><p><code>pushReplacementNamed</code> hanya mengganti satu halaman teratas, sehingga riwayat navigasi (<code>HomeScreen</code>, tab-tab sebelumnya) masih ada di <em>back stack</em> — menekan tombol back dari <code>LoginScreen</code> setelah logout bisa saja balik ke <code>HomeScreen</code> dengan state lama. <code>pushNamedAndRemoveUntil(..., (route) =&gt; false)</code> membuang <strong>seluruh</strong> riwayat navigasi sebelumnya, memastikan tombol back dari layar login tidak mengarah ke halaman yang seharusnya sudah tidak bisa diakses tanpa login.</p></div>
 
-    <h2 id="s15"><span class="badge">15</span>Struktur Folder Project (Final)</h2>
+    <h2 id="s15"><span class="badge">15</span>Troubleshooting — Error 401 Unauthorized</h2>
+    <p>Backend Pertemuan 4 sudah diuji ulang end-to-end (register → login → panggil endpoint ber-token, termasuk <code>POST /api/umkm</code> yang pakai <code>multipart/form-data</code>) dan token dari <code>/api/auth/login</code> <strong>berfungsi normal</strong> di semua endpoint yang butuh login. Jadi kalau aplikasi Flutter-mu dapat <code>401</code>, penyebabnya hampir selalu ada di kode klien, bukan di server. Masalahnya, pesan error dari server sengaja dibuat generik (<code>"token tidak valid"</code> untuk hampir semua kasus — token rusak, salah secret, maupun kedaluwarsa, semuanya dibalas pesan yang sama) supaya penyerang tidak bisa menebak alasan penolakan, sehingga <strong>pesan errornya sendiri tidak cukup untuk mendiagnosis</strong>. Ikuti urutan pengecekan di bawah.</p>
+
+    <h4>Langkah 1 — Pastikan token memang tersimpan setelah login</h4>
+    <p>Tambahkan <code>print('token tersimpan: $token')</code> sesaat setelah <code>TokenStorage.simpan(token)</code> dipanggil di <code>ApiService.login()</code> (Bagian 04), lalu login ulang dan cek konsol. Token harus berupa string panjang berformat <code>xxxxx.yyyyy.zzzzz</code> (tiga bagian dipisah titik). Kalau kosong/null, masalahnya ada di alur login/penyimpanan — bukan di endpoint yang 401.</p>
+
+    <h4>Langkah 2 — Pastikan header Authorization benar-benar terkirim</h4>
+    <p>Penyebab paling sering: method <code>ApiService</code> yang baru ditambahkan (misalnya endpoint custom di luar yang sudah ada di tutorial) <strong>lupa menyertakan <code>await _authHeaders()</code></strong> pada `headers:`. Contoh kode yang salah vs benar:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">salah — tanpa header Authorization</span></div><pre><code>final response = await http.get(Uri.parse('$baseUrl/umkm/saya'));
+// server menolak dengan 401 "token tidak ditemukan", karena tidak ada header sama sekali</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">benar — ikut sertakan _authHeaders()</span></div><pre><code>final response = await http.get(Uri.parse('$baseUrl/umkm/saya'), headers: await _authHeaders());</code></pre></div>
+    <p>Untuk request <code>multipart/form-data</code> (buat/ubah UMKM dan produk), polanya beda — header ditambahkan lewat <code>.headers.addAll(...)</code>, <strong>bukan</strong> lewat parameter <code>headers:</code> biasa (karena <code>http.MultipartRequest</code> tidak punya parameter itu):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola yang benar untuk multipart (Bagian 05)</span></div><pre><code>final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/umkm'))
+  ..headers.addAll(await _authHeaders())
+  ..fields['nama'] = nama;</code></pre></div>
+    <p>Kalau butuh memastikan header memang terkirim tanpa menebak-nebak, tambahkan <code>print(request.headers)</code> (untuk multipart) atau <code>print(await _authHeaders())</code> sebelum request dikirim, lalu cek apakah formatnya persis <code>Bearer &lt;token&gt;</code> — bukan <code>bearer</code> huruf kecil, dan bukan tanpa spasi setelah <code>Bearer</code>. Server membaca header ini <em>case-sensitive</em>, jadi <code>"bearer eyJ..."</code> akan dianggap sama dengan "tidak ada token sama sekali".</p>
+
+    <h4>Langkah 3 — Jangan timpa header Content-Type pada multipart</h4>
+    <p>Kalau endpoint yang 401 justru endpoint upload foto (<code>POST /api/umkm</code> atau <code>POST /api/umkm/{id}/produk</code>), cek apakah ada baris yang menambahkan <code>'Content-Type': 'multipart/form-data'</code> secara manual ke <code>request.headers</code>. <strong>Jangan pernah lakukan ini</strong> — <code>http.MultipartRequest</code> sudah otomatis membuat header <code>Content-Type</code> lengkap dengan <code>boundary</code> acak yang dipakai server untuk memisahkan tiap field/file. Menimpanya secara manual membuat boundary hilang, sehingga server gagal mem-parse body (biasanya muncul sebagai <code>400 "form tidak valid"</code>, tapi pada beberapa kasus request bisa gagal lebih awal dan terlihat seperti token tidak terkirim). Solusi: cukup gunakan <code>..headers.addAll(await _authHeaders())</code> saja, biarkan <code>Content-Type</code> diatur otomatis oleh package <code>http</code>.</p>
+
+    <h4>Langkah 4 — Token kedaluwarsa atau server di-restart dengan JWT_SECRET baru</h4>
+    <p>Token berlaku <strong>24 jam</strong> sejak login (lihat <code>generateToken</code> di <code>AuthService</code>, Pertemuan 4 Bagian 10.6) — token lama otomatis ditolak setelah itu. Selain itu, kalau backend direstart dengan <code>JWT_SECRET</code> yang berbeda dari saat token diterbitkan (misalnya <code>.env</code> diedit atau API dijalankan dari komputer lain dengan <code>.env</code> yang beda), semua token lama otomatis tidak valid walau belum 24 jam. Perbaikannya: logout lalu login ulang untuk mendapat token baru. Kalau ini sering terjadi padahal baru saja login, cek apakah ada lebih dari satu proses <code>go run ./cmd/api</code> yang nyala bersamaan dengan <code>.env</code> berbeda (salah satunya sisa proses lama yang lupa dimatikan).</p>
+
+    <h4>Langkah 5 — Uji backend-nya langsung dulu, lepas dari Flutter</h4>
+    <p>Supaya cepat tahu masalahnya di Flutter atau di server, uji dulu lewat Swagger UI (<code>http://localhost:8080/swagger/index.html</code>, Pertemuan 4 Bagian 11) atau <code>curl</code>: login untuk dapat token, lalu panggil endpoint yang 401 pakai token yang sama persis. Kalau lewat Swagger/curl berhasil (bukan 401) tapi dari Flutter tetap 401 dengan token yang sama — dipastikan masalahnya ada di kode Flutter (langkah 1-3 di atas), bukan di backend.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh verifikasi cepat lewat curl</span></div><pre><code>curl http://localhost:8080/api/umkm/saya -H "Authorization: Bearer &lt;token-dari-login&gt;"</code></pre></div>
+
+    <h2 id="s16"><span class="badge">16</span>Struktur Folder Project (Final)</h2>
     <p>Struktur akhir setelah pertemuan ini — tetap mengikuti <code>lib/screens/&lt;area&gt;/&lt;nama&gt;_screen.dart</code> yang flat, konsisten dengan repo referensi project (bukan <code>lib/features/...</code> berlapis):</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder</span></div><pre><code>lib/
 ├── main.dart
@@ -1433,7 +1461,7 @@ class _ProdukFormScreenState extends State&lt;ProdukFormScreen&gt; {
       <p>Nyalakan backend Go lebih dulu (<code>go run ./cmd/api</code>, lihat Pertemuan 4 Bagian 12), pastikan <code>baseUrl</code> di <code>ApiService</code> sesuai jenis perangkat yang dipakai (Pertemuan 6 Bagian 07), baru jalankan <code>flutter run</code>. Urutan uji coba yang disarankan: register akun baru → login → buat UMKM (dengan/tanpa foto) → tambah beberapa produk → buka tab "Semua UMKM" dari akun lain untuk memastikan data publik ikut tampil → logout → pastikan kembali ke layar login dan tidak bisa menekan back ke Home.</p>
     </div>
 
-    <h2 id="s16"><span class="badge">16</span>Latihan</h2>
+    <h2 id="s17"><span class="badge">17</span>Latihan</h2>
     <ol>
       <li>Tambahkan <code>RefreshIndicator</code> (tarik-untuk-refresh) pada <code>MyUmkmScreen</code>, memanggil ulang <code>_muatUmkm()</code>.</li>
       <li>Wire fitur pencarian yang diminta sebagai latihan di Pertemuan 6: tambahkan <code>TextField</code> pencarian pada <code>UmkmListScreen</code> yang memanggil ulang <code>getUmkmList(q: ...)</code>.</li>
