@@ -38,6 +38,7 @@
   }
   nav.side a:hover{color:var(--text);}
   nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  nav.side li.sub a{padding-left:28px; font-size:12.5px;}
 
   main{flex:1; min-width:0; padding:56px 32px 120px; max-width:760px;}
 
@@ -119,6 +120,7 @@
       <li><a href="#s8">Setup Project di VS Code</a></li>
       <li><a href="#s9">Desain Database & Kontrak API</a></li>
       <li><a href="#s10">Implementasi API UMKM</a></li>
+      <li class="sub"><a href="#s10-2">↳ Fix Error Migration</a></li>
       <li><a href="#s11">Dokumentasi API dengan Swagger</a></li>
       <li><a href="#s12">Menjalankan & Menguji API</a></li>
     </ol>
@@ -475,7 +477,7 @@ DROP TABLE IF EXISTS users;</code></pre></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi migration yang sedang aktif</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" version</code></pre></div>
     <div class="note"><span class="lbl">Kenapa pakai golang-migrate, bukan psql manual?</span><p>Dengan <code>psql -f file.sql</code>, kamu harus ingat sendiri file mana yang sudah/belum dijalankan dan tidak ada cara mudah untuk <em>rollback</em>. <code>golang-migrate</code> mencatat nomor versi migration terakhir di tabel <code>schema_migrations</code> pada database itu sendiri, jadi perintah <code>up</code> hanya menjalankan migration yang belum diterapkan, dan <code>down</code> bisa membatalkan perubahan secara terurut. Setiap kali ada perubahan skema baru (misalnya tambah kolom), cukup jalankan <code>migrate create -ext sql -dir migrations -seq nama_perubahan</code> lagi — jangan edit ulang file migration yang sudah pernah dijalankan ke database manapun.</p></div>
 
-    <h3>10.2 Mengatasi Error Migration</h3>
+    <h3 id="s10-2">10.2 Mengatasi Error Migration</h3>
     <p>Bagian ini bagian "P3K" migration — kumpulkan di sini supaya kalau <code>migrate ... up</code> gagal, kamu tidak perlu scroll ke atas mencari-cari, cukup cocokkan pesan errornya dengan tabel di bawah.</p>
 
     <div class="note"><span class="lbl">Sudah <code>git clone</code> / <code>git pull</code> proyek ini? Lewati langkah "membuat berkas migration baru"</span><p>Perintah <code>migrate create ...</code> di Bagian 10.1 hanya dipakai <strong>sekali</strong>, waktu proyek ini pertama kali dibuat. Kalau kamu dapat proyek ini dari <code>git clone</code>/<code>git pull</code>, folder <code>migrations/000001_init.up.sql</code> dan <code>.down.sql</code> <strong>sudah ada dan sudah terisi</strong> — langsung ke langkah 1 di bawah. Menjalankan ulang <code>migrate create -seq init</code> hanya akan membuat berkas kosong baru bernomor <code>000002_init...</code> yang tidak perlu kamu isi dan cuma bikin bingung.</p></div>
