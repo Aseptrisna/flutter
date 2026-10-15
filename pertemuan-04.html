@@ -1194,6 +1194,7 @@ func (s *ProdukService) DeleteOwn(ctx context.Context, userID, produkID int64) (
 
     <h3>10.7 Middleware — Autentikasi JWT</h3>
     <p>Middleware ini memeriksa header <code>Authorization: Bearer &lt;token&gt;</code>, lalu menyisipkan <code>userID</code> ke dalam <code>context</code> agar dapat dibaca oleh handler berikutnya. Secara tipe, middleware di Go cukup berupa fungsi dengan tanda tangan <code>func(http.Handler) http.Handler</code> — ia menerima handler "asli", lalu mengembalikan handler baru yang menjalankan kode tambahan (cek token) <em>sebelum</em> memanggil handler asli lewat <code>next.ServeHTTP(...)</code>. Pola "bungkus-memanggil" inilah yang disebut <em>middleware chaining</em>.</p>
+    <div class="note"><span class="lbl">Kenapa prefix "Bearer " dibuat opsional, bukan wajib?</span><p>Swagger (OpenAPI 2.0, dipakai <code>swag</code>) hanya punya skema keamanan <code>apiKey</code> untuk kasus seperti ini — <strong>tidak ada</strong> skema <code>http bearer</code> yang membuat Swagger UI otomatis menambahkan kata "Bearer " di kotak Authorize seperti pada beberapa tools lain. Akibatnya mahasiswa yang hanya paste token mentah (tanpa mengetik "Bearer " sendiri) akan selalu dapat <code>401 "token tidak ditemukan"</code> walau tokennya valid — ini sumber kebingungan yang sangat umum. Middleware di atas sengaja dibuat menerima <strong>kedua bentuk</strong>: <code>Bearer &lt;token&gt;</code> (format standar, tetap dianjurkan dan dipakai semua contoh di tutorial ini) maupun token mentah tanpa prefix — tanpa mengurangi keamanan, karena yang diverifikasi tetap tanda tangan HS256 token itu sendiri, bukan format headernya.</p></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go</span></div><pre><code>package middleware
 
 import (
@@ -1212,12 +1213,18 @@ func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
     return func(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
             header := r.Header.Get("Authorization")
-            if !strings.HasPrefix(header, "Bearer ") {
+            if header == "" {
                 http.Error(w, `{"error":{"message":"token tidak ditemukan","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
                 return
             }
 
-            tokenStr := strings.TrimPrefix(header, "Bearer ")
+            // Terima baik "Bearer &lt;token&gt;" maupun token mentah tanpa prefix,
+            // supaya kotak Authorize di Swagger (skema apikey, tidak auto-tambah "Bearer ")
+            // tidak selalu gagal kalau mahasiswa lupa mengetik kata "Bearer".
+            tokenStr := header
+            if len(header) > 7 && strings.EqualFold(header[:7], "Bearer ") {
+                tokenStr = header[7:]
+            }
             token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
                 return []byte(jwtSecret), nil
             })
@@ -2278,7 +2285,7 @@ swag --version</code></pre></div>
       <li>Klik tombol <strong>Authorize</strong> di kanan atas halaman, masukkan <code>Bearer &lt;token&gt;</code>, lalu klik <strong>Authorize</strong>.</li>
       <li>Endpoint yang butuh login (bertanda gembok) kini otomatis menyertakan token tersebut setiap kali dicoba.</li>
     </ol>
-    <div class="note"><span class="lbl">Wajib ketik kata "Bearer " di depan token — Swagger tidak menambahkannya otomatis</span><p>Skema keamanan project ini didefinisikan sebagai <code>@securityDefinitions.apikey BearerAuth</code> (lihat <code>cmd/api/main.go</code>), bukan tipe <code>http</code>/<code>bearer</code> bawaan OpenAPI. Konsekuensinya, kotak <strong>Authorize</strong> di Swagger UI mengirim <strong>persis apa yang kamu ketik</strong> sebagai header <code>Authorization</code>, tanpa menambahkan apa pun. Kalau kamu cuma paste tokennya saja (tanpa kata <code>Bearer</code> dan spasi di depannya), header yang terkirim jadi <code>Authorization: eyJ...</code> — bukan <code>Authorization: Bearer eyJ...</code> — dan server akan menolaknya dengan <code>401 "token tidak ditemukan"</code>, padahal tokennya sendiri valid. Cara memastikan: klik tombol <strong>Curl</strong> di bawah hasil "Try it out" dan cek baris <code>-H 'Authorization: ...'</code> — kalau tidak diawali <code>Bearer </code>, klik ulang tombol Authorize dan ketik ulang dengan format <code>Bearer &lt;token&gt;</code> yang benar.</p></div>
+    <div class="note"><span class="lbl">Tetap biasakan ketik "Bearer " di depan token, walau sekarang tidak wajib</span><p>Skema keamanan project ini didefinisikan sebagai <code>@securityDefinitions.apikey BearerAuth</code> (lihat <code>cmd/api/main.go</code>) — Swagger tidak punya tipe <code>http</code>/<code>bearer</code> bawaan OpenAPI 2.0 yang auto-menambahkan kata "Bearer ". Kotak <strong>Authorize</strong> mengirim <strong>persis apa yang kamu ketik</strong> sebagai header <code>Authorization</code>. Awalnya ini bikin banyak mahasiswa dapat <code>401 "token tidak ditemukan"</code> kalau cuma paste tokennya saja tanpa kata <code>Bearer</code> di depan — makanya middleware di Bagian 10.7 sekarang sengaja dibuat menerima <strong>keduanya</strong> (dengan atau tanpa prefix). Tapi tetap biasakan menulis format standar <code>Bearer &lt;token&gt;</code>, karena itu konvensi yang dipakai aplikasi Flutter (Pertemuan 7) dan hampir semua API lain di dunia nyata.</p></div>
     <div class="verify">
       <span class="lbl">✓ Diverifikasi</span>
       <p>Setelah <code>swag init</code> dijalankan pada project hasil Bagian 10, <code>http://localhost:8080/swagger/index.html</code> menampilkan 9 path (<code>/auth/register</code>, <code>/auth/login</code>, <code>/profile</code>, <code>/profile/password</code>, <code>/umkm</code>, <code>/umkm/saya</code>, <code>/umkm/{id}</code>, <code>/umkm/{id}/produk</code>, <code>/produk/{id}</code>) dengan skema <code>BearerAuth</code> aktif — persis sesuai kontrak endpoint pada Bagian 9.1.</p>
