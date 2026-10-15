@@ -468,8 +468,39 @@ DROP TABLE IF EXISTS umkm;
 DROP TABLE IF EXISTS users;</code></pre></div>
     <p>Urutan <code>DROP TABLE</code> di berkas down sengaja dibalik (anak dulu baru induk) karena foreign key <code>umkm → users</code> dan <code>produk → umkm</code> akan menolak tabel induknya dihapus duluan selama masih ada tabel anak yang mereferensikannya.</p>
 
-    <h4>Menjalankan migration</h4>
-    <div class="note"><span class="lbl">Simpan connection string sebagai variabel</span><p>Supaya tidak perlu menulis ulang connection string Neon di setiap perintah, simpan dulu ke variabel environment:</p></div>
+    <h4>Menjalankan migration — cara simpel pakai Makefile (macOS/Linux)</h4>
+    <p>Daripada mengetik ulang <code>export DATABASE_URL="..."</code> setiap buka terminal baru (dan rawan typo), buat satu berkas <code>Makefile</code> di root project yang otomatis membaca <code>.env</code>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Makefile</span></div><pre><code>include .env
+export
+
+migrate-up:
+	migrate -path migrations -database "$(DATABASE_URL)" up
+
+migrate-down:
+	migrate -path migrations -database "$(DATABASE_URL)" down 1
+
+migrate-version:
+	migrate -path migrations -database "$(DATABASE_URL)" version
+
+# contoh: make migrate-force V=1
+migrate-force:
+	migrate -path migrations -database "$(DATABASE_URL)" force $(V)
+
+run:
+	go run ./cmd/api</code></pre></div>
+    <div class="note"><span class="lbl">Baris sebelum setiap target wajib diawali karakter TAB, bukan spasi</span><p>Ini aturan baku sintaks <code>Makefile</code>, bukan gaya penulisan bebas — kalau editor otomatis mengganti tab jadi spasi (beberapa pengaturan VS Code melakukan ini), <code>make</code> akan gagal dengan error <code>missing separator</code>. Cek pengaturan <code>editor.insertSpaces</code> khusus untuk berkas bernama <code>Makefile</code> kalau ini terjadi.</p></div>
+    <p>Setelah itu, migration cukup dijalankan dengan satu perintah pendek, dari direktori manapun di dalam project, di terminal manapun (tidak perlu <code>export</code> manual lagi karena <code>Makefile</code> yang membaca <code>.env</code>):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menerapkan migration</span></div><pre><code>make migrate-up</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">membatalkan 1 migration terakhir</span></div><pre><code>make migrate-down</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek versi migration yang sedang aktif</span></div><pre><code>make migrate-version</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menjalankan API (bonus, menggantikan go run ./cmd/api)</span></div><pre><code>make run</code></pre></div>
+    <div class="verify">
+      <span class="lbl">✓ Diverifikasi</span>
+      <p>Seluruh target <code>Makefile</code> di atas sudah dicoba langsung terhadap Postgres lokal sungguhan: <code>make migrate-up</code> berhasil membuat tabel, <code>make migrate-version</code> menampilkan versi yang benar tanpa perlu <code>export</code> apa pun lebih dulu, dan <code>make run</code> menyalakan server yang langsung bisa diakses.</p>
+    </div>
+
+    <h4>Cara manual tanpa Makefile (Windows tanpa WSL, atau kalau mau paham prosesnya)</h4>
+    <p><code>make</code> sudah tersedia bawaan di macOS dan Linux, tapi tidak ada secara default di Windows (CMD/PowerShell biasa). Kalau tidak pakai WSL/Git Bash dengan <code>make</code> ter-install, pakai cara manual berikut — isinya persis sama dengan yang dikerjakan <code>Makefile</code> di atas, cuma harus di-export ulang setiap buka terminal baru:</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS / Linux</span></div><pre><code>export DATABASE_URL="postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require"</code></pre></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Windows (PowerShell)</span></div><pre><code>$env:DATABASE_URL="postgresql://neondb_owner:password@ep-xxxx.aws.neon.tech/neondb?sslmode=require"</code></pre></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">menerapkan migration (up)</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
@@ -521,6 +552,7 @@ DROP TABLE IF EXISTS users;</code></pre></div>
     <p>Harus keluar versi seperti <code>v4.17.0</code> atau lebih baru. Kalau keluar <code>command not found</code> / <code>'migrate' is not recognized</code>, instalasinya belum benar atau <code>PATH</code> belum menunjuk ke foldernya — perbaiki dulu pakai baris pertama tabel di bawah sebelum lanjut.</p>
 
     <h4>Langkah 3 — Pastikan <code>DATABASE_URL</code> benar-benar ter-set di terminal yang sama</h4>
+    <p>Kalau sudah pakai <code>Makefile</code> (Bagian 10.1), langkah ini otomatis ditangani lewat <code>include .env</code> — cukup pastikan isi <code>.env</code> benar lalu lanjut ke Langkah 4. Kalau masih pakai cara manual, set dan cek dulu:</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">macOS / Linux — set lalu cek</span></div><pre><code>export DATABASE_URL="postgresql://postgres:12345678@localhost:5432/umkm_db?sslmode=disable"
 echo $DATABASE_URL</code></pre></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Windows (PowerShell) — set lalu cek</span></div><pre><code>$env:DATABASE_URL="postgresql://postgres:12345678@localhost:5432/umkm_db?sslmode=disable"
@@ -528,7 +560,11 @@ echo $env:DATABASE_URL</code></pre></div>
     <p>Ganti connection string di atas dengan milikmu sendiri (Neon atau Postgres lokal, lihat <code>.env</code>). Perintah <code>echo</code> harus menampilkan connection string yang sama persis — kalau hasilnya kosong, berarti <code>export</code>/<code>$env:</code> belum dijalankan di terminal yang sedang dipakai, atau kamu pindah ke tab/jendela terminal lain setelahnya (variabel environment hanya berlaku di sesi terminal tempat ia di-set).</p>
 
     <h4>Langkah 4 — Jalankan migration, lalu verifikasi tabelnya benar-benar terbentuk</h4>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terapkan migration</span></div><pre><code>migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terapkan migration (pilih salah satu)</span></div><pre><code># pakai Makefile
+make migrate-up
+
+# atau cara manual
+migrate -path migrations -database "$DATABASE_URL" up</code></pre></div>
     <p>Kalau berhasil, akan muncul <code>1/u init (xx.xxxxxxxx)</code> tanpa pesan error. Jangan berhenti di sini — <strong>verifikasi langsung ke database</strong> memakai <code>psql</code> supaya yakin tabelnya benar-benar ada, bukan cuma percaya output <code>migrate</code>:</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cek tabel lewat psql</span></div><pre><code>psql "$DATABASE_URL" -c "\dt"</code></pre></div>
     <p>Hasilnya harus menampilkan empat tabel: <code>users</code>, <code>umkm</code>, <code>produk</code>, dan <code>schema_migrations</code> (tabel internal milik <code>golang-migrate</code> untuk mencatat versi). Kalau <code>migrate up</code> sukses tapi salah satu dari keempat tabel itu tidak muncul, kemungkinan besar <code>DATABASE_URL</code> yang dipakai saat <code>migrate up</code> mengarah ke database yang berbeda dengan yang dicek lewat <code>psql</code> (misalnya satu ke Neon, satu ke Postgres lokal) — samakan dulu connection string di kedua perintah.</p>
@@ -545,6 +581,8 @@ echo $env:DATABASE_URL</code></pre></div>
       <tr><td><code>relation "users" already exists</code></td><td>Tabelnya sudah pernah dibuat manual (misalnya lewat <code>psql -f</code> sebelum pindah ke <code>golang-migrate</code>), tapi <code>golang-migrate</code> belum tahu soal itu karena tabel <code>schema_migrations</code> belum ada/masih versi 0.</td><td>Kalau datanya boleh hilang (database latihan): <code>DROP TABLE</code> semua tabel lalu jalankan <code>migrate ... up</code> dari nol. Kalau datanya mau dipertahankan: tandai migration 1 sebagai "sudah diterapkan" tanpa dijalankan ulang dengan <code>migrate -path migrations -database "$DATABASE_URL" force 1</code>.</td></tr>
       <tr><td>Koneksi ke Neon gagal / <code>x509</code> / timeout, tapi ke Postgres lokal normal</td><td><code>sslmode</code> tertukar — Neon (cloud) butuh <code>sslmode=require</code>, Postgres lokal biasanya <code>sslmode=disable</code>. <code>.env.example</code> dan <code>.env</code> isinya harus disesuaikan dengan database mana yang sedang dipakai.</td><td>Cek ulang query string di akhir <code>DATABASE_URL</code>: pakai <code>?sslmode=require</code> untuk Neon, <code>?sslmode=disable</code> untuk Postgres lokal. Jangan asal copy salah satu contoh.</td></tr>
       <tr><td><code>no migration found for version X</code> / folder <code>migrations</code> kosong saat <code>up</code></td><td>Perintah <code>migrate</code> dijalankan dari direktori yang salah, jadi <code>-path migrations</code> menunjuk ke folder yang tidak ada/kosong.</td><td>Pastikan kamu berada di root proyek <code>umkm-api</code> (folder yang berisi <code>go.mod</code>) saat menjalankan perintah <code>migrate</code>, atau tulis path absolut/relatif yang benar di flag <code>-path</code>.</td></tr>
+      <tr><td><code>make: command not found</code> / <code>'make' is not recognized</code></td><td><code>make</code> tidak ter-install, paling sering terjadi di Windows (CMD/PowerShell) karena <code>make</code> bukan bawaan Windows.</td><td>Pakai cara manual tanpa Makefile (lihat Bagian 10.1), atau install <code>make</code> lewat WSL/Git Bash/Chocolatey (<code>choco install make</code>) kalau mau tetap pakai Makefile.</td></tr>
+      <tr><td><code>Makefile:4: *** missing separator. Stop.</code></td><td>Baris perintah di bawah nama target (misalnya <code>migrate-up:</code>) harus diawali karakter <strong>TAB</strong>, bukan spasi. Editor yang otomatis mengganti tab jadi spasi akan merusak ini.</td><td>Buka ulang <code>Makefile</code>, hapus indentasi di baris yang error, lalu ketik ulang pakai tombol Tab (bukan 4× spasi). Di VS Code, cek pojok kanan bawah status bar menampilkan "Spaces" atau "Tab Size" saat kursor ada di baris itu.</td></tr>
     </table>
     <div class="note"><span class="lbl">Masih gagal setelah dicoba semua di atas?</span><p>Siapkan tiga info ini sebelum bertanya ke dosen/asisten supaya cepat dibantu: (1) <strong>pesan error lengkap</strong> dari terminal (jangan diringkas), (2) output <code>migrate -version</code>, dan (3) <code>DATABASE_URL</code> milikmu dengan <strong>password disensor</strong> (ganti jadi <code>***</code>) supaya strukturnya tetap kelihatan tanpa membocorkan kredensial.</p></div>
 
