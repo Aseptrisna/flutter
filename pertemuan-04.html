@@ -1324,7 +1324,8 @@ func (s *ProdukService) DeleteOwn(ctx context.Context, userID, produkID int64) (
     <h3>10.7 Middleware — Autentikasi JWT</h3>
     <p>Middleware ini memeriksa header <code>Authorization: Bearer &lt;token&gt;</code>, lalu menyisipkan <code>userID</code> ke dalam <code>context</code> agar dapat dibaca oleh handler berikutnya. Secara tipe, middleware di Go cukup berupa fungsi dengan tanda tangan <code>func(http.Handler) http.Handler</code> — ia menerima handler "asli", lalu mengembalikan handler baru yang menjalankan kode tambahan (cek token) <em>sebelum</em> memanggil handler asli lewat <code>next.ServeHTTP(...)</code>. Pola "bungkus-memanggil" inilah yang disebut <em>middleware chaining</em>.</p>
     <div class="note"><span class="lbl">Kenapa prefix "Bearer " dibuat opsional, bukan wajib?</span><p>Swagger (OpenAPI 2.0, dipakai <code>swag</code>) hanya punya skema keamanan <code>apiKey</code> untuk kasus seperti ini — <strong>tidak ada</strong> skema <code>http bearer</code> yang membuat Swagger UI otomatis menambahkan kata "Bearer " di kotak Authorize seperti pada beberapa tools lain. Akibatnya mahasiswa yang hanya paste token mentah (tanpa mengetik "Bearer " sendiri) akan selalu dapat <code>401 "token tidak ditemukan"</code> walau tokennya valid — ini sumber kebingungan yang sangat umum. Middleware di atas sengaja dibuat menerima <strong>kedua bentuk</strong>: <code>Bearer &lt;token&gt;</code> (format standar, tetap dianjurkan dan dipakai semua contoh di tutorial ini) maupun token mentah tanpa prefix — tanpa mengurangi keamanan, karena yang diverifikasi tetap tanda tangan HS256 token itu sendiri, bukan format headernya.</p></div>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go</span></div><pre><code>package middleware
+    <div class="note"><span class="lbl">Project kamu sudah lebih dulu dibuat (sebelum update ini)? Cukup ganti satu file ini</span><p>Kalau pas coba token di Swagger masih dapat <code>401 "token tidak ditemukan"</code> padahal tokennya valid, berarti <code>internal/middleware/auth.go</code> di project kamu masih versi lama. <strong>Tidak perlu menulis ulang semua, cukup ganti isi satu file ini</strong> — buka <code>internal/middleware/auth.go</code> di VS Code, hapus semua isinya, lalu salin-tempel (copy-paste) persis kode lengkap di bawah ini menggantikannya. Setelah disimpan, matikan server (<kbd>Ctrl+C</kbd> di terminal) dan jalankan ulang <code>go run ./cmd/api</code> — Go tidak hot-reload otomatis, jadi perubahan baru berlaku setelah server dinyalakan ulang.</p></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go — ganti seluruh isi file ini</span></div><pre><code>package middleware
 
 import (
     "context"
@@ -1354,16 +1355,27 @@ func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
             if len(header) > 7 && strings.EqualFold(header[:7], "Bearer ") {
                 tokenStr = header[7:]
             }
+            // jwt.WithValidMethods memaksa algoritma HS256 saja, agar token dengan
+            // header "alg" lain (termasuk "none") selalu ditolak (algorithm confusion attack).
             token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
                 return []byte(jwtSecret), nil
-            })
+            }, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
             if err != nil || !token.Valid {
                 http.Error(w, `{"error":{"message":"token tidak valid","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
                 return
             }
 
-            claims := token.Claims.(jwt.MapClaims)
-            userID := int64(claims["sub"].(float64))
+            claims, ok := token.Claims.(jwt.MapClaims)
+            if !ok {
+                http.Error(w, `{"error":{"message":"token tidak valid","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
+                return
+            }
+            sub, ok := claims["sub"].(float64)
+            if !ok {
+                http.Error(w, `{"error":{"message":"token tidak valid","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
+                return
+            }
+            userID := int64(sub)
 
             ctx := context.WithValue(r.Context(), UserIDKey, userID)
             next.ServeHTTP(w, r.WithContext(ctx))
@@ -1375,6 +1387,7 @@ func GetUserID(r *http.Request) int64 {
     id, _ := r.Context().Value(UserIDKey).(int64)
     return id
 }</code></pre></div>
+    <p>Dua pengecekan tambahan <code>claims, ok := ...</code> dan <code>sub, ok := ...</code> di atas (dibanding sekadar <code>token.Claims.(jwt.MapClaims)</code> langsung) mencegah server <em>panic</em> kalau ada token yang lolos tanda tangan tapi strukturnya aneh — misalnya claims kosong atau <code>sub</code> bukan angka. Tanpa pengecekan ini, satu request dengan token "nyeleneh" bisa menjatuhkan seluruh server.</p>
     <p>Middleware kedua membatasi laju request per alamat IP, dipasang khusus pada endpoint login agar percobaan brute-force password tidak bisa dilakukan tanpa batas.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/ratelimit.go</span></div><pre><code>package middleware
 
