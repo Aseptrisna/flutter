@@ -483,8 +483,8 @@ Future&lt;void&gt; _muatProduk() async {
     <div class="note"><span class="lbl">Diuji dengan unit test</span><p><code>ApiService.fotoUrl('umkm/169999.png')</code> diverifikasi menghasilkan persis <code>http://10.0.2.2:8080/uploads/umkm/169999.png</code> — menggabungkan origin server (tanpa <code>/api</code>) dengan <code>/uploads/</code> dan path relatifnya.</p></div>
 
     <h2 id="s11"><span class="badge">11</span>Struktur Folder Project</h2>
-    <p>Mulai pertemuan ini, folder <code>lib/</code> ditambah dua folder baru — <code>models/</code> dan <code>services/</code> — mengikuti struktur project referensi yang akan dipakai pada Pertemuan 7 (integrasi penuh). Folder <code>screens/</code> tetap flat per area (bukan <code>features/</code> berlapis), agar konsisten dengan project yang akan dilanjutkan nanti.</p>
-    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder</span></div><pre><code>lib/
+    <p>Mulai pertemuan ini, folder <code>lib/</code> ditambah dua folder baru — <code>models/</code> dan <code>services/</code>. Berikut struktur <strong>yang benar-benar sudah ada</strong> di project-mu setelah mengikuti pertemuan ini sampai Bagian 12 — kalau kamu cek folder <code>lib/</code> sendiri, isinya harus persis seperti ini, tidak lebih:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder — setelah Pertemuan 6</span></div><pre><code>lib/
 ├── main.dart
 ├── models/
 │   ├── umkm_model.dart
@@ -493,19 +493,10 @@ Future&lt;void&gt; _muatProduk() async {
 ├── services/
 │   └── api_service.dart
 └── screens/
-    ├── splash_screen.dart
-    ├── auth/
-    │   ├── login_screen.dart
-    │   └── register_screen.dart
     └── home/
-        ├── home_screen.dart
-        ├── profile/
-        │   ├── profile_screen.dart
-        │   └── update_profile_screen.dart
         └── umkm/
-            ├── umkm_list_screen.dart
-            └── umkm_detail_screen.dart</code></pre></div>
-    <div class="note"><span class="lbl">Kenapa bukan lib/features/...?</span><p>Struktur feature-first (setiap fitur punya folder <code>data/</code>, <code>domain/</code>, <code>presentation/</code> sendiri) memang umum di proyek skala besar, tetapi materi ini sengaja mengikuti struktur <code>lib/screens/</code> yang lebih flat agar konsisten dengan project yang akan dipakai dan dilanjutkan langsung pada Pertemuan 7.</p></div>
+            └── umkm_list_screen.dart</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa cuma satu screen (umkm_list_screen.dart)?</span><p>Pertemuan ini fokus ke konsep HTTP client, model data, dan <code>ApiService</code> — baru dipraktikkan ke <strong>satu</strong> layar contoh (Bagian 12) untuk membuktikan semuanya tersambung ke API sungguhan. Layar lain seperti login, register, splash, profil, dan detail UMKM <strong>belum dibuat di pertemuan ini</strong> — itu semua baru ditambahkan satu per satu di Pertemuan 7 (integrasi penuh), yang juga akan menata ulang <code>screens/</code> jadi per-area (<code>auth/</code>, <code>home/profile/</code>, dst) mengikuti struktur <code>lib/screens/&lt;area&gt;/&lt;nama&gt;_screen.dart</code> yang flat (bukan <code>lib/features/...</code> berlapis).</p></div>
 
     <h2 id="s12"><span class="badge">12</span>Praktik: Halaman "Semua UMKM" Tersambung ke API Sungguhan</h2>
     <p>Menggabungkan seluruh bagian di atas menjadi satu halaman utuh yang memanggil API, menampilkan avatar dari foto (atau inisial), serta mendukung tarik-untuk-refresh.</p>
