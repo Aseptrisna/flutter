@@ -62,6 +62,12 @@
       href: "pertemuan-01.html"
     },
     {
+      num: "1a",
+      title: "Dasar Fundamental Mobile Android & Identitas Aplikasi",
+      desc: "Lifecycle, manifest, permission, package name vs applicationId",
+      href: "pertemuan-01a.html"
+    },
+    {
       title: "Menjalankan Aplikasi ke Real Device",
       desc: "Setup Android & iOS, flutter run, hot reload",
       href: "pertemuan-02.html"
@@ -91,6 +97,12 @@
       desc: "Login, token, profil, CRUD UMKM/produk, upload foto lewat multipart",
       href: "pertemuan-07.html"
     },
+    {
+      num: "7a",
+      title: "Membangun umkm-app dari Nol (Panduan Lengkap)",
+      desc: "Rangkuman Pertemuan 5-7 berurutan: flutter create sampai aplikasi penuh",
+      href: "pertemuan-07a.html"
+    },
     { title: null, desc: null, href: null },
     { title: null, desc: null, href: null },
     { title: null, desc: null, href: null },
@@ -101,8 +113,9 @@
   ];
 
   const grid = document.getElementById('grid');
-  pertemuan.forEach((p, i) => {
-    const n = String(i + 1).padStart(2, '0');
+  let seq = 0;
+  pertemuan.forEach((p) => {
+    const n = p.num ? p.num : String(++seq).padStart(2, '0');
     const active = !!p.href;
     const el = document.createElement(active ? 'a' : 'div');
     el.className = 'card ' + (active ? 'active' : 'disabled');

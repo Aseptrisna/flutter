@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dasar Fundamental Pemrograman Mobile Android & Identitas Aplikasi</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE; --blue:#7C93FF;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:#fff;}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:230px; flex:0 0 230px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:760px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:#fff;}
+  .sub{color:var(--muted); font-size:16.5px; max-width:58ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff; margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:26px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .oscard{border:1px solid var(--line); border-radius:10px; padding:4px 18px 6px; margin:0 0 24px; background:var(--panel);}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  td code{white-space:nowrap;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Fundamental Platform Android</a></li>
+      <li><a href="#s2">Fundamental Flutter & Dart</a></li>
+      <li><a href="#s3">Jebakan Umum Pemula</a></li>
+      <li><a href="#s4">Package Name vs Application ID</a></li>
+      <li><a href="#s5">Lokasi Identitas di Proyek Flutter</a></li>
+      <li><a href="#s6">Identitas Lain Aplikasi</a></li>
+      <li><a href="#s7">Latihan</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 1a · Fundamental</span>
+      <h1>Dasar Fundamental Pemrograman Mobile Android & Identitas Aplikasi</h1>
+      <p class="sub">Materi tambahan sebelum masuk ke praktik Flutter: konsep dasar platform Android yang tetap berlaku meski kita membangun aplikasi lewat Flutter, serta pengenalan identitas aplikasi (package name, application ID, dan sejenisnya) yang akan terus dipakai sepanjang semester.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Fundamental Platform Android</h2>
+    <p>Flutter membungkus banyak hal, tetapi aplikasi yang dihasilkan tetap berjalan di atas sistem operasi Android dengan aturan mainnya sendiri. Konsep berikut tetap wajib dipahami:</p>
+    <ul>
+      <li><strong>Application lifecycle</strong> — urutan <code>onCreate</code>, <code>onStart</code>, <code>onResume</code>, <code>onPause</code>, <code>onStop</code>, <code>onDestroy</code> pada sisi native. Di Flutter, lifecycle ini dipetakan ke <code>AppLifecycleState</code> (<code>resumed</code>, <code>inactive</code>, <code>paused</code>, <code>detached</code>) dan menentukan kapan data harus disimpan sebelum aplikasi dipindah ke background.</li>
+      <li><strong>Activity, Fragment, dan View</strong> — unit tampilan di dunia native Android. Flutter membungkus semuanya menjadi satu <code>FlutterActivity</code>, namun konsep ini tetap muncul saat berurusan dengan permission atau platform channel.</li>
+      <li><strong>Manifest & permission model</strong> — berkas <code>AndroidManifest.xml</code> mendeklarasikan komponen dan izin aplikasi. Sejak Android 6 (API 23), permission sensitif (kamera, lokasi, storage) harus diminta ulang saat runtime, tidak cukup hanya dideklarasikan di manifest.</li>
+      <li><strong>Intent</strong> — mekanisme komunikasi antar-komponen atau antar-aplikasi, misalnya membuka kamera bawaan, fitur share, atau deep link dari notifikasi.</li>
+      <li><strong>Threading model</strong> — Android hanya punya satu <em>main/UI thread</em>; pekerjaan berat (network, baca-tulis file) tidak boleh memblokirnya. Di Flutter, ini tercermin lewat <code>async/await</code> dan <code>Isolate</code>.</li>
+      <li><strong>APK & AAB</strong> — format berkas hasil build. <code>minSdkVersion</code>/<code>targetSdkVersion</code> menentukan rentang versi Android yang didukung, dan keystore dipakai untuk menandatangani build sebelum dirilis.</li>
+    </ul>
+
+    <h2 id="s2"><span class="badge">02</span>Fundamental Flutter & Dart</h2>
+    <p>Di atas fondasi Android tadi, Flutter menambahkan lapisan konsepnya sendiri yang akan dipakai di hampir setiap pertemuan:</p>
+    <ul>
+      <li><strong>Widget tree & reactive UI</strong> — seluruh tampilan adalah widget; UI dianggap sebagai fungsi dari state, sehingga <code>build(context)</code> dipanggil ulang setiap kali state berubah.</li>
+      <li><strong>StatelessWidget vs StatefulWidget</strong> — menentukan apakah sebuah widget butuh menyimpan dan mengubah datanya sendiri lewat <code>setState</code>.</li>
+      <li><strong>const constructor</strong> — menandai widget yang tidak berubah agar tidak dibangun ulang tanpa perlu, berdampak langsung ke performa.</li>
+      <li><strong>Pemrograman asinkron</strong> — <code>Future</code>, <code>async/await</code>, dan <code>Stream</code>, karena hampir seluruh operasi I/O (panggilan API, baca database lokal) bersifat asinkron.</li>
+      <li><strong>State management, navigasi, dan networking</strong> — akan dibahas mendalam pada pertemuan-pertemuan berikutnya (Riverpod, go_router, Dio).</li>
+    </ul>
+
+    <h2 id="s3"><span class="badge">03</span>Jebakan Umum Pemula</h2>
+    <ul>
+      <li><strong>Memakai <code>BuildContext</code> setelah jeda <code>await</code></strong> — widget bisa saja sudah di-<em>dispose</em> ketika proses asinkron selesai, sehingga wajib memeriksa <code>context.mounted</code> sebelum memakainya kembali.</li>
+      <li><strong>State hilang saat rotasi layar atau aplikasi di-kill sistem</strong> — terjadi bila data penting hanya disimpan di memori, tanpa mekanisme persist.</li>
+      <li><strong>Layout kaku (tidak responsif)</strong> — perangkat Android sangat beragam ukurannya; hindari nilai ukuran yang di-hardcode.</li>
+      <li><strong>Lupa meminta permission saat runtime</strong> — deklarasi di manifest saja tidak cukup untuk permission sensitif pada Android modern.</li>
+    </ul>
+
+    <h2 id="s4"><span class="badge">04</span>Package Name vs Application ID</h2>
+    <p>Dua istilah ini sering tertukar padahal fungsinya berbeda:</p>
+    <ul>
+      <li><strong>Package name</strong> — nama namespace kode Java/Kotlin, tercermin di struktur folder dan <code>AndroidManifest.xml</code> (contoh: <code>com.aseptrisna.umkmapp</code>).</li>
+      <li><strong>Application ID</strong> — identitas unik aplikasi di level build system (Gradle), didefinisikan lewat <code>applicationId</code> di <code>android/app/build.gradle</code>. Inilah yang benar-benar membedakan aplikasi di Play Store, dan sengaja dipisahkan dari package name agar satu basis kode bisa punya beberapa varian build (debug, staging, production) dengan ID berbeda.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">android/app/build.gradle</span></div><pre><code>android {
+    defaultConfig {
+        applicationId "com.aseptrisna.umkmapp"
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Aturan penamaan</span><p>Gunakan notasi domain terbalik: <code>com.&lt;organisasi&gt;.&lt;namaaplikasi&gt;</code>, hanya huruf kecil, angka, titik, dan underscore. Harus unik secara global di Play Store dan <strong>tidak boleh diubah lagi setelah aplikasi dipublikasikan</strong>, karena menjadi identitas permanen untuk proses update.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Lokasi Identitas di Proyek Flutter</h2>
+    <p>Satu identitas aplikasi sebenarnya tersebar di beberapa berkas berbeda dalam proyek Flutter:</p>
+    <table>
+      <tr><th>File</th><th>Fungsi</th></tr>
+      <tr><td><code>android/app/build.gradle</code></td><td><code>applicationId</code> — ID unik untuk Play Store dan instalasi di perangkat</td></tr>
+      <tr><td><code>android/app/src/main/AndroidManifest.xml</code></td><td>Deklarasi permission, activity, dan atribut package (versi lama)</td></tr>
+      <tr><td><code>android/.../MainActivity.kt</code></td><td>Lokasi folder harus sesuai dengan package name lama</td></tr>
+      <tr><td><code>ios/Runner.xcodeproj</code> &rarr; Bundle Identifier</td><td>Setara <code>applicationId</code> tetapi untuk iOS, format sama</td></tr>
+      <tr><td><code>pubspec.yaml</code> &rarr; <code>name:</code></td><td>Nama internal proyek Dart, tidak terkait identitas Play Store</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Mengganti applicationId</span><p>Tidak cukup edit satu berkas saja. Jika salah satu lokasi (build.gradle, manifest, path MainActivity) tidak konsisten, build bisa gagal atau aplikasi gagal dipasang sebagai update dari versi sebelumnya. Gunakan tool bantu seperti package <code>change_app_package_name</code> agar seluruh berkas diperbarui sekaligus.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Identitas Lain yang Sepaket</h2>
+    <ul>
+      <li><strong>App name</strong> — <code>android:label</code> di manifest (Android) atau <code>CFBundleDisplayName</code> di <code>Info.plist</code> (iOS); nama yang tampil di launcher, berbeda dari application ID.</li>
+      <li><strong>Version code & version name</strong> — di <code>pubspec.yaml</code> ditulis sebagai <code>1.0.0+1</code>. Bagian <code>1.0.0</code> (versionName) yang dilihat pengguna, bagian <code>1</code> (versionCode) adalah angka internal yang wajib naik setiap kali mengunggah update ke Play Store.</li>
+      <li><strong>Signing key / keystore</strong> — bukti kriptografis bahwa sebuah update benar-benar berasal dari pengembang yang sama. Play Store menolak update jika signing key berbeda dari rilis pertama.</li>
+      <li><strong>minSdkVersion / targetSdkVersion</strong> — menentukan versi Android minimum yang didukung dan versi API yang ditarget; Play Store mewajibkan target SDK tertentu yang naik setiap tahun.</li>
+    </ul>
+
+    <h2 id="s7"><span class="badge">07</span>Latihan Pemahaman</h2>
+    <div class="oscard">
+      <ol>
+        <li>Jelaskan perbedaan antara <code>package name</code> dan <code>applicationId</code> dengan kata-kata sendiri, beserta contoh kasus mengapa keduanya sengaja dipisahkan.</li>
+        <li>Buka proyek Flutter yang sudah pernah dibuat (atau proyek UMKM dari pertemuan sebelumnya), temukan nilai <code>applicationId</code> di <code>android/app/build.gradle</code>, lalu cocokkan dengan struktur folder paket Kotlin/Java di dalamnya.</li>
+        <li>Sebutkan tiga permission Android yang membutuhkan permintaan izin saat runtime, dan jelaskan mengapa cukup mendeklarasikannya di manifest saja tidak memadai.</li>
+      </ol>
+    </div>
+
+    <footer>Setelah memahami fundamental ini, lanjutkan ke Pertemuan 1 untuk praktik instalasi Flutter SDK dan verifikasi lingkungan pengembangan. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>

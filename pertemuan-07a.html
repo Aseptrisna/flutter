@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Membangun umkm-app dari Nol: Panduan Lengkap Flutter + API UMKM</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE; --blue:#7C93FF; --green:#6FCF97; --green-dim:#17301F;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:#fff;}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:250px; flex:0 0 250px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:7px 0 7px 16px; font-size:13.5px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:#fff;}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff; margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:68ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:66ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .oscard{border:1px solid var(--line); border-radius:10px; padding:4px 18px 6px; margin:0 0 24px; background:var(--panel);}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .toc{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 22px; margin:0 0 28px;}
+  .toc .lbl{font-family:'Space Grotesk',sans-serif; font-weight:600; color:#fff; font-size:14px; margin-bottom:10px; display:block;}
+  .toc ol{columns:2; column-gap:24px; margin:0; padding-left:18px;}
+  .toc li{font-size:13.5px; margin-bottom:6px; break-inside:avoid;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} .toc ol{columns:1;} }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tujuan & Prasyarat</a></li>
+      <li><a href="#s2">Membuat Proyek dari Nol</a></li>
+      <li><a href="#s3">Struktur Folder Final</a></li>
+      <li><a href="#s4">Dependency di pubspec.yaml</a></li>
+      <li><a href="#s5">Konfigurasi Native</a></li>
+      <li><a href="#s6">Model: Umkm, Produk, Paginasi</a></li>
+      <li><a href="#s7">Model: User</a></li>
+      <li><a href="#s8">TokenStorage</a></li>
+      <li><a href="#s9">ApiService Lengkap</a></li>
+      <li><a href="#s10">main.dart & Routing</a></li>
+      <li><a href="#s11">SplashScreen</a></li>
+      <li><a href="#s12">Login & Register</a></li>
+      <li><a href="#s13">HomeScreen</a></li>
+      <li><a href="#s14">Profile & UpdateProfile</a></li>
+      <li><a href="#s15">UmkmList & UmkmDetail</a></li>
+      <li><a href="#s16">MyUmkmScreen</a></li>
+      <li><a href="#s17">Form UMKM & Produk</a></li>
+      <li><a href="#s18">Menjalankan Aplikasi</a></li>
+      <li><a href="#s19">Troubleshooting Cepat</a></li>
+      <li><a href="#s20">Latihan</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 7a · Proyek Lengkap</span>
+      <h1>Membangun umkm-app dari Nol: Panduan Lengkap</h1>
+      <p class="sub">Materi ini merangkum Pertemuan 5, 6, dan 7 menjadi satu alur runtut: membuat proyek Flutter <code>umkm-app</code> dari <code>flutter create</code> yang kosong sampai menjadi aplikasi penuh — login, lihat semua UMKM, kelola UMKM &amp; produk milik sendiri lengkap dengan foto, dan profil — tersambung ke backend Go <code>umkm-api</code> (Pertemuan 4). Setiap berkas disertai kode lengkap dan penjelasan <em>mengapa</em> ditulis seperti itu, bukan sekadar salin-tempel.</p>
+    </header>
+
+    <div class="toc">
+      <span class="lbl">Daftar isi cepat</span>
+      <ol>
+        <li><a href="#s1">01. Tujuan &amp; Prasyarat</a></li>
+        <li><a href="#s2">02. Membuat Proyek dari Nol</a></li>
+        <li><a href="#s3">03. Struktur Folder Final</a></li>
+        <li><a href="#s4">04. Dependency di pubspec.yaml</a></li>
+        <li><a href="#s5">05. Konfigurasi Native</a></li>
+        <li><a href="#s6">06. Model: Umkm, Produk, Paginasi</a></li>
+        <li><a href="#s7">07. Model: User</a></li>
+        <li><a href="#s8">08. TokenStorage</a></li>
+        <li><a href="#s9">09. ApiService Lengkap</a></li>
+        <li><a href="#s10">10. main.dart &amp; Routing</a></li>
+        <li><a href="#s11">11. SplashScreen</a></li>
+        <li><a href="#s12">12. Login &amp; Register</a></li>
+        <li><a href="#s13">13. HomeScreen</a></li>
+        <li><a href="#s14">14. Profile &amp; UpdateProfile</a></li>
+        <li><a href="#s15">15. UmkmList &amp; UmkmDetail</a></li>
+        <li><a href="#s16">16. MyUmkmScreen</a></li>
+        <li><a href="#s17">17. Form UMKM &amp; Produk</a></li>
+        <li><a href="#s18">18. Menjalankan Aplikasi</a></li>
+        <li><a href="#s19">19. Troubleshooting Cepat</a></li>
+        <li><a href="#s20">20. Latihan</a></li>
+      </ol>
+    </div>
+
+    <h2 id="s1"><span class="badge">01</span>Tujuan & Prasyarat</h2>
+    <p>Di akhir materi ini, akan ada satu proyek Flutter utuh bernama <code>umkm-app</code> yang bisa: mendaftar &amp; login, melihat daftar seluruh UMKM beserta detailnya (publik, tanpa login), membuat/mengubah/menghapus UMKM dan produk milik sendiri lengkap dengan upload foto (butuh login), serta melihat dan mengubah profil akun. Semua data sungguhan, datang dari API Golang + PostgreSQL yang dibangun di Pertemuan 4.</p>
+    <p>Sebelum mulai, pastikan:</p>
+    <ul>
+      <li>Flutter SDK sudah terpasang dan <code>flutter doctor</code> bersih (Pertemuan 1).</li>
+      <li>Backend <code>umkm-api</code> (Pertemuan 4) sudah bisa dijalankan dengan <code>go run ./cmd/api</code> dan diuji lewat Swagger (<code>http://localhost:8080/swagger/index.html</code>).</li>
+      <li>Paham dasar widget, <code>State</code>/<code>setState</code>, dan navigasi (Pertemuan 3), serta pola <code>FutureBuilder</code>/async (Pertemuan 6).</li>
+      <li>Paham konsep <code>applicationId</code>/package name (Pertemuan 1a) — dipakai saat <code>flutter create</code> di bawah.</li>
+    </ul>
+    <div class="note"><span class="lbl">Materi ini vs Pertemuan 5–7</span><p>Isinya sama persis dengan Pertemuan 5, 6, dan 7 — tidak ada fitur baru. Bedanya, di sini semua langkah disusun <strong>berurutan dari proyek kosong</strong> sampai selesai dalam satu alur baca, cocok dipakai sebagai referensi saat membangun ulang proyek dari nol (misalnya proyek UAS/tugas akhir) tanpa perlu bolak-balik tiga pertemuan berbeda.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Membuat Proyek dari Nol</h2>
+    <p>Jalankan perintah berikut di terminal, di folder tempat proyek ingin disimpan:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter create --org com.aseptrisna --project-name umkm_app umkm-app
+cd umkm-app</code></pre></div>
+    <p>Beberapa catatan soal perintah ini (lihat Pertemuan 1a untuk penjelasan konsepnya):</p>
+    <ul>
+      <li><code>--org com.aseptrisna</code> menentukan <code>applicationId</code>/Bundle Identifier menjadi <code>com.aseptrisna.umkm_app</code>. Ganti <code>aseptrisna</code> dengan identitasmu sendiri.</li>
+      <li><code>--project-name umkm_app</code> adalah nama internal paket Dart (dipakai di <code>pubspec.yaml</code> dan import <code>package:umkm_app/...</code>) — <strong>harus</strong> <code>snake_case</code>, tidak boleh pakai tanda hubung.</li>
+      <li>Nama folder <code>umkm-app</code> (pakai tanda hubung) boleh berbeda dari nama proyek Dart <code>umkm_app</code> — folder cuma lokasi di disk, tidak memengaruhi kode.</li>
+    </ul>
+    <div class="verify"><span class="lbl">✓ Verifikasi</span><p>Jalankan <code>flutter run</code> sekali di sini (sebelum kode apa pun ditambahkan) untuk memastikan proyek kosong bisa jalan ke device/emulator pilihanmu (Pertemuan 2) — counter demo bawaan Flutter akan muncul. Kalau ini berhasil, lanjut ke langkah berikutnya.</p></div>
+
+    <h2 id="s3"><span class="badge">03</span>Struktur Folder Final</h2>
+    <p>Berikut struktur <code>lib/</code> yang akan dibangun sampai akhir materi ini — flat per area, konsisten dengan pola <code>lib/screens/&lt;area&gt;/&lt;nama&gt;_screen.dart</code> (bukan <code>lib/features/...</code> berlapis):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder</span></div><pre><code>lib/
+├── main.dart
+├── models/
+│   ├── user_model.dart
+│   ├── umkm_model.dart
+│   ├── produk_model.dart
+│   └── paginated_result.dart
+├── services/
+│   ├── api_service.dart
+│   └── token_storage.dart
+└── screens/
+    ├── splash_screen.dart
+    ├── auth/
+    │   ├── login_screen.dart
+    │   └── register_screen.dart
+    └── home/
+        ├── home_screen.dart
+        ├── profile/
+        │   ├── profile_screen.dart
+        │   └── update_profile_screen.dart
+        └── umkm/
+            ├── umkm_list_screen.dart
+            ├── umkm_detail_screen.dart
+            ├── myumkm_screen.dart
+            ├── umkm_form_screen.dart
+            └── produk_form_screen.dart</code></pre></div>
+    <p>Buat seluruh folder kosongnya sekarang supaya tinggal mengisi berkas di langkah-langkah berikutnya:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal (dari dalam folder umkm-app)</span></div><pre><code>mkdir -p lib/models lib/services lib/screens/auth lib/screens/home/profile lib/screens/home/umkm</code></pre></div>
+
+    <h2 id="s4"><span class="badge">04</span>Dependency di pubspec.yaml</h2>
+    <p>Empat package tambahan dibutuhkan di luar bawaan Flutter: <code>http</code> (Pertemuan 6, panggil REST API), <code>flutter_secure_storage</code> (Pertemuan 7, simpan token terenkripsi), dan <code>image_picker</code> (Pertemuan 7, pilih foto dari galeri).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter pub add http
+flutter pub add flutter_secure_storage
+flutter pub add image_picker</code></pre></div>
+    <p>Perintah ini otomatis menulis versi terbaru ke <code>pubspec.yaml</code> dan menjalankan <code>flutter pub get</code>. Tidak perlu mengetik versi secara manual.</p>
+    <div class="note"><span class="lbl">Kenapa flutter_secure_storage, bukan shared_preferences?</span><p><code>shared_preferences</code> menyimpan data sebagai file XML/plist biasa yang bisa dibaca siapa pun dengan akses ke penyimpanan device. <code>flutter_secure_storage</code> memakai Keystore (Android)/Keychain (iOS) — penyimpanan terenkripsi level sistem operasi, tempat yang semestinya untuk token autentikasi.</p></div>
+    <div class="note"><span class="lbl">image_picker tidak butuh permission_handler manual</span><p>Plugin ini sudah menangani sendiri permintaan izin runtime untuk galeri/kamera di Android maupun iOS. Cukup tambahkan deklarasi di Bagian 05; jangan tambahkan <code>permission_handler</code> kecuali benar-benar perlu mengecek status izin secara manual di luar alur pilih-foto.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Konfigurasi Native (Android & iOS)</h2>
+    <p>Dua pengaturan wajib di luar kode Dart, atau aplikasi akan gagal diam-diam saat mengakses backend lokal atau galeri foto:</p>
+    <table>
+      <tr><th>Platform</th><th>Yang ditambahkan</th><th>Kenapa</th></tr>
+      <tr><td>Android</td><td><code>android:usesCleartextTraffic="true"</code> pada tag <code>&lt;application&gt;</code></td><td>Sejak Android 9, trafik HTTP polos (bukan HTTPS) diblokir secara default. Backend lokal (<code>http://10.0.2.2:8080</code>) memakai HTTP biasa, jadi tanpa ini <code>http.get</code>/<code>http.post</code> gagal dengan <code>SocketException</code> tanpa pesan jelas.</td></tr>
+      <tr><td>iOS</td><td><code>NSPhotoLibraryUsageDescription</code> di <code>Info.plist</code></td><td>Wajib ada deskripsi alasan akses galeri, atau aplikasi <strong>crash</strong> begitu <code>image_picker</code> dipanggil.</td></tr>
+    </table>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">android/app/src/main/AndroidManifest.xml</span></div><pre><code>&lt;application
+    android:label="umkm_app"
+    android:name="${applicationName}"
+    android:icon="@mipmap/ic_launcher"
+    android:usesCleartextTraffic="true"&gt;
+    ...
+&lt;/application&gt;</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">ios/Runner/Info.plist — tambahkan di dalam &lt;dict&gt; utama</span></div><pre><code>&lt;key&gt;NSPhotoLibraryUsageDescription&lt;/key&gt;
+&lt;string&gt;Dipakai untuk memilih foto UMKM/produk&lt;/string&gt;</code></pre></div>
+    <div class="note"><span class="lbl">usesCleartextTraffic hanya untuk development</span><p>Pengaturan ini sengaja melonggarkan keamanan supaya HTTP polos ke backend lokal diizinkan. Untuk aplikasi produksi yang server-nya sudah pakai HTTPS, baris ini sebaiknya dihapus kembali — bukan kebiasaan yang dibawa ke aplikasi nyata.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Model: Umkm, Produk, dan Paginasi</h2>
+    <p>Model di Flutter adalah representasi Dart dari bentuk JSON yang dikirim <code>umkm-api</code> (Pertemuan 4 Bagian 9). Setiap model punya <code>factory ...fromJson()</code> untuk mengubah <code>Map&lt;String, dynamic&gt;</code> hasil <code>jsonDecode</code> menjadi object Dart yang type-safe — sehingga kesalahan tipe data ketahuan saat kompilasi, bukan saat aplikasi sudah berjalan.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/umkm_model.dart</span></div><pre><code>class Umkm {
+  final int id;
+  final int userId;
+  final String nama;
+  final String deskripsi;
+  final String alamat;
+  final String foto;
+
+  Umkm({
+    required this.id,
+    required this.userId,
+    required this.nama,
+    required this.deskripsi,
+    required this.alamat,
+    required this.foto,
+  });
+
+  factory Umkm.fromJson(Map&lt;String, dynamic&gt; json) {
+    return Umkm(
+      id: json['id'] as int,
+      userId: json['user_id'] as int,
+      nama: json['nama'] as String,
+      deskripsi: json['deskripsi'] as String? ?? '',
+      alamat: json['alamat'] as String? ?? '',
+      foto: json['foto'] as String? ?? '',
+    );
+  }
+
+  bool get punyaFoto =&gt; foto.isNotEmpty;
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/produk_model.dart</span></div><pre><code>class Produk {
+  final int id;
+  final int umkmId;
+  final String nama;
+  final double harga;
+  final String deskripsi;
+  final String foto;
+
+  Produk({
+    required this.id,
+    required this.umkmId,
+    required this.nama,
+    required this.harga,
+    required this.deskripsi,
+    required this.foto,
+  });
+
+  factory Produk.fromJson(Map&lt;String, dynamic&gt; json) {
+    return Produk(
+      id: json['id'] as int,
+      umkmId: json['umkm_id'] as int,
+      nama: json['nama'] as String,
+      harga: (json['harga'] as num).toDouble(),
+      deskripsi: json['deskripsi'] as String? ?? '',
+      foto: json['foto'] as String? ?? '',
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa (json['harga'] as num).toDouble()?</span><p>PostgreSQL <code>NUMERIC</code> bisa dikirim sebagai angka bulat oleh <code>encoding/json</code> Go (mis. <code>17000</code> tanpa desimal). Meng-cast ke <code>num</code> dulu — bukan langsung <code>double</code> — membuat parsing tetap aman baik nilainya <code>17000</code> maupun <code>17000.50</code>.</p></div>
+    <div class="note"><span class="lbl">Kenapa pakai ?? '' di setiap field String?</span><p>Field seperti <code>deskripsi</code>, <code>alamat</code>, atau <code>foto</code> boleh kosong di API (string kosong, bukan <code>null</code>) — namun berjaga dengan <code>as String? ?? ''</code> membuat parsing tidak pernah crash walau suatu saat backend mengirim <code>null</code> untuk field itu.</p></div>
+    <p>Karena banyak endpoint mengembalikan <code>data</code> beserta <code>meta</code> (page/limit/total), dibuat satu class generic <code>PaginatedResult&lt;T&gt;</code> yang dipakai ulang untuk daftar UMKM maupun daftar produk:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/paginated_result.dart</span></div><pre><code>class PaginatedResult&lt;T&gt; {
+  final List&lt;T&gt; data;
+  final int page;
+  final int limit;
+  final int total;
+
+  PaginatedResult({
+    required this.data,
+    required this.page,
+    required this.limit,
+    required this.total,
+  });
+
+  factory PaginatedResult.fromJson(
+    Map&lt;String, dynamic&gt; json,
+    T Function(Map&lt;String, dynamic&gt;) fromJsonItem,
+  ) {
+    final items = (json['data'] as List&lt;dynamic&gt;? ?? [])
+        .map((e) =&gt; fromJsonItem(e as Map&lt;String, dynamic&gt;))
+        .toList();
+    final meta = json['meta'] as Map&lt;String, dynamic&gt;? ?? {};
+    return PaginatedResult(
+      data: items,
+      page: meta['page'] as int? ?? 1,
+      limit: meta['limit'] as int? ?? items.length,
+      total: meta['total'] as int? ?? items.length,
+    );
+  }
+
+  bool get masihAdaHalamanBerikutnya =&gt; page * limit &lt; total;
+}</code></pre></div>
+    <p>Generic <code>&lt;T&gt;</code> berarti class ini tidak terikat satu jenis model — dipanggil dengan <code>PaginatedResult.fromJson(json, Umkm.fromJson)</code> untuk daftar UMKM, atau <code>PaginatedResult.fromJson(json, Produk.fromJson)</code> untuk daftar produk, tanpa menulis ulang logika paginasinya.</p>
+
+    <h2 id="s7"><span class="badge">07</span>Model: User</h2>
+    <p>Model terakhir merepresentasikan data akun, mengikuti kontrak <code>GET /profile</code> dan field <code>user</code> pada respons login.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/models/user_model.dart</span></div><pre><code>class User {
+  final int id;
+  final String nama;
+  final String email;
+
+  User({required this.id, required this.nama, required this.email});
+
+  factory User.fromJson(Map&lt;String, dynamic&gt; json) {
+    return User(
+      id: json['id'] as int,
+      nama: json['nama'] as String,
+      email: json['email'] as String,
+    );
+  }
+}</code></pre></div>
+
+    <h2 id="s8"><span class="badge">08</span>TokenStorage: Menyimpan Token Login</h2>
+    <p>Setelah login berhasil, server mengembalikan JWT token. Token ini harus disimpan secara lokal di device agar pengguna tidak perlu login ulang setiap membuka aplikasi, dan disimpan dengan aman.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/services/token_storage.dart</span></div><pre><code>import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+/// Membungkus flutter_secure_storage agar seluruh aplikasi mengakses token
+/// lewat satu pintu — bukan memanggil FlutterSecureStorage() di banyak tempat.
+class TokenStorage {
+  static const _storage = FlutterSecureStorage();
+  static const _key = 'auth_token';
+
+  static Future&lt;void&gt; simpan(String token) =&gt; _storage.write(key: _key, value: token);
+  static Future&lt;String?&gt; ambil() =&gt; _storage.read(key: _key);
+  static Future&lt;void&gt; hapus() =&gt; _storage.delete(key: _key);
+}</code></pre></div>
+
+    <h2 id="s9"><span class="badge">09</span>ApiService Lengkap</h2>
+    <p>Seluruh logika pemanggilan API dikumpulkan dalam satu class <code>ApiService</code>, terpisah dari widget/screen. Screen hanya perlu tahu <em>apa</em> yang dipanggil (mis. <code>getUmkmSaya()</code>), bukan <em>bagaimana</em> detail HTTP/header/parsing-nya. Berikut versi <strong>lengkap</strong> — timpa seluruh isi <code>api_service.dart</code> dengan ini:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/services/api_service.dart — LENGKAP</span></div><pre><code>import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+import '../models/umkm_model.dart';
+import '../models/produk_model.dart';
+import '../models/paginated_result.dart';
+import '../models/user_model.dart';
+import 'token_storage.dart';
+
+class ApiException implements Exception {
+  final String message;
+  ApiException(this.message);
+
+  @override
+  String toString() =&gt; message;
+}
+
+class ApiService {
+  static const String baseUrl = 'http://10.0.2.2:8080/api';
+
+  // ---------- Publik: daftar & detail UMKM, tanpa login ----------
+
+  Future&lt;PaginatedResult&lt;Umkm&gt;&gt; getUmkmList({String q = '', int page = 1}) async {
+    final uri = Uri.parse('$baseUrl/umkm').replace(queryParameters: {
+      if (q.isNotEmpty) 'q': q,
+      'page': '$page',
+      'limit': '10',
+    });
+
+    final response = await http.get(uri);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat data UMKM');
+    }
+    return PaginatedResult.fromJson(body, Umkm.fromJson);
+  }
+
+  Future&lt;Umkm&gt; getUmkmDetail(int id) async {
+    final response = await http.get(Uri.parse('$baseUrl/umkm/$id'));
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'UMKM tidak ditemukan');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;PaginatedResult&lt;Produk&gt;&gt; getProdukByUmkm(int umkmId, {int page = 1}) async {
+    final uri = Uri.parse('$baseUrl/umkm/$umkmId/produk').replace(queryParameters: {
+      'page': '$page',
+      'limit': '10',
+    });
+
+    final response = await http.get(uri);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat produk');
+    }
+    return PaginatedResult.fromJson(body, Produk.fromJson);
+  }
+
+  // ---------- Auth & profil, butuh token ----------
+
+  /// Header Authorization yang disisipkan ke setiap request yang butuh login.
+  Future&lt;Map&lt;String, String&gt;&gt; _authHeaders() async {
+    final token = await TokenStorage.ambil();
+    return {'Authorization': 'Bearer $token'};
+  }
+
+  Future&lt;User&gt; register(String nama, String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'nama': nama, 'email': email, 'password': password}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 201) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal mendaftar');
+    }
+    return User.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; login(String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Email atau password salah');
+    }
+    final token = body['data']['token'] as String;
+    await TokenStorage.simpan(token);
+  }
+
+  Future&lt;void&gt; logout() =&gt; TokenStorage.hapus();
+
+  Future&lt;User&gt; getProfile() async {
+    final response = await http.get(Uri.parse('$baseUrl/profile'), headers: await _authHeaders());
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat profil');
+    }
+    return User.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; updateProfile(String nama, String email) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/profile'),
+      headers: {...await _authHeaders(), 'Content-Type': 'application/json'},
+      body: jsonEncode({'nama': nama, 'email': email}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memperbarui profil');
+    }
+  }
+
+  Future&lt;void&gt; updatePassword(String lama, String baru) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/profile/password'),
+      headers: {...await _authHeaders(), 'Content-Type': 'application/json'},
+      body: jsonEncode({'password_lama': lama, 'password_baru': baru}),
+    );
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memperbarui password');
+    }
+  }
+
+  // ---------- UMKM & produk milik sendiri, butuh token + multipart ----------
+
+  Future&lt;Umkm?&gt; getUmkmSaya() async {
+    final response = await http.get(Uri.parse('$baseUrl/umkm/saya'), headers: await _authHeaders());
+    if (response.statusCode == 404) return null;
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal memuat UMKM saya');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  /// id == null -&gt; membuat UMKM baru (POST /umkm).
+  /// id terisi -&gt; mengubah UMKM yang sudah ada (PUT /umkm/{id}).
+  Future&lt;Umkm&gt; simpanUmkm({
+    int? id,
+    required String nama,
+    String deskripsi = '',
+    String alamat = '',
+    String? fotoPath,
+  }) async {
+    final uri = id == null ? Uri.parse('$baseUrl/umkm') : Uri.parse('$baseUrl/umkm/$id');
+    final request = http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)
+      ..headers.addAll(await _authHeaders())
+      ..fields['nama'] = nama
+      ..fields['deskripsi'] = deskripsi
+      ..fields['alamat'] = alamat;
+    if (fotoPath != null) {
+      request.files.add(await http.MultipartFile.fromPath('foto', fotoPath));
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200 &amp;&amp; response.statusCode != 201) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menyimpan UMKM');
+    }
+    return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; hapusUmkm(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/umkm/$id'), headers: await _authHeaders());
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menghapus UMKM');
+    }
+  }
+
+  /// id == null -&gt; tambah produk baru pada UMKM `umkmId` (POST /umkm/{umkmId}/produk).
+  /// id terisi -&gt; ubah produk yang sudah ada (PUT /produk/{id}), `umkmId` diabaikan.
+  Future&lt;Produk&gt; simpanProduk({
+    int? id,
+    int? umkmId,
+    required String nama,
+    required double harga,
+    String deskripsi = '',
+    String? fotoPath,
+  }) async {
+    final uri = id == null
+        ? Uri.parse('$baseUrl/umkm/$umkmId/produk')
+        : Uri.parse('$baseUrl/produk/$id');
+    final request = http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)
+      ..headers.addAll(await _authHeaders())
+      ..fields['nama'] = nama
+      ..fields['harga'] = '$harga'
+      ..fields['deskripsi'] = deskripsi;
+    if (fotoPath != null) {
+      request.files.add(await http.MultipartFile.fromPath('foto', fotoPath));
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200 &amp;&amp; response.statusCode != 201) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menyimpan produk');
+    }
+    return Produk.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; hapusProduk(int id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/produk/$id'), headers: await _authHeaders());
+    final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+    if (response.statusCode != 200) {
+      throw ApiException(body['error']?['message'] ?? 'Gagal menghapus produk');
+    }
+  }
+
+  static String fotoUrl(String relativePath) {
+    final origin = baseUrl.replaceFirst('/api', '');
+    return '$origin/uploads/$relativePath';
+  }
+}</code></pre></div>
+    <p>Beberapa keputusan desain penting dalam berkas ini:</p>
+    <ul>
+      <li><strong>login() bertipe <code>Future&lt;void&gt;</code>, bukan <code>Future&lt;String&gt;</code></strong> — token langsung disimpan ke <code>TokenStorage</code> di dalam method itu sendiri. Layar pemanggil cukup tahu "berhasil atau gagal" (lewat <em>throw</em>/tidaknya <code>ApiException</code>), tidak perlu tahu atau menyimpan token secara manual.</li>
+      <li><strong>Satu <code>simpanUmkm</code>/<code>simpanProduk</code> untuk create <em>dan</em> update</strong> — perbedaan <code>POST</code> (buat baru) dan <code>PUT /…/{id}</code> (ubah) di backend cuma soal method HTTP dan ada/tidaknya <code>{id}</code> di path; field yang dikirim persis sama. Parameter opsional <code>id</code> menghindari duplikasi kode di sini maupun di form nanti.</li>
+      <li><strong>Request multipart, bukan <code>http.post</code> biasa</strong> — endpoint yang menerima foto memakai <code>multipart/form-data</code> (Pertemuan 4 Bagian 10.8), sehingga di Dart memakai <code>http.MultipartRequest</code>. Header ditambahkan lewat <code>.headers.addAll(...)</code>, <strong>bukan</strong> parameter <code>headers:</code> biasa seperti di <code>http.get</code>/<code>http.post</code>.</li>
+      <li><strong><code>fotoPath</code> bernilai <code>null</code> berarti "tidak ganti foto", bukan "hapus foto"</strong> — sama seperti di backend: kalau parameter foto tidak dikirim sama sekali, field <code>foto</code> yang sudah tersimpan di database tidak diubah.</li>
+      <li><strong><code>getUmkmSaya()</code> mengembalikan <code>Umkm?</code> (nullable)</strong>, bukan melempar error saat belum punya UMKM — status <code>404</code> ditangani secara eksplisit sebagai "belum ada", bukan sebagai kegagalan. Layar <code>MyUmkmScreen</code> memanfaatkan ini untuk menampilkan tombol "Buat UMKM" alih-alih pesan error.</li>
+    </ul>
+    <div class="verify"><span class="lbl">✓ Diverifikasi</span><p>Seluruh berkas ini — model, service, <code>token_storage.dart</code> — sudah dicoba <code>flutter analyze</code> dalam proyek nyata (<code>umkm-app</code>). Hasilnya <code>No issues found!</code>, tidak ada error maupun warning.</p></div>
+
+    <h2 id="s10"><span class="badge">10</span>main.dart & Routing</h2>
+    <p><code>main.dart</code> mendefinisikan titik masuk aplikasi dan peta <em>named route</em> yang dipakai seluruh layar untuk berpindah halaman.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/main.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import 'package:umkm_app/screens/auth/login_screen.dart';
+import 'package:umkm_app/screens/auth/register_screen.dart';
+import 'package:umkm_app/screens/home/home_screen.dart';
+import 'package:umkm_app/screens/splash_screen.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Aplikasi SI FIK UBL',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.indigo),
+      initialRoute: '/',
+      routes: {
+        '/': (context) =&gt; const SplashScreen(),
+        '/login': (context) =&gt; const LoginScreen(),
+        '/register': (context) =&gt; const RegisterPage(),
+        '/home': (context) =&gt; const HomeScreen(),
+      },
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Ganti package:umkm_app sesuai nama proyekmu</span><p>Import <code>package:umkm_app/...</code> di atas mengikuti nama yang diisi di <code>--project-name umkm_app</code> pada Bagian 02. Kalau proyekmu dibuat dengan nama berbeda, ganti <code>umkm_app</code> di baris import ini (dan hanya di baris ini — berkas lain dalam tutorial ini memakai import relatif <code>../</code> yang tidak terpengaruh nama proyek).</p></div>
+
+    <h2 id="s11"><span class="badge">11</span>SplashScreen: Memeriksa Token Tersimpan</h2>
+    <p>Tugas <code>SplashScreen</code>: memeriksa apakah pengguna sudah pernah login sebelumnya (ada token tersimpan) — kalau ada, langsung masuk ke <code>HomeScreen</code> tanpa perlu login ulang; kalau tidak, arahkan ke <code>LoginScreen</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/splash_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../services/token_storage.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+  @override
+  State&lt;SplashScreen&gt; createState() =&gt; _SplashScreenState();
+}
+
+class _SplashScreenState extends State&lt;SplashScreen&gt; {
+  @override
+  void initState() {
+    super.initState();
+    _cekTokenTersimpan();
+  }
+
+  Future&lt;void&gt; _cekTokenTersimpan() async {
+    final token = await TokenStorage.ambil();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, token == null ? '/login' : '/home');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.indigo,
+      body: Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">if (!mounted) return; sebelum Navigator</span><p>Antara <code>await TokenStorage.ambil()</code> dimulai dan selesai, pengguna bisa saja sudah menutup aplikasi atau widget ini sudah dilepas dari tree. Memanggil <code>Navigator</code> pada <code>BuildContext</code> yang sudah tidak <code>mounted</code> akan melempar error. Pola ini berulang di <strong>setiap</strong> pemakaian <code>context</code> setelah sebuah <code>await</code> di seluruh materi ini.</p></div>
+
+    <h2 id="s12"><span class="badge">12</span>LoginScreen & RegisterScreen</h2>
+    <p>Kedua layar memanggil <code>ApiService</code> sungguhan, dengan variabel <code>_loading</code> supaya tombol submit menampilkan indikator progres dan tidak bisa ditekan dua kali selama request berjalan.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/auth/login_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+  @override
+  State&lt;LoginScreen&gt; createState() =&gt; _LoginScreenState();
+}
+
+class _LoginScreenState extends State&lt;LoginScreen&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _apiService = ApiService();
+  bool _loading = false;
+
+  Future&lt;void&gt; _prosesLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() =&gt; _loading = true);
+    try {
+      await _apiService.login(_emailController.text, _passwordController.text);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() =&gt; _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Login')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.length &lt; 6) ? 'Password minimal 6 karakter' : null,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _prosesLogin,
+                  child: _loading
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Masuk'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () =&gt; Navigator.pushNamed(context, '/register'),
+                child: const Text('Belum memiliki akun? Daftar di sini'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/auth/register_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
+
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
+  @override
+  State&lt;RegisterPage&gt; createState() =&gt; _RegisterPageState();
+}
+
+class _RegisterPageState extends State&lt;RegisterPage&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _namaController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _apiService = ApiService();
+  bool _loading = false;
+
+  Future&lt;void&gt; _prosesRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() =&gt; _loading = true);
+    try {
+      await _apiService.register(_namaController.text, _emailController.text, _passwordController.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Akun berhasil dibuat, silakan login')),
+      );
+      Navigator.pop(context);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() =&gt; _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Daftar Akun')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _namaController,
+                decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                validator: (v) =&gt; (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                validator: (v) =&gt;
+                    (v == null || v.length &lt; 6) ? 'Password minimal 6 karakter' : null,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _prosesRegister,
+                  child: _loading
+                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('Daftar'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+
+    <h2 id="s13"><span class="badge">13</span>HomeScreen: Navigasi Bawah Tiga Tab</h2>
+    <p>Setelah login, pengguna mendarat di <code>HomeScreen</code> yang membagi aplikasi jadi tiga tab lewat <code>NavigationBar</code> (Material 3) — "Semua UMKM" (publik), "UMKM Saya" (butuh login), dan "Profil" (butuh login).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/home_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import 'umkm/umkm_list_screen.dart';
+import 'umkm/myumkm_screen.dart';
+import 'profile/profile_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+  @override
+  State&lt;HomeScreen&gt; createState() =&gt; _HomeScreenState();
+}
+
+class _HomeScreenState extends State&lt;HomeScreen&gt; {
+  int _index = 0;
+
+  static const _halaman = [
+    UmkmListScreen(),
+    MyUmkmScreen(),
+    ProfileScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _index, children: _halaman),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) =&gt; setState(() =&gt; _index = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Semua UMKM'),
+          NavigationDestination(icon: Icon(Icons.store_outlined), selectedIcon: Icon(Icons.store), label: 'UMKM Saya'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
+        ],
+      ),
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">IndexedStack, bukan sekadar menukar widget biasa</span><p><code>IndexedStack</code> membangun ketiga halaman sekaligus di memori dan hanya menampilkan satu, alih-alih membongkar-pasang widget setiap pindah tab. Efeknya: state tiap tab (posisi scroll, <code>Future</code> yang sedang berjalan) tidak hilang ketika berpindah ke tab lain lalu kembali lagi.</p></div>
+
+    <h2 id="s14"><span class="badge">14</span>ProfileScreen & UpdateProfileScreen</h2>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/profile/profile_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../../../models/user_model.dart';
+import '../../../services/api_service.dart';
+import 'update_profile_screen.dart';
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+  @override
+  State&lt;ProfileScreen&gt; createState() =&gt; _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State&lt;ProfileScreen&gt; {
+  final _apiService = ApiService();
+  late Future&lt;User&gt; _futureProfile;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureProfile = _apiService.getProfile();
+  }
+
+  Future&lt;void&gt; _logout() async {
+    await _apiService.logout();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) =&gt; false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Profil Saya')),
+      body: FutureBuilder&lt;User&gt;(
+        future: _futureProfile,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Gagal memuat profil: ${snapshot.error}'));
+          }
+          final user = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              CircleAvatar(radius: 36, child: Text(user.nama[0].toUpperCase(), style: const TextStyle(fontSize: 28))),
+              const SizedBox(height: 16),
+              Text(user.nama, style: Theme.of(context).textTheme.titleLarge),
+              Text(user.email, style: TextStyle(color: Colors.grey[600])),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Ubah Profil &amp; Password'),
+                onTap: () =&gt; Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) =&gt; UpdateProfileScreen(user: user)),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('Keluar', style: TextStyle(color: Colors.red)),
+                onTap: _logout,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/profile/update_profile_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../../../models/user_model.dart';
+import '../../../services/api_service.dart';
+
+class UpdateProfileScreen extends StatefulWidget {
+  final User user;
+  const UpdateProfileScreen({super.key, required this.user});
+  @override
+  State&lt;UpdateProfileScreen&gt; createState() =&gt; _UpdateProfileScreenState();
+}
+
+class _UpdateProfileScreenState extends State&lt;UpdateProfileScreen&gt; {
+  final _apiService = ApiService();
+  final _formProfilKey = GlobalKey&lt;FormState&gt;();
+  final _formPasswordKey = GlobalKey&lt;FormState&gt;();
+  late final _namaController = TextEditingController(text: widget.user.nama);
+  late final _emailController = TextEditingController(text: widget.user.email);
+  final _passwordLamaController = TextEditingController();
+  final _passwordBaruController = TextEditingController();
+  bool _savingProfil = false;
+  bool _savingPassword = false;
+
+  Future&lt;void&gt; _simpanProfil() async {
+    if (!_formProfilKey.currentState!.validate()) return;
+    setState(() =&gt; _savingProfil = true);
+    try {
+      await _apiService.updateProfile(_namaController.text, _emailController.text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profil berhasil diperbarui')));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() =&gt; _savingProfil = false);
+    }
+  }
+
+  Future&lt;void&gt; _simpanPassword() async {
+    if (!_formPasswordKey.currentState!.validate()) return;
+    setState(() =&gt; _savingPassword = true);
+    try {
+      await _apiService.updatePassword(_passwordLamaController.text, _passwordBaruController.text);
+      if (!mounted) return;
+      _passwordLamaController.clear();
+      _passwordBaruController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password berhasil diperbarui')));
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() =&gt; _savingPassword = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ubah Profil')),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Form(
+            key: _formProfilKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _namaController,
+                  decoration: const InputDecoration(labelText: 'Nama', border: OutlineInputBorder()),
+                  validator: (v) =&gt; (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                  validator: (v) =&gt; (v == null || v.isEmpty) ? 'Email wajib diisi' : null,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _savingProfil ? null : _simpanProfil,
+                    child: Text(_savingProfil ? 'Menyimpan...' : 'Simpan Profil'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 48),
+          Form(
+            key: _formPasswordKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _passwordLamaController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Password Lama', border: OutlineInputBorder()),
+                  validator: (v) =&gt; (v == null || v.isEmpty) ? 'Password lama wajib diisi' : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordBaruController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Password Baru', border: OutlineInputBorder()),
+                  validator: (v) =&gt; (v == null || v.length &lt; 6) ? 'Minimal 6 karakter' : null,
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _savingPassword ? null : _simpanPassword,
+                    child: Text(_savingPassword ? 'Menyimpan...' : 'Ubah Password'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _emailController.dispose();
+    _passwordLamaController.dispose();
+    _passwordBaruController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Dua Form terpisah dalam satu layar</span><p>Form profil dan form ganti password sengaja memakai <code>GlobalKey&lt;FormState&gt;</code> dan fungsi simpan yang terpisah. Kalau disatukan jadi satu <code>Form</code>, menekan "Simpan Profil" akan ikut memvalidasi field password lama/baru yang mungkin sengaja dikosongkan pengguna — padahal keduanya memang dua aksi independen di API (<code>PUT /profile</code> vs <code>PUT /profile/password</code>).</p></div>
+
+    <h2 id="s15"><span class="badge">15</span>UmkmListScreen & UmkmDetailScreen</h2>
+    <p><code>UmkmListScreen</code> adalah layar publik yang menampilkan seluruh UMKM terdaftar; <code>onTap</code> pada tiap item membuka <code>UmkmDetailScreen</code> — juga publik, menampilkan info UMKM beserta daftar produknya.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_list_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+
+import '../../../models/paginated_result.dart';
+import '../../../models/umkm_model.dart';
+import '../../../services/api_service.dart';
+import 'umkm_detail_screen.dart';
+
+class UmkmListScreen extends StatefulWidget {
+  const UmkmListScreen({super.key});
+
+  @override
+  State&lt;UmkmListScreen&gt; createState() =&gt; _UmkmListScreenState();
+}
+
+class _UmkmListScreenState extends State&lt;UmkmListScreen&gt; {
+  final _apiService = ApiService();
+  late Future&lt;PaginatedResult&lt;Umkm&gt;&gt; _futureUmkm;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureUmkm = _apiService.getUmkmList();
+  }
+
+  Future&lt;void&gt; _muatUlang() async {
+    setState(() {
+      _futureUmkm = _apiService.getUmkmList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Semua UMKM')),
+      body: FutureBuilder&lt;PaginatedResult&lt;Umkm&gt;&gt;(
+        future: _futureUmkm,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Gagal memuat data: ${snapshot.error}'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(onPressed: _muatUlang, child: const Text('Coba Lagi')),
+                ],
+              ),
+            );
+          }
+
+          final hasil = snapshot.data!;
+          if (hasil.data.isEmpty) {
+            return const Center(child: Text('Belum ada UMKM yang terdaftar'));
+          }
+
+          return RefreshIndicator(
+            onRefresh: _muatUlang,
+            child: ListView.builder(
+              itemCount: hasil.data.length,
+              itemBuilder: (context, i) {
+                final umkm = hasil.data[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: umkm.punyaFoto
+                        ? NetworkImage(ApiService.fotoUrl(umkm.foto))
+                        : null,
+                    child: umkm.punyaFoto ? null : Text(umkm.nama[0]),
+                  ),
+                  title: Text(umkm.nama),
+                  subtitle: Text(umkm.alamat),
+                  onTap: () =&gt; Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) =&gt; UmkmDetailScreen(umkmId: umkm.id)),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_detail_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../../../models/umkm_model.dart';
+import '../../../models/produk_model.dart';
+import '../../../models/paginated_result.dart';
+import '../../../services/api_service.dart';
+
+class UmkmDetailScreen extends StatefulWidget {
+  final int umkmId;
+  const UmkmDetailScreen({super.key, required this.umkmId});
+  @override
+  State&lt;UmkmDetailScreen&gt; createState() =&gt; _UmkmDetailScreenState();
+}
+
+class _UmkmDetailScreenState extends State&lt;UmkmDetailScreen&gt; {
+  final _apiService = ApiService();
+  late Future&lt;Umkm&gt; _futureUmkm;
+  late Future&lt;PaginatedResult&lt;Produk&gt;&gt; _futureProduk;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureUmkm = _apiService.getUmkmDetail(widget.umkmId);
+    _futureProduk = _apiService.getProdukByUmkm(widget.umkmId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detail UMKM')),
+      body: FutureBuilder&lt;Umkm&gt;(
+        future: _futureUmkm,
+        builder: (context, snapshotUmkm) {
+          if (snapshotUmkm.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshotUmkm.hasError) {
+            return Center(child: Text('Gagal memuat UMKM: ${snapshotUmkm.error}'));
+          }
+          final umkm = snapshotUmkm.data!;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (umkm.punyaFoto)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(ApiService.fotoUrl(umkm.foto), height: 180, width: double.infinity, fit: BoxFit.cover),
+                ),
+              const SizedBox(height: 12),
+              Text(umkm.nama, style: Theme.of(context).textTheme.titleLarge),
+              Text(umkm.alamat, style: TextStyle(color: Colors.grey[600])),
+              const SizedBox(height: 8),
+              Text(umkm.deskripsi),
+              const Divider(height: 32),
+              Text('Produk', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              FutureBuilder&lt;PaginatedResult&lt;Produk&gt;&gt;(
+                future: _futureProduk,
+                builder: (context, snapshotProduk) {
+                  if (snapshotProduk.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snapshotProduk.hasError) {
+                    return Text('Gagal memuat produk: ${snapshotProduk.error}');
+                  }
+                  final produkList = snapshotProduk.data!.data;
+                  if (produkList.isEmpty) {
+                    return const Text('Belum ada produk');
+                  }
+                  return Column(
+                    children: produkList.map((p) =&gt; ListTile(
+                      leading: p.foto.isNotEmpty
+                          ? CircleAvatar(backgroundImage: NetworkImage(ApiService.fotoUrl(p.foto)))
+                          : const CircleAvatar(child: Icon(Icons.inventory_2_outlined)),
+                      title: Text(p.nama),
+                      subtitle: Text('Rp${p.harga.toStringAsFixed(0)}'),
+                    )).toList(),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}</code></pre></div>
+
+    <h2 id="s16"><span class="badge">16</span>MyUmkmScreen: Lihat, Buat, Edit, Hapus UMKM Sendiri</h2>
+    <p>Layar ini punya tiga kondisi yang lebih kaya dari sekadar loading/error/data: <strong>belum punya UMKM</strong> (tampilkan tombol "Buat UMKM"), <strong>sudah punya</strong> (tampilkan detail + tombol edit/hapus + daftar produknya).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/myumkm_screen.dart</span></div><pre><code>import 'package:flutter/material.dart';
+import '../../../models/umkm_model.dart';
+import '../../../models/produk_model.dart';
+import '../../../models/paginated_result.dart';
+import '../../../services/api_service.dart';
+import 'umkm_form_screen.dart';
+import 'produk_form_screen.dart';
+
+class MyUmkmScreen extends StatefulWidget {
+  const MyUmkmScreen({super.key});
+  @override
+  State&lt;MyUmkmScreen&gt; createState() =&gt; _MyUmkmScreenState();
+}
+
+class _MyUmkmScreenState extends State&lt;MyUmkmScreen&gt; {
+  final _apiService = ApiService();
+  late Future&lt;Umkm?&gt; _futureUmkm;
+  int _produkKey = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _muatUmkm();
+  }
+
+  void _muatUmkm() {
+    setState(() =&gt; _futureUmkm = _apiService.getUmkmSaya());
+  }
+
+  void _muatUlangProduk() =&gt; setState(() =&gt; _produkKey++);
+
+  Future&lt;void&gt; _bukaFormUmkm([Umkm? umkm]) async {
+    final tersimpan = await Navigator.push&lt;bool&gt;(
+      context,
+      MaterialPageRoute(builder: (_) =&gt; UmkmFormScreen(umkm: umkm)),
+    );
+    if (tersimpan == true) _muatUmkm();
+  }
+
+  Future&lt;void&gt; _hapusUmkm(int id) async {
+    try {
+      await _apiService.hapusUmkm(id);
+      _muatUmkm();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  Future&lt;void&gt; _bukaFormProduk(int umkmId, [Produk? produk]) async {
+    final tersimpan = await Navigator.push&lt;bool&gt;(
+      context,
+      MaterialPageRoute(builder: (_) =&gt; ProdukFormScreen(umkmId: umkmId, produk: produk)),
+    );
+    if (tersimpan == true) _muatUlangProduk();
+  }
+
+  Future&lt;void&gt; _hapusProduk(int id) async {
+    try {
+      await _apiService.hapusProduk(id);
+      _muatUlangProduk();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('UMKM Saya')),
+      body: FutureBuilder&lt;Umkm?&gt;(
+        future: _futureUmkm,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Gagal memuat: ${snapshot.error}'));
+          }
+          final umkm = snapshot.data;
+          if (umkm == null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Anda belum memiliki UMKM'),
+                  const SizedBox(height: 12),
+                  ElevatedButton(onPressed: () =&gt; _bukaFormUmkm(), child: const Text('Buat UMKM')),
+                ],
+              ),
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (umkm.punyaFoto)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(ApiService.fotoUrl(umkm.foto), height: 160, width: double.infinity, fit: BoxFit.cover),
+                ),
+              const SizedBox(height: 12),
+              Text(umkm.nama, style: Theme.of(context).textTheme.titleLarge),
+              Text(umkm.alamat, style: TextStyle(color: Colors.grey[600])),
+              Text(umkm.deskripsi),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: OutlinedButton(onPressed: () =&gt; _bukaFormUmkm(umkm), child: const Text('Edit UMKM'))),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                      onPressed: () =&gt; _hapusUmkm(umkm.id),
+                      child: const Text('Hapus UMKM'),
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Produk', style: Theme.of(context).textTheme.titleMedium),
+                  TextButton.icon(
+                    onPressed: () =&gt; _bukaFormProduk(umkm.id),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Tambah'),
+                  ),
+                ],
+              ),
+              _DaftarProduk(
+                key: ValueKey(_produkKey),
+                umkmId: umkm.id,
+                apiService: _apiService,
+                onEdit: (p) =&gt; _bukaFormProduk(umkm.id, p),
+                onHapus: _hapusProduk,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Widget terpisah dengan state sendiri untuk daftar produk, supaya punya
+/// siklus fetch-sekali-di-initState yang independen dari FutureBuilder UMKM
+/// di atasnya (lihat catatan di bawah).
+class _DaftarProduk extends StatefulWidget {
+  final int umkmId;
+  final ApiService apiService;
+  final void Function(Produk) onEdit;
+  final void Function(int id) onHapus;
+
+  const _DaftarProduk({
+    super.key,
+    required this.umkmId,
+    required this.apiService,
+    required this.onEdit,
+    required this.onHapus,
+  });
+
+  @override
+  State&lt;_DaftarProduk&gt; createState() =&gt; _DaftarProdukState();
+}
+
+class _DaftarProdukState extends State&lt;_DaftarProduk&gt; {
+  late Future&lt;PaginatedResult&lt;Produk&gt;&gt; _futureProduk;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureProduk = widget.apiService.getProdukByUmkm(widget.umkmId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder&lt;PaginatedResult&lt;Produk&gt;&gt;(
+      future: _futureProduk,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Text('Gagal memuat produk: ${snapshot.error}');
+        }
+        final produkList = snapshot.data!.data;
+        if (produkList.isEmpty) {
+          return const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Belum ada produk'));
+        }
+        return Column(
+          children: produkList.map((p) =&gt; ListTile(
+            leading: p.foto.isNotEmpty
+                ? CircleAvatar(backgroundImage: NetworkImage(ApiService.fotoUrl(p.foto)))
+                : const CircleAvatar(child: Icon(Icons.inventory_2_outlined)),
+            title: Text(p.nama),
+            subtitle: Text('Rp${p.harga.toStringAsFixed(0)}'),
+            trailing: PopupMenuButton&lt;String&gt;(
+              onSelected: (value) {
+                if (value == 'edit') widget.onEdit(p);
+                if (value == 'hapus') widget.onHapus(p.id);
+              },
+              itemBuilder: (_) =&gt; const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'hapus', child: Text('Hapus')),
+              ],
+            ),
+          )).toList(),
+        );
+      },
+    );
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Kenapa daftar produk jadi widget terpisah, bukan FutureBuilder langsung di dalam build()?</span><p>Aturan "<code>Future</code> dibuat sekali di <code>initState</code>, bukan di <code>build()</code>" mencegah request berulang setiap rebuild. Di sini ada masalah baru: produk perlu di-<em>refresh</em> setelah ditambah/diubah/dihapus, padahal <code>MyUmkmScreen</code> sendiri juga rebuild karena alasan lain (mis. <code>setState</code> dari UMKM). Solusinya <strong>bukan</strong> memanggil ulang <code>getProdukByUmkm</code> langsung di <code>build()</code> (melanggar aturan di atas), melainkan membungkus daftar produk dalam widget <code>StatefulWidget</code> terpisah (<code>_DaftarProduk</code>) yang fetch sekali di <code>initState</code>-nya sendiri, lalu memberinya <code>key: ValueKey(_produkKey)</code>. Mengganti nilai <code>key</code> memberi tahu Flutter untuk <strong>membuang widget lama dan membuat yang baru dari nol</strong> — termasuk memanggil <code>initState</code> lagi — persis saat dibutuhkan, tidak lebih sering dari itu.</p></div>
+
+    <h2 id="s17"><span class="badge">17</span>Form UMKM & Form Produk (Buat/Ubah + Upload Foto)</h2>
+    <p>Kedua form berikut dipakai untuk <strong>dua mode sekaligus</strong>: <code>umkm</code>/<code>produk</code> bernilai <code>null</code> berarti mode "buat baru", terisi berarti mode "edit" (form terisi otomatis dari data yang ada). Memilih foto memakai <code>image_picker</code>, lalu path file lokalnya dikirim ke <code>ApiService.simpanUmkm</code>/<code>simpanProduk</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_form_screen.dart</span></div><pre><code>import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../models/umkm_model.dart';
+import '../../../services/api_service.dart';
+
+class UmkmFormScreen extends StatefulWidget {
+  final Umkm? umkm; // null = membuat baru, terisi = mode edit
+  const UmkmFormScreen({super.key, this.umkm});
+  @override
+  State&lt;UmkmFormScreen&gt; createState() =&gt; _UmkmFormScreenState();
+}
+
+class _UmkmFormScreenState extends State&lt;UmkmFormScreen&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _apiService = ApiService();
+  late final _namaController = TextEditingController(text: widget.umkm?.nama ?? '');
+  late final _deskripsiController = TextEditingController(text: widget.umkm?.deskripsi ?? '');
+  late final _alamatController = TextEditingController(text: widget.umkm?.alamat ?? '');
+  XFile? _fotoBaru;
+  bool _saving = false;
+
+  Future&lt;void&gt; _pilihFoto() async {
+    final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (file != null) setState(() =&gt; _fotoBaru = file);
+  }
+
+  Future&lt;void&gt; _simpan() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() =&gt; _saving = true);
+    try {
+      await _apiService.simpanUmkm(
+        id: widget.umkm?.id,
+        nama: _namaController.text,
+        deskripsi: _deskripsiController.text,
+        alamat: _alamatController.text,
+        fotoPath: _fotoBaru?.path,
+      );
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() =&gt; _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sedangEdit = widget.umkm != null;
+    return Scaffold(
+      appBar: AppBar(title: Text(sedangEdit ? 'Edit UMKM' : 'Buat UMKM')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            GestureDetector(
+              onTap: _pilihFoto,
+              child: _fotoBaru != null
+                  ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(_fotoBaru!.path), height: 160, fit: BoxFit.cover))
+                  : (sedangEdit &amp;&amp; widget.umkm!.punyaFoto
+                      ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(ApiService.fotoUrl(widget.umkm!.foto), height: 160, fit: BoxFit.cover))
+                      : Container(
+                          height: 160,
+                          decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+                          child: const Center(child: Icon(Icons.add_a_photo_outlined, size: 32)),
+                        )),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _namaController,
+              decoration: const InputDecoration(labelText: 'Nama UMKM', border: OutlineInputBorder()),
+              validator: (v) =&gt; (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _deskripsiController,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Deskripsi', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _alamatController,
+              decoration: const InputDecoration(labelText: 'Alamat', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _simpan,
+                child: Text(_saving ? 'Menyimpan...' : 'Simpan'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _deskripsiController.dispose();
+    _alamatController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/produk_form_screen.dart</span></div><pre><code>import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../models/produk_model.dart';
+import '../../../services/api_service.dart';
+
+class ProdukFormScreen extends StatefulWidget {
+  final int umkmId;
+  final Produk? produk; // null = tambah baru, terisi = mode edit
+  const ProdukFormScreen({super.key, required this.umkmId, this.produk});
+  @override
+  State&lt;ProdukFormScreen&gt; createState() =&gt; _ProdukFormScreenState();
+}
+
+class _ProdukFormScreenState extends State&lt;ProdukFormScreen&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _apiService = ApiService();
+  late final _namaController = TextEditingController(text: widget.produk?.nama ?? '');
+  late final _hargaController = TextEditingController(text: widget.produk?.harga.toStringAsFixed(0) ?? '');
+  late final _deskripsiController = TextEditingController(text: widget.produk?.deskripsi ?? '');
+  XFile? _fotoBaru;
+  bool _saving = false;
+
+  Future&lt;void&gt; _pilihFoto() async {
+    final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (file != null) setState(() =&gt; _fotoBaru = file);
+  }
+
+  Future&lt;void&gt; _simpan() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() =&gt; _saving = true);
+    try {
+      await _apiService.simpanProduk(
+        id: widget.produk?.id,
+        umkmId: widget.umkmId,
+        nama: _namaController.text,
+        harga: double.parse(_hargaController.text),
+        deskripsi: _deskripsiController.text,
+        fotoPath: _fotoBaru?.path,
+      );
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() =&gt; _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sedangEdit = widget.produk != null;
+    return Scaffold(
+      appBar: AppBar(title: Text(sedangEdit ? 'Edit Produk' : 'Tambah Produk')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            GestureDetector(
+              onTap: _pilihFoto,
+              child: _fotoBaru != null
+                  ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(_fotoBaru!.path), height: 140, fit: BoxFit.cover))
+                  : (sedangEdit &amp;&amp; widget.produk!.foto.isNotEmpty
+                      ? ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(ApiService.fotoUrl(widget.produk!.foto), height: 140, fit: BoxFit.cover))
+                      : Container(
+                          height: 140,
+                          decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12)),
+                          child: const Center(child: Icon(Icons.add_a_photo_outlined, size: 32)),
+                        )),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _namaController,
+              decoration: const InputDecoration(labelText: 'Nama Produk', border: OutlineInputBorder()),
+              validator: (v) =&gt; (v == null || v.isEmpty) ? 'Nama wajib diisi' : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _hargaController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Harga', border: OutlineInputBorder()),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Harga wajib diisi';
+                if (double.tryParse(v) == null) return 'Harga harus berupa angka';
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _deskripsiController,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Deskripsi', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _simpan,
+                child: Text(_saving ? 'Menyimpan...' : 'Simpan'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _hargaController.dispose();
+    _deskripsiController.dispose();
+    super.dispose();
+  }
+}</code></pre></div>
+    <div class="note"><span class="lbl">Navigator.pop(context, true) — kenapa membawa nilai?</span><p>Kedua form memanggil <code>Navigator.pop(context, true)</code> setelah berhasil simpan, bukan <code>Navigator.pop(context)</code> polos. Nilai <code>true</code> ini diterima layar pemanggil lewat <code>await Navigator.push&lt;bool&gt;(...)</code> di <code>MyUmkmScreen</code> — dipakai sebagai sinyal "data berubah, silakan muat ulang" tanpa perlu <code>Provider</code>/state management tambahan. Kalau pengguna menekan tombol back tanpa menyimpan, <code>pop</code> otomatis membawa <code>null</code> sehingga <code>MyUmkmScreen</code> tahu tidak perlu memuat ulang apa-apa.</p></div>
+
+    <h2 id="s18"><span class="badge">18</span>Menjalankan Aplikasi</h2>
+    <p>Urutan menyalakan proyek selalu sama: backend dulu, baru Flutter.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal 1 — backend</span></div><pre><code>cd umkm-api
+go run ./cmd/api</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal 2 — aplikasi Flutter</span></div><pre><code>cd umkm-app
+flutter run</code></pre></div>
+    <p>Pastikan <code>ApiService.baseUrl</code> sesuai jenis perangkat yang dipakai (Pertemuan 6 Bagian 07):</p>
+    <table>
+      <tr><th>Target</th><th>baseUrl</th></tr>
+      <tr><td>Android Emulator</td><td><code>http://10.0.2.2:8080/api</code> (default di kode ini)</td></tr>
+      <tr><td>iOS Simulator</td><td><code>http://localhost:8080/api</code></td></tr>
+      <tr><td>HP fisik (Android/iOS)</td><td><code>http://&lt;IP-lokal-komputer&gt;:8080/api</code>, mis. <code>http://192.168.1.5:8080/api</code> — HP dan komputer harus satu jaringan Wi-Fi</td></tr>
+    </table>
+    <div class="verify">
+      <span class="lbl">✓ Urutan uji coba yang disarankan</span>
+      <p>Register akun baru → login → buat UMKM (dengan/tanpa foto) → tambah beberapa produk → buka tab "Semua UMKM" dari akun lain untuk memastikan data publik ikut tampil → edit salah satu produk → hapus salah satu produk → logout → pastikan kembali ke layar login dan tidak bisa menekan back ke Home.</p>
+    </div>
+
+    <h2 id="s19"><span class="badge">19</span>Troubleshooting Cepat</h2>
+    <p>Kalau menemui <code>401 Unauthorized</code> di endpoint mana pun yang butuh login, atau error lain yang tidak jelas penyebabnya, langkah diagnosisnya sudah dibahas lengkap di Pertemuan 7 Bagian 15 — ringkasannya:</p>
+    <ol>
+      <li>Pastikan token benar-benar tersimpan setelah login (<code>print</code> di <code>ApiService.login()</code>).</li>
+      <li>Pastikan setiap method baru yang kamu tambahkan sendiri ikut menyertakan <code>await _authHeaders()</code> / <code>.headers.addAll(await _authHeaders())</code>.</li>
+      <li>Jangan pernah menimpa header <code>Content-Type</code> secara manual pada <code>http.MultipartRequest</code> — biarkan diatur otomatis.</li>
+      <li>Token kedaluwarsa (24 jam) atau backend direstart dengan <code>JWT_SECRET</code> berbeda &rarr; logout lalu login ulang.</li>
+      <li>Uji endpoint langsung lewat Swagger/<code>curl</code> dulu untuk memastikan masalahnya di Flutter, bukan di server.</li>
+    </ol>
+    <p>Lihat <a href="pertemuan-07.html#s15">Pertemuan 7 Bagian 15</a> untuk penjelasan lengkap beserta contoh kode salah/benar.</p>
+
+    <h2 id="s20"><span class="badge">20</span>Latihan</h2>
+    <ol>
+      <li>Tambahkan <code>RefreshIndicator</code> (tarik-untuk-refresh) pada <code>MyUmkmScreen</code>, memanggil ulang <code>_muatUmkm()</code>.</li>
+      <li>Tambahkan fitur pencarian: <code>TextField</code> di <code>UmkmListScreen</code> yang memanggil ulang <code>getUmkmList(q: ...)</code>.</li>
+      <li>Tambahkan konfirmasi (<code>showDialog</code> dengan tombol "Batal"/"Hapus") sebelum benar-benar memanggil <code>_hapusUmkm</code>/<code>_hapusProduk</code>.</li>
+      <li><strong>Tantangan:</strong> buat satu fungsi pembantu di <code>ApiService</code> yang membungkus semua pemanggilan <code>http</code>, menangkap status <code>401</code> secara seragam — hapus token dari <code>TokenStorage</code> lalu lempar <code>ApiException</code> khusus yang ditangkap di level atas untuk otomatis mengarahkan ke <code>/login</code>, tanpa duplikasi pengecekan di setiap layar.</li>
+    </ol>
+
+    <footer>Dengan panduan ini, proyek <code>umkm-app</code> bisa dibangun ulang dari nol kapan pun dibutuhkan — satu alur lengkap dari <code>flutter create</code> kosong sampai aplikasi yang benar-benar login, menyimpan sesi, dan mengelola data milik sendiri termasuk foto, tersambung ke backend Golang + PostgreSQL. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>
