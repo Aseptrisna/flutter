@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dasar Pemrograman Dart & Golang: Perbandingan Sisi-ke-Sisi</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE; --blue:#7C93FF; --blue-dim:#1C2440;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:#fff;}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:#fff;}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff; margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:26px 0 10px;}
+  p{margin:0 0 15px; max-width:68ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:66ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .pair{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 20px;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted); font-weight:600;}
+  .codecard.dart .tag{color:var(--blue);}
+  .codecard.go .tag{color:var(--accent);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .usage{background:var(--blue-dim); border-left:3px solid var(--blue); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .usage .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:4px;}
+  .usage p{margin:0; font-size:15px;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} .pair{grid-template-columns:1fr;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Kenapa Dart & Go</a></li>
+      <li><a href="#s2">Variabel & Tipe Data</a></li>
+      <li><a href="#s3">Operator & Percabangan</a></li>
+      <li><a href="#s4">Perulangan</a></li>
+      <li><a href="#s5">Fungsi</a></li>
+      <li><a href="#s6">Koleksi Data</a></li>
+      <li><a href="#s7">OOP: Class vs Struct</a></li>
+      <li><a href="#s8">Null Safety vs Zero Value</a></li>
+      <li><a href="#s9">Error Handling</a></li>
+      <li><a href="#s10">Asynchronous</a></li>
+      <li><a href="#s11">Package & Module</a></li>
+      <li><a href="#s12">Latihan</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 1b · Fundamental Bahasa</span>
+      <h1>Dasar Pemrograman Dart & Golang</h1>
+      <p class="sub">Mata kuliah ini memakai <strong>Dart</strong> untuk membangun aplikasi mobile (Flutter) dan <strong>Golang</strong> untuk membangun backend (REST API). Materi ini membahas dasar sintaks kedua bahasa secara berdampingan — bukan supaya dihafal terpisah, tapi supaya pola pikirnya kelihatan: di mana keduanya mirip, dan di mana keduanya sengaja berbeda filosofi.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Kenapa Dart & Kenapa Go</h2>
+    <p><strong>Dart</strong> dipilih Google sebagai bahasa Flutter karena mendukung <em>hot reload</em> (kompilasi JIT saat development) sekaligus kompilasi native (AOT) saat rilis — kombinasi yang jarang ada di bahasa lain, dan cocok untuk UI yang sering berubah-ubah saat development tapi harus cepat saat dipakai pengguna.</p>
+    <p><strong>Go (Golang)</strong> dipilih untuk backend karena sederhana (sengaja sedikit fitur, mudah dibaca tim besar), punya concurrency bawaan (goroutine) yang ringan, dan dikompilasi jadi satu binary native tanpa dependensi runtime — cocok untuk server yang harus menangani banyak koneksi sekaligus dengan resource minim.</p>
+    <div class="note"><span class="lbl">Keduanya "statically typed"</span><p>Baik Dart maupun Go memaksa tipe data diketahui saat kompilasi (bukan saat program jalan seperti Python/JavaScript). Ini sebabnya banyak kesalahan ketahuan lewat IDE/compiler sebelum sempat dijalankan — kebiasaan yang akan terus dipakai sepanjang mata kuliah ini.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Variabel & Tipe Data</h2>
+    <p>Dart punya tipe dasar: <code>int</code>, <code>double</code>, <code>String</code>, <code>bool</code>, <code>List</code>, <code>Map</code>. Go punya himpunan yang mirip: <code>int</code>, <code>float64</code>, <code>string</code>, <code>bool</code>, <code>[]T</code> (slice), <code>map[K]V</code>.</p>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart</span></div><pre><code>void main() {
+  int umur = 20;
+  double harga = 15000.5;
+  String nama = 'Budi';
+  bool aktif = true;
+
+  // Inferensi tipe otomatis
+  var kota = 'Bandar Lampung';
+
+  // Konstanta — nilai tidak bisa diubah
+  const pajak = 0.11;
+
+  print('$nama, $umur tahun, dari $kota');
+}</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go</span></div><pre><code>package main
+
+import "fmt"
+
+func main() {
+	var umur int = 20
+	var harga float64 = 15000.5
+	var nama string = "Budi"
+	var aktif bool = true
+
+	// Inferensi tipe otomatis (:=)
+	kota := "Bandar Lampung"
+
+	// Konstanta — nilai tidak bisa diubah
+	const pajak = 0.11
+
+	fmt.Printf("%s, %d tahun, dari %s\n", nama, umur, kota)
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">var di Dart vs := di Go</span><p>Keduanya sama-sama "biarkan compiler menebak tipe dari nilai di kanan", tapi sintaksnya beda: Dart tetap menulis <code>var</code>, Go memakai operator <code>:=</code> (short variable declaration) yang hanya bisa dipakai di dalam fungsi, bukan di level package. Keduanya tetap <strong>statically typed</strong> — begitu dideklarasikan, tipe variabel itu tidak bisa berubah.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Variabel &amp; tipe data mencegah data tertukar jenis — nama itu teks, harga itu angka, status login itu benar/salah. Di <code>Umkm</code> model (<code>umkm_model.dart</code>), field <code>nama</code> (String), <code>id</code> (int), <code>punyaFoto</code> (bool) harus persis sesuai jenisnya; kalau <code>harga</code> produk salah dideklarasikan sebagai <code>String</code>, perhitungan total belanja di aplikasi akan error atau salah hasil.</p></div>
+
+    <h2 id="s3"><span class="badge">03</span>Operator & Percabangan</h2>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart</span></div><pre><code>int nilai = 75;
+
+if (nilai >= 85) {
+  print('A');
+} else if (nilai >= 70) {
+  print('B');
+} else {
+  print('C');
+}
+
+// switch dengan pattern (Dart 3)
+String kategori = switch (nilai) {
+  >= 85 => 'A',
+  >= 70 => 'B',
+  _ => 'C',
+};</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go</span></div><pre><code>nilai := 75
+
+if nilai >= 85 {
+	fmt.Println("A")
+} else if nilai >= 70 {
+	fmt.Println("B")
+} else {
+	fmt.Println("C")
+}
+
+// switch tanpa kondisi (idiomatis di Go)
+var kategori string
+switch {
+case nilai >= 85:
+	kategori = "A"
+case nilai >= 70:
+	kategori = "B"
+default:
+	kategori = "C"
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Go tidak pakai tanda kurung pada kondisi if</span><p><code>if nilai >= 85 {</code> — bukan <code>if (nilai >= 85) {</code>. Ini bukan opsional, melainkan aturan sintaks Go: tanda kurung di sekitar kondisi malah jadi error compile. Kurung kurawal <code>{ }</code> juga wajib walau badan if cuma satu baris (beda dari Dart yang mengizinkan <code>if (x) print(x);</code> tanpa kurung kurawal).</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Operator &amp; percabangan membuat program mengambil keputusan berbeda tergantung kondisi — inti dari hampir semua logika aplikasi. Di <code>MyUmkmScreen</code>: <code>if (umkm == null)</code> menentukan tampilkan tombol "Buat UMKM" atau detail UMKM. Di backend Go: <code>if response.statusCode != 200 { throw error }</code> dipakai di <strong>setiap</strong> method <code>ApiService</code> untuk membedakan request sukses atau gagal.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Perulangan</h2>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart</span></div><pre><code>// for klasik
+for (int i = 0; i < 5; i++) {
+  print(i);
+}
+
+// for-in untuk koleksi
+final buah = ['apel', 'jeruk', 'mangga'];
+for (final nama in buah) {
+  print(nama);
+}
+
+// while
+int sisa = 3;
+while (sisa > 0) {
+  sisa--;
+}</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go</span></div><pre><code>// for klasik — satu-satunya bentuk loop di Go
+for i := 0; i < 5; i++ {
+	fmt.Println(i)
+}
+
+// for-range untuk koleksi (index, value)
+buah := []string{"apel", "jeruk", "mangga"}
+for _, nama := range buah {
+	fmt.Println(nama)
+}
+
+// "while" di Go cukup pakai for tanpa init/post
+sisa := 3
+for sisa > 0 {
+	sisa--
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Go cuma punya satu kata kunci loop: for</span><p>Tidak ada <code>while</code> atau <code>do-while</code> terpisah seperti di Dart — semuanya ditulis dengan <code>for</code> dalam bentuk berbeda. Ini konsisten dengan filosofi Go: lebih sedikit cara melakukan hal yang sama, supaya kode tim besar tetap seragam gayanya.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Perulangan mengerjakan hal yang sama berulang kali tanpa menulis kode berkali-kali — biasanya untuk memproses daftar data. <code>produkList.map((p) =&gt; ListTile(...)).toList()</code> di <code>MyUmkmScreen</code> menampilkan setiap produk jadi satu baris list, berapapun jumlah produknya. Tanpa loop, kamu harus menulis kode tampilan untuk tiap produk satu per satu secara manual.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Fungsi</h2>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart</span></div><pre><code>int tambah(int a, int b) {
+  return a + b;
+}
+
+// parameter bernama (named) & opsional
+String sapa(String nama, {String salam = 'Halo'}) {
+  return '$salam, $nama!';
+}
+
+// mengembalikan lebih dari satu nilai lewat Record (Dart 3)
+(int, int) bagiSisa(int a, int b) {
+  return (a ~/ b, a % b);
+}
+
+void main() {
+  print(tambah(2, 3));
+  print(sapa('Budi'));
+  final (hasil, sisa) = bagiSisa(17, 5);
+  print('$hasil sisa $sisa');
+}</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go</span></div><pre><code>package main
+
+import "fmt"
+
+func tambah(a int, b int) int {
+	return a + b
+}
+
+func sapa(nama string) string {
+	return fmt.Sprintf("Halo, %s!", nama)
+}
+
+// mengembalikan lebih dari satu nilai — pola sangat umum di Go
+func bagiSisa(a int, b int) (int, int) {
+	return a / b, a % b
+}
+
+func main() {
+	fmt.Println(tambah(2, 3))
+	fmt.Println(sapa("Budi"))
+	hasil, sisa := bagiSisa(17, 5)
+	fmt.Printf("%d sisa %d\n", hasil, sisa)
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Multiple return value: fitur bawaan Go, fitur baru di Dart</span><p>Go sudah punya multiple return value sejak awal — dan ini dipakai di <strong>mana-mana</strong>, terutama untuk pola <code>(hasil, error)</code> yang akan dibahas di Bagian 09. Dart baru mendapat fitur setara (<em>Records</em>) di Dart 3 (2023) — sebelumnya pemrogram Dart harus membungkus beberapa nilai dalam class atau <code>List</code>/<code>Map</code> buatan sendiri.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Fungsi membungkus sekumpulan langkah jadi satu nama yang bisa dipanggil ulang — menghindari copy-paste kode yang sama di banyak tempat. <code>ApiService.getUmkmSaya()</code> membungkus seluruh langkah (buat request, decode JSON, cek status, lempar error) jadi satu pemanggilan sederhana yang dipakai di <code>MyUmkmScreen</code> tanpa perlu menulis ulang detail HTTP-nya setiap kali butuh data UMKM.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Koleksi Data</h2>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart</span></div><pre><code>// List — array dinamis
+List&lt;String&gt; kota = ['Bandar Lampung', 'Metro'];
+kota.add('Kotabumi');
+print(kota.length);
+
+// Map — key-value
+Map&lt;String, int&gt; stok = {'apel': 10, 'jeruk': 5};
+stok['mangga'] = 8;
+print(stok['apel']);
+
+// Operasi fungsional
+final genap = [1, 2, 3, 4, 5].where((n) =&gt; n % 2 == 0).toList();</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go</span></div><pre><code>// Slice — array dinamis (mirip List)
+kota := []string{"Bandar Lampung", "Metro"}
+kota = append(kota, "Kotabumi")
+fmt.Println(len(kota))
+
+// Map — key-value
+stok := map[string]int{"apel": 10, "jeruk": 5}
+stok["mangga"] = 8
+fmt.Println(stok["apel"])
+
+// Go tidak punya .where()/.map() bawaan — ditulis manual dengan for
+var genap []int
+for _, n := range []int{1, 2, 3, 4, 5} {
+	if n%2 == 0 {
+		genap = append(genap, n)
+	}
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">append() mengembalikan slice baru, bukan mengubah di tempat</span><p><code>kota = append(kota, "Kotabumi")</code> — hasil <code>append</code> harus ditampung ulang ke variabelnya. Beda dari Dart <code>List.add()</code> yang langsung mengubah list aslinya. Ini karena slice Go bisa saja perlu dialokasikan ulang ke memori baru kalau kapasitasnya penuh, jadi Go memaksa penulisnya sadar akan hal ini lewat return value.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Koleksi data menyimpan banyak data sejenis sekaligus — daftar UMKM, daftar produk, hasil query database. <code>PaginatedResult&lt;Umkm&gt;.data</code> adalah <code>List&lt;Umkm&gt;</code> — seluruh daftar UMKM dari API ditampung di satu variabel ini, lalu ditampilkan lewat <code>ListView.builder</code>. Di backend Go, hasil query SQL ditampung sebagai slice <code>[]Umkm</code> sebelum dikirim jadi JSON ke Flutter.</p></div>
+
+    <h2 id="s7"><span class="badge">07</span>OOP: Class (Dart) vs Struct + Method (Go)</h2>
+    <p>Dart adalah bahasa <em>object-oriented</em> penuh dengan <code>class</code>, pewarisan (<code>extends</code>), dan interface. Go <strong>tidak punya class sama sekali</strong> — Go memakai <code>struct</code> untuk mengelompokkan data, lalu menempelkan <em>method</em> ke struct itu secara terpisah.</p>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart</span></div><pre><code>class Produk {
+  final String nama;
+  final double harga;
+
+  Produk({required this.nama, required this.harga});
+
+  String info() {
+    return '$nama - Rp$harga';
+  }
+}
+
+void main() {
+  final p = Produk(nama: 'Kopi', harga: 15000);
+  print(p.info());
+}</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go</span></div><pre><code>package main
+
+import "fmt"
+
+type Produk struct {
+	Nama  string
+	Harga float64
+}
+
+// method ditempel ke struct lewat "receiver" (p Produk)
+func (p Produk) Info() string {
+	return fmt.Sprintf("%s - Rp%.0f", p.Nama, p.Harga)
+}
+
+func main() {
+	p := Produk{Nama: "Kopi", Harga: 15000}
+	fmt.Println(p.Info())
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Tidak ada pewarisan (inheritance) di Go</span><p>Dart punya <code>class Anak extends Induk</code>. Go sengaja tidak menyediakan ini — sebagai gantinya, Go memakai <strong>composition</strong> (menaruh satu struct di dalam struct lain) dan <strong>interface</strong> (kontrak method, tanpa implementasi) untuk berbagi perilaku antar tipe. Ini keputusan filosofis Go: pewarisan sering membuat hierarki class rumit di bahasa lain, jadi Go menghindarinya sejak awal.</p></div>
+    <div class="note"><span class="lbl">Huruf besar di awal nama = exported (public) di Go</span><p><code>Produk</code>, <code>Nama</code>, <code>Info</code> diawali huruf besar sehingga bisa diakses dari package lain (setara <code>public</code> di bahasa lain). Kalau ditulis huruf kecil (<code>produk</code>, <code>nama</code>), otomatis <em>private</em> — hanya bisa diakses dalam package yang sama. Dart memakai kata kunci eksplisit seperti garis bawah di depan nama (<code>_variabelPrivat</code>) untuk hal yang sama.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>OOP mengelompokkan data yang berkaitan jadi satu "bentuk" yang jelas, plus perilakunya — daripada data UMKM berceceran di banyak variabel lepas. <code>class Umkm { id, nama, alamat, foto }</code> membuat satu objek <code>Umkm</code> mewakili satu baris data UMKM secara utuh, dioper ke mana-mana (ke <code>UmkmDetailScreen</code>, <code>UmkmFormScreen</code>) sebagai satu kesatuan, bukan parameter terpisah-pisah yang gampang salah urutan.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Null Safety (Dart) vs Zero Value (Go)</h2>
+    <p>Keduanya mencegah bug klasik "null reference", tapi dengan pendekatan yang berlawanan.</p>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart — null safety</span></div><pre><code>String nama = 'Budi';       // tidak boleh null
+String? alamat;              // boleh null, wajib tanda ?
+
+// Compiler MEMAKSA cek null sebelum dipakai
+print(alamat?.toUpperCase()); // aman, hasil null kalau alamat null
+print(alamat ?? 'Tidak ada'); // nilai default kalau null
+
+// "Saya yakin ini tidak null" (hati-hati, bisa crash)
+print(alamat!.length);</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go — zero value</span></div><pre><code>var nama string   // otomatis ""  (bukan null/nil)
+var umur int      // otomatis 0
+var aktif bool    // otomatis false
+var daftar []int  // otomatis nil (slice kosong)
+
+// nil HANYA ada untuk tipe tertentu: pointer, slice,
+// map, interface, channel, function
+var alamat *string // boleh nil, karena pointer
+
+if alamat != nil {
+	fmt.Println(*alamat)
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Filosofi yang berbeda</span><p>Dart (sejak versi 2.12/null safety) memaksa programmer menyatakan eksplisit "variabel ini boleh kosong" lewat tanda <code>?</code>, lalu compiler menolak kompilasi kalau nilai nullable dipakai tanpa dicek. Go tidak punya konsep "nullable type" — setiap tipe data punya <strong>zero value</strong> baku (string kosong, angka nol, dst) sehingga variabel tidak pernah benar-benar "tidak terdefinisi". <code>nil</code> di Go cuma berlaku untuk segelintir tipe (pointer, slice, map, interface, channel, function), dan mengakses pointer <code>nil</code> tetap bisa bikin program crash (<em>nil pointer dereference</em>) — mirip efeknya dengan null safety yang dilanggar paksa pakai <code>!</code> di Dart.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Null safety &amp; zero value mencegah aplikasi crash gara-gara mengakses data yang sebenarnya belum ada/kosong. <code>getUmkmSaya()</code> mengembalikan <code>Umkm?</code> (boleh null) karena pengguna baru <strong>mungkin belum punya UMKM</strong> — <code>if (umkm == null)</code> di <code>MyUmkmScreen</code> menangani kasus itu secara eksplisit, bukan asal akses <code>umkm.nama</code> yang akan crash kalau null.</p></div>
+
+    <h2 id="s9"><span class="badge">09</span>Error Handling</h2>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart — try/catch</span></div><pre><code>double bagi(int a, int b) {
+  if (b == 0) {
+    throw Exception('Tidak bisa dibagi nol');
+  }
+  return a / b;
+}
+
+void main() {
+  try {
+    print(bagi(10, 0));
+  } catch (e) {
+    print('Error: $e');
+  } finally {
+    print('Selesai diproses');
+  }
+}</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go — return error</span></div><pre><code>package main
+
+import (
+	"errors"
+	"fmt"
+)
+
+func bagi(a, b int) (float64, error) {
+	if b == 0 {
+		return 0, errors.New("tidak bisa dibagi nol")
+	}
+	return float64(a) / float64(b), nil
+}
+
+func main() {
+	hasil, err := bagi(10, 0)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println(hasil)
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Go tidak punya exception — error adalah nilai biasa</span><p>Dart (seperti kebanyakan bahasa lain) melempar <em>exception</em> yang "melompat" ke blok <code>catch</code> terdekat. Go sama sekali tidak punya mekanisme ini untuk alur normal — fungsi yang bisa gagal cukup mengembalikan nilai kedua bertipe <code>error</code> (lihat Bagian 05: multiple return value), dan pemanggil <strong>wajib</strong> mengecek <code>if err != nil</code> secara eksplisit setiap kali. Ini terasa lebih verbose, tapi membuat jalur error terlihat jelas di setiap baris, tidak tersembunyi seperti exception yang bisa dilempar dari fungsi manapun tanpa terlihat di signature-nya. Pola <code>if err != nil { return ...err }</code> ini akan sangat sering muncul di backend <code>umkm-api</code> (Pertemuan 4).</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Error handling menangani kegagalan (koneksi putus, data tidak valid, server down) dengan rapi, bukan bikin aplikasi langsung tertutup paksa. <code>try { await _apiService.hapusUmkm(id); } on ApiException catch (e) { tampilkan SnackBar }</code> — kalau hapus gagal (misal koneksi internet putus), pengguna melihat pesan error yang jelas, aplikasi tidak crash.</p></div>
+
+    <h2 id="s10"><span class="badge">10</span>Asynchronous: Future/async-await vs Goroutine/Channel</h2>
+    <p>Dart berjalan di satu <em>thread</em> (event loop) dan memakai <code>Future</code>/<code>async</code>/<code>await</code> untuk kerja yang butuh menunggu (network, file). Go punya <strong>concurrency bawaan</strong> lewat <em>goroutine</em> — ribuan "thread ringan" bisa jalan bersamaan, dikoordinasikan lewat <em>channel</em>.</p>
+    <div class="pair">
+      <div class="codecard dart"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Dart — Future & async/await</span></div><pre><code>Future&lt;String&gt; ambilData() async {
+  await Future.delayed(const Duration(seconds: 1));
+  return 'Data dari server';
+}
+
+void main() async {
+  print('Mulai mengambil data...');
+  final data = await ambilData();
+  print(data);
+}</code></pre></div>
+      <div class="codecard go"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Go — goroutine & channel</span></div><pre><code>package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func ambilData(hasil chan string) {
+	time.Sleep(1 * time.Second)
+	hasil <- "Data dari server"
+}
+
+func main() {
+	hasil := make(chan string)
+	fmt.Println("Mulai mengambil data...")
+	go ambilData(hasil) // jalankan sebagai goroutine terpisah
+	data := <-hasil      // tunggu sampai ada nilai dikirim ke channel
+	fmt.Println(data)
+}</code></pre></div>
+    </div>
+    <div class="note"><span class="lbl">Dart: satu tugas tertunda setiap saat. Go: banyak tugas berjalan betulan bersamaan</span><p><code>await</code> di Dart menjeda eksekusi fungsi saat ini sampai <code>Future</code> selesai, tapi thread utama tetap satu — cocok untuk UI yang menunggu respons API tanpa membekukan layar. Kata kunci <code>go</code> di depan pemanggilan fungsi Go benar-benar menjalankan fungsi itu di goroutine terpisah yang berjalan konkuren (bisa paralel di banyak core CPU) — inilah yang membuat satu server Go sanggup melayani ribuan request HTTP sekaligus tanpa membuat thread sistem operasi baru untuk tiap request (yang mahal). <code>channel</code> adalah "pipa" aman untuk mengirim nilai antar goroutine tanpa data race.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Asynchronous menjalankan proses yang makan waktu (request ke server, baca database) tanpa membekukan tampilan aplikasi/server selagi menunggu. <code>await _apiService.login(...)</code> — selagi menunggu respons server, Flutter tetap bisa menampilkan <code>CircularProgressIndicator</code> berputar, tidak freeze. Di backend Go, goroutine membuat satu server sanggup melayani ratusan request UMKM sekaligus tanpa antre satu per satu.</p></div>
+
+    <h2 id="s11"><span class="badge">11</span>Package & Module System</h2>
+    <table>
+      <tr><th></th><th>Dart / Flutter</th><th>Go</th></tr>
+      <tr><td>Berkas manifest dependensi</td><td><code>pubspec.yaml</code></td><td><code>go.mod</code></td></tr>
+      <tr><td>Perintah tambah dependensi</td><td><code>flutter pub add &lt;paket&gt;</code></td><td><code>go get &lt;modul&gt;</code></td></tr>
+      <tr><td>Registry resmi</td><td><a href="https://pub.dev" target="_blank" rel="noopener">pub.dev</a></td><td><a href="https://pkg.go.dev" target="_blank" rel="noopener">pkg.go.dev</a></td></tr>
+      <tr><td>Import dalam kode</td><td><code>import 'package:http/http.dart';</code></td><td><code>import "net/http"</code></td></tr>
+      <tr><td>File lock versi</td><td><code>pubspec.lock</code></td><td><code>go.sum</code></td></tr>
+    </table>
+    <div class="note"><span class="lbl">Struktur ini sudah dipakai sejak Pertemuan 4 & 6</span><p>Penambahan <code>http</code>, <code>flutter_secure_storage</code>, <code>image_picker</code> lewat <code>flutter pub add</code> (Pertemuan 7 Bagian 02/04) di sisi Flutter, dan <code>go get</code> untuk <code>pgx</code>/<code>golang-jwt</code>/dsb di sisi backend (Pertemuan 4), keduanya mengikuti pola yang sama persis seperti tabel di atas — cuma nama perintah dan file manifest-nya yang beda.</p></div>
+    <div class="usage"><span class="lbl">Kegunaan nyata: buat apa sebenarnya?</span><p>Package &amp; module system memakai kode yang sudah dibuat orang lain (komunitas) daripada menulis ulang dari nol — misalnya logika HTTP request yang rumit. <code>flutter pub add http</code> memberi akses ke package <code>http</code> yang dipakai di <code>ApiService</code> untuk semua pemanggilan API — tanpa package ini, kamu harus menulis sendiri seluruh protokol HTTP dari socket mentah, yang jauh lebih rumit dan rawan bug.</p></div>
+
+    <h2 id="s12"><span class="badge">12</span>Latihan</h2>
+    <ol>
+      <li>Tulis fungsi Dart dan fungsi Go yang sama-sama menghitung apakah sebuah angka termasuk bilangan prima, lalu bandingkan gaya penulisannya.</li>
+      <li>Buat satu <code>class Mahasiswa</code> di Dart (dengan field <code>nama</code> dan <code>nim</code>) dan satu <code>struct Mahasiswa</code> + method <code>Info()</code> yang setara di Go.</li>
+      <li>Di Dart, buat fungsi yang mengembalikan <code>String?</code> (nullable) untuk mencari nama berdasarkan ID di sebuah <code>Map</code>; tangani kasus ID tidak ditemukan tanpa memakai tanda <code>!</code>.</li>
+      <li>Di Go, buat fungsi yang mengembalikan <code>(string, error)</code> untuk kasus yang sama; kembalikan error ketika ID tidak ditemukan di <code>map</code>.</li>
+      <li><strong>Tantangan:</strong> jalankan tiga <code>Future</code> di Dart secara bersamaan dengan <code>Future.wait([...])</code>, lalu bandingkan dengan menjalankan tiga goroutine di Go yang mengirim hasilnya ke satu channel yang sama.</li>
+    </ol>
+
+    <footer>Dasar-dasar di sini akan terus dipakai di sepanjang mata kuliah: sintaks Dart untuk seluruh layar Flutter (Pertemuan 2–7), dan sintaks Go untuk seluruh backend <code>umkm-api</code> (Pertemuan 4). Kalau ada bagian yang masih terasa asing saat membaca kode di pertemuan lain, kembali ke materi ini sebagai rujukan. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>

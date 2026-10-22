@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 8 — UTS: Proyek Flutter Perorangan</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F1116; --panel:#161923; --text:#E7E6E1; --muted:#8B93A3; --line:#262A36;
+    --accent:#F2B441; --accent-dim:#3A331F; --code-bg:#0A0C11; --code-text:#DCE1EE; --blue:#7C93FF;
+    --red:#F26B6B; --red-dim:#331A1A; --green:#6FCF97; --green-dim:#17301F;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(242,180,65,.08), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:#fff;}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto;}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); margin-bottom:22px;}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:20px; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:#fff;}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:#fff; margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:#fff; margin:26px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#3A3E4A;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#111;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang UTS Ini</a></li>
+      <li><a href="#s2">Langkah 1: Ide Aplikasi</a></li>
+      <li><a href="#s3">Langkah 2: Proyek Baru</a></li>
+      <li><a href="#s4">Langkah 3: Package Name</a></li>
+      <li><a href="#s5">Langkah 4: Menu Wajib</a></li>
+      <li><a href="#s6">Contoh Navigasi Antar Menu</a></li>
+      <li><a href="#s7">Checklist Sebelum Submit</a></li>
+      <li><a href="#s8">Kesalahan yang Sering Terjadi</a></li>
+      <li><a href="#s9">Kriteria Penilaian</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 8 · UTS</span>
+      <h1>UTS: Proyek Flutter Perorangan</h1>
+      <p class="sub">Ujian Tengah Semester ini sekaligus menjadi <strong>titik awal proyek UAS</strong> — ide aplikasi yang ditentukan sekarang akan terus dikembangkan sampai akhir semester. Dikerjakan <strong>perorangan</strong>, bukan kelompok, dan dinilai dari seberapa rapi fondasi navigasi dasarnya terpasang.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang UTS Ini</h2>
+    <p>UTS mata kuliah ini tidak berbentuk soal ujian tertulis, melainkan <strong>membangun fondasi proyek Flutter</strong> yang nantinya dikembangkan terus sampai menjadi proyek UAS. Karena itu, keputusan yang diambil sekarang (terutama ide aplikasi dan nama proyek) akan dipakai sampai akhir semester — pilih dengan sungguh-sungguh, bukan asal jadi.</p>
+    <ul>
+      <li><strong>Sifat pengerjaan:</strong> perorangan. Tidak ada kerja kelompok untuk UTS maupun UAS.</li>
+      <li><strong>Keaslian ide:</strong> ide aplikasi tidak boleh sama dengan mahasiswa lain di kelas — dicatat di spreadsheet kelas supaya ketahuan kalau ada yang bentrok.</li>
+      <li><strong>Waktu pengerjaan:</strong> aplikasi harus sudah berjalan (minimal lima menu wajib + navigasi) pada tanggal UTS dilaksanakan sesuai jadwal kampus.</li>
+    </ul>
+    <div class="warn"><span class="lbl">Ide ini dipakai sampai UAS</span><p>Jangan asal pilih ide aplikasi cuma supaya cepat selesai UTS. Fitur-fitur tambahan di UAS nanti (CRUD, API, database, dsb — menyusul di pertemuan berikutnya) akan dibangun di atas ide yang sama. Pilih ide yang masuk akal untuk dikembangkan minimal 2-3 bulan ke depan.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Langkah 1: Tentukan & Daftarkan Ide Aplikasi</h2>
+    <ol class="steps">
+      <li>Pikirkan satu ide aplikasi mobile yang ingin dibangun untuk proyek UAS. Boleh terinspirasi dari masalah sehari-hari di sekitarmu (contoh: aplikasi pencatat keuangan pribadi, aplikasi booking lapangan futsal, aplikasi manajemen tugas kuliah, dll) — tapi harus bisa dijelaskan dalam satu-dua kalimat apa masalah yang diselesaikan.</li>
+      <li>Buka spreadsheet kelas di tautan berikut, lalu <strong>tuliskan nama ide aplikasimu</strong> di baris sesuai namamu:
+        <br><a href="https://docs.google.com/spreadsheets/d/1fIGSAVGdEZajpY7B-amSITQifzv9QKFJqGKz619jKzo/edit?usp=sharing" target="_blank" rel="noopener">docs.google.com/spreadsheets/.../1fIGSAVGdEZajpY7B-amSITQifzv9QKFJqGKz619jKzo</a>
+      </li>
+      <li>Sebelum menuliskannya, <strong>scroll daftar yang sudah ada</strong> — pastikan idemu belum dipakai mahasiswa lain. Kalau mirip, ganti sudut pandang atau fiturnya supaya jelas berbeda.</li>
+    </ol>
+    <div class="note"><span class="lbl">"Tidak boleh sama" artinya apa, persisnya?</span><p>Dua mahasiswa boleh sama-sama membuat "aplikasi UMKM", tapi tidak boleh identik sampai ke detail fitur dan target penggunanya. Perbedaan yang jelas — target pengguna, alur utama, atau jenis data yang dikelola — sudah cukup membuat dua ide dianggap berbeda.</p></div>
+
+    <h2 id="s3"><span class="badge">03</span>Langkah 2: Buat Proyek Flutter Baru</h2>
+    <p>Buat folder kerja baru bernama <strong>"Project UTS dan UAS"</strong> — terpisah dari folder latihan pertemuan 1-7, karena ini proyek yang akan terus dikembangkan sampai akhir semester, bukan sekadar latihan.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>mkdir "Project UTS dan UAS"
+cd "Project UTS dan UAS"
+flutter create --org com.&lt;namamu&gt; --project-name &lt;nama_aplikasimu&gt; &lt;nama_aplikasimu&gt;
+cd &lt;nama_aplikasimu&gt;</code></pre></div>
+    <p>Ganti <code>&lt;namamu&gt;</code> dan <code>&lt;nama_aplikasimu&gt;</code> sesuai identitas dan ide yang sudah didaftarkan di Langkah 1. Lihat Bagian 04 untuk aturan lengkap format nama paketnya.</p>
+
+    <h2 id="s4"><span class="badge">04</span>Langkah 3: Format Package Name</h2>
+    <p>Package name/<code>applicationId</code> proyek UTS <strong>wajib</strong> mengikuti format berikut (lihat Pertemuan 1a untuk penjelasan konsep <code>applicationId</code> secara umum):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">format wajib</span></div><pre><code>com.&lt;nama&gt;&lt;npm&gt;.&lt;nama_aplikasi&gt;</code></pre></div>
+    <table>
+      <tr><th>Bagian</th><th>Isi</th><th>Aturan</th></tr>
+      <tr><td><code>nama</code></td><td>Nama depan kamu</td><td>Huruf kecil semua, tanpa spasi</td></tr>
+      <tr><td><code>npm</code></td><td>NPM/NIM kamu</td><td>Hanya angka, ditempel langsung setelah nama (segmen tidak boleh <em>diawali</em> angka, jadi digabung dengan nama)</td></tr>
+      <tr><td><code>nama_aplikasi</code></td><td>Nama proyek yang didaftarkan di Langkah 1</td><td>Huruf kecil, <code>underscore</code> sebagai pemisah kata, bukan tanda hubung</td></tr>
+    </table>
+    <p>Contoh: mahasiswa bernama <strong>Budi</strong> dengan NPM <strong>2224510089</strong> membuat aplikasi "Catatan Keuangan":</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh applicationId</span></div><pre><code>com.budi2224510089.catatan_keuangan</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh perintah flutter create</span></div><pre><code>flutter create --org com.budi2224510089 --project-name catatan_keuangan catatan_keuangan</code></pre></div>
+    <div class="warn"><span class="lbl">Kenapa NPM digabung ke nama, bukan jadi segmen sendiri?</span><p>Package name Android tidak mengizinkan segmen yang diawali angka (<code>com.2224510089.budi</code> akan <strong>ditolak</strong> saat build). NPM digabung langsung setelah nama (<code>budi2224510089</code>) supaya segmennya tetap diawali huruf dan proyekmu bisa di-build tanpa error.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Langkah 4: Lima Menu Wajib</h2>
+    <p>Proyek UTS minimal harus punya lima layar berikut, saling terhubung lewat navigasi:</p>
+    <table>
+      <tr><th>Menu</th><th>Isi minimal</th></tr>
+      <tr><td><strong>Splash Screen</strong></td><td>Logo + nama aplikasi (desain bebas, tapi <strong>tidak boleh sama</strong> dengan splash screen mahasiswa lain), tampil sebentar lalu pindah ke Login.</td></tr>
+      <tr><td><strong>Login</strong></td><td>Form email/username + password, tombol masuk, link ke halaman Register.</td></tr>
+      <tr><td><strong>Register</strong></td><td>Form pendaftaran akun baru, tombol daftar, kembali ke halaman Login setelah berhasil.</td></tr>
+      <tr><td><strong>Home</strong></td><td>Halaman utama setelah login — isinya menyesuaikan ide aplikasimu (boleh masih berupa tampilan dummy/statis untuk UTS, fungsionalitas penuh menyusul di UAS).</td></tr>
+      <tr><td><strong>Profile</strong></td><td>Menampilkan info akun pengguna, minimal ada tombol untuk kembali/logout.</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Belum wajib tersambung ke API</span><p>Untuk UTS, fokusnya adalah <strong>struktur &amp; navigasi</strong> — form boleh memakai data dummy/lokal (belum tersambung ke backend sungguhan). Koneksi ke API/database adalah materi lanjutan yang akan dikerjakan menuju UAS, mengikuti pola yang sudah dipelajari di Pertemuan 4-7 pada proyek <code>umkm-app</code>.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Contoh Navigasi Antar Menu</h2>
+    <p>Pola routing paling sederhana untuk lima menu ini sama seperti yang sudah dipelajari di Pertemuan 3 dan 7 — satu <code>MaterialApp</code> dengan peta <code>routes</code>, lalu setiap tombol berpindah pakai <code>Navigator</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/main.dart — kerangka awal</span></div><pre><code>import 'package:flutter/material.dart';
+import 'screens/splash_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/home/profile_screen.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Nama Aplikasimu',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.indigo),
+      initialRoute: '/',
+      routes: {
+        '/': (context) =&gt; const SplashScreen(),
+        '/login': (context) =&gt; const LoginScreen(),
+        '/register': (context) =&gt; const RegisterScreen(),
+        '/home': (context) =&gt; const HomeScreen(),
+        '/profile': (context) =&gt; const ProfileScreen(),
+      },
+    );
+  }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/splash_screen.dart — contoh perpindahan otomatis</span></div><pre><code>import 'package:flutter/material.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+  @override
+  State&lt;SplashScreen&gt; createState() =&gt; _SplashScreenState();
+}
+
+class _SplashScreenState extends State&lt;SplashScreen&gt; {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.indigo,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.apps, size: 72, color: Colors.white),
+            SizedBox(height: 16),
+            Text('Nama Aplikasimu', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+  }
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh perpindahan dari tombol</span></div><pre><code>// Dari LoginScreen menuju Home setelah "login" (dummy, belum ke API)
+ElevatedButton(
+  onPressed: () =&gt; Navigator.pushReplacementNamed(context, '/home'),
+  child: const Text('Masuk'),
+),
+
+// Dari LoginScreen menuju Register
+TextButton(
+  onPressed: () =&gt; Navigator.pushNamed(context, '/register'),
+  child: const Text('Belum punya akun? Daftar di sini'),
+),
+
+// Dari HomeScreen menuju Profile (lewat BottomNavigationBar/tombol/ikon)
+IconButton(
+  icon: const Icon(Icons.person),
+  onPressed: () =&gt; Navigator.pushNamed(context, '/profile'),
+),</code></pre></div>
+    <div class="note"><span class="lbl">pushReplacementNamed vs pushNamed</span><p>Dipakai <code>pushReplacementNamed</code> dari Splash ke Login dan dari Login ke Home — <strong>mengganti</strong> halaman sebelumnya di riwayat navigasi, supaya pengguna tidak bisa menekan tombol back untuk kembali ke Splash atau ke Login setelah berhasil masuk. Sedangkan Login &rarr; Register memakai <code>pushNamed</code> biasa karena pengguna memang boleh menekan back untuk kembali ke Login (dibahas lengkap di Pertemuan 3).</p></div>
+
+    <h2 id="s7"><span class="badge">07</span>Checklist Sebelum Submit</h2>
+    <ul class="checklist">
+      <li>Ide aplikasi sudah dituliskan di spreadsheet kelas, dan sudah dicek tidak sama dengan mahasiswa lain.</li>
+      <li>Proyek dibuat di folder baru "Project UTS dan UAS", bukan menimpa folder latihan pertemuan sebelumnya.</li>
+      <li>Package name mengikuti format <code>com.&lt;nama&gt;&lt;npm&gt;.&lt;nama_aplikasi&gt;</code>.</li>
+      <li>Kelima menu wajib ada: Splash Screen, Login, Register, Home, Profile.</li>
+      <li>Splash Screen punya logo + nama aplikasi yang berbeda dari milik mahasiswa lain.</li>
+      <li>Navigasi antar kelima halaman berfungsi (bisa dicoba tekan semua tombol tanpa error merah).</li>
+      <li><code>flutter analyze</code> dijalankan dan tidak ada error (warning masih boleh ditoleransi).</li>
+      <li>Proyek bisa dijalankan dengan <code>flutter run</code> tanpa crash saat dibuka pertama kali.</li>
+    </ul>
+
+    <h2 id="s8"><span class="badge">08</span>Kesalahan yang Sering Terjadi</h2>
+    <ul>
+      <li><strong>Lupa cek spreadsheet sebelum menuliskan ide</strong> — berakhir dengan ide yang sama persis dengan mahasiswa lain, harus mengulang dari awal mendekati deadline.</li>
+      <li><strong>Package name mengandung huruf besar atau spasi</strong> — <code>Com.Budi.CatatanKeuangan</code> akan gagal di-build; harus huruf kecil semua.</li>
+      <li><strong>NPM dijadikan segmen sendiri</strong> (<code>com.budi.2224510089.catatan</code>) — gagal build karena segmen diawali angka. Gabungkan NPM langsung setelah nama.</li>
+      <li><strong>Splash Screen tidak pernah berpindah halaman</strong> — biasanya karena lupa memanggil <code>Navigator</code> di dalam <code>Future.delayed</code>, atau lupa <code>if (!mounted) return;</code> sehingga error saat widget sudah tidak ada di tree.</li>
+      <li><strong>Menimpa folder latihan pertemuan 1-7</strong> alih-alih membuat folder proyek baru — menyulitkan kalau sewaktu-waktu perlu membuka ulang materi latihan sebelumnya.</li>
+    </ul>
+
+    <h2 id="s9"><span class="badge">09</span>Kriteria Penilaian</h2>
+    <table>
+      <tr><th>Aspek</th><th>Yang dinilai</th></tr>
+      <tr><td>Keaslian ide</td><td>Ide tidak duplikat dengan mahasiswa lain, tercatat di spreadsheet kelas</td></tr>
+      <tr><td>Kesesuaian struktur</td><td>Package name mengikuti format wajib, struktur folder proyek rapi (mengikuti pola <code>lib/screens/...</code> seperti di <code>umkm-app</code>)</td></tr>
+      <tr><td>Kelengkapan menu</td><td>Kelima menu wajib ada dan masing-masing menampilkan konten yang relevan (bukan halaman kosong)</td></tr>
+      <tr><td>Navigasi</td><td>Perpindahan antar halaman berfungsi tanpa error, memakai pola <code>Navigator</code>/<code>routes</code> yang benar</td></tr>
+      <tr><td>Kebersihan kode</td><td><code>flutter analyze</code> tanpa error, penamaan file/folder konsisten</td></tr>
+    </table>
+
+    <footer>Proyek yang dibangun hari ini adalah fondasi UAS — semakin rapi struktur navigasi dan semakin matang ide yang dipilih sekarang, semakin mudah menambahkan fitur CRUD, koneksi API, dan database di pertemuan-pertemuan berikutnya. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+</script>
+</body>
+</html>
