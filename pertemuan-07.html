@@ -1485,6 +1485,7 @@ class _DaftarProdukState extends State&lt;_DaftarProduk&gt; {
 
     <h2 id="s13"><span class="badge">13</span>Form UMKM &amp; Form Produk (Buat/Ubah + Upload Foto)</h2>
     <p>Kedua form berikut dipakai untuk <strong>dua mode sekaligus</strong>: <code>umkm</code>/<code>produk</code> bernilai <code>null</code> berarti mode "buat baru", terisi berarti mode "edit" (form terisi otomatis dari data yang ada). Memilih foto memakai <code>image_picker</code>, lalu path file lokalnya dikirim ke <code>ApiService.simpanUmkm</code>/<code>simpanProduk</code> (Bagian 05).</p>
+    <div class="note"><span class="lbl">Foto wajib berformat JPG/JPEG/PNG</span><p><code>image_picker</code> membuka galeri bawaan device, yang bisa saja berisi foto HEIC (default iPhone), WebP, atau format lain di luar yang didukung — plugin ini sendiri tidak punya opsi untuk membatasi jenis file yang boleh dipilih dari galeri. Karena itu, validasi dilakukan manual setelah foto dipilih: cek ekstensi <code>file.path</code>, dan tolak dengan <code>SnackBar</code> kalau bukan <code>.jpg</code>/<code>.jpeg</code>/<code>.png</code> — foto tidak ikut disimpan ke <code>_fotoBaru</code> kalau gagal validasi, sehingga tombol "Simpan" tetap memakai foto lama (mode edit) atau tanpa foto (mode buat baru).</p></div>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/home/umkm/umkm_form_screen.dart</span></div><pre><code>import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -1509,7 +1510,16 @@ class _UmkmFormScreenState extends State&lt;UmkmFormScreen&gt; {
 
   Future&lt;void&gt; _pilihFoto() async {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (file != null) setState(() =&gt; _fotoBaru = file);
+    if (file == null) return;
+    final ext = file.path.toLowerCase();
+    if (!ext.endsWith('.jpg') &amp;&amp; !ext.endsWith('.jpeg') &amp;&amp; !ext.endsWith('.png')) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto harus berformat JPG/JPEG/PNG')),
+      );
+      return;
+    }
+    setState(() =&gt; _fotoBaru = file);
   }
 
   Future&lt;void&gt; _simpan() async {
@@ -1619,7 +1629,16 @@ class _ProdukFormScreenState extends State&lt;ProdukFormScreen&gt; {
 
   Future&lt;void&gt; _pilihFoto() async {
     final file = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (file != null) setState(() =&gt; _fotoBaru = file);
+    if (file == null) return;
+    final ext = file.path.toLowerCase();
+    if (!ext.endsWith('.jpg') &amp;&amp; !ext.endsWith('.jpeg') &amp;&amp; !ext.endsWith('.png')) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto harus berformat JPG/JPEG/PNG')),
+      );
+      return;
+    }
+    setState(() =&gt; _fotoBaru = file);
   }
 
   Future&lt;void&gt; _simpan() async {
