@@ -90,6 +90,9 @@
   .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
   .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
   .note p{margin:0; font-size:15px;}
+  .warn{background:#331A1A; border-left:3px solid #F26B6B; border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:#F26B6B; font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
 
   .verify{background:#12241A; border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
   .verify .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
@@ -1284,7 +1287,9 @@ class _MyUmkmScreenState extends State&lt;MyUmkmScreen&gt; {
   }
 
   void _muatUmkm() {
-    setState(() =&gt; _futureUmkm = _apiService.getUmkmSaya());
+    setState(() {
+      _futureUmkm = _apiService.getUmkmSaya();
+    });
   }
 
   void _muatUlangProduk() =&gt; setState(() =&gt; _produkKey++);
@@ -1475,6 +1480,7 @@ class _DaftarProdukState extends State&lt;_DaftarProduk&gt; {
     );
   }
 }</code></pre></div>
+    <div class="warn"><span class="lbl">Jangan pakai setState(() =&gt; ...) berbentuk assignment untuk Future</span><p><code>_muatUmkm()</code> sengaja ditulis dengan <strong>blok</strong> <code>setState(() { _futureUmkm = ...; });</code>, bukan bentuk singkat <code>setState(() =&gt; _futureUmkm = _apiService.getUmkmSaya());</code>. Alasannya teknis tapi penting: di Dart, nilai dari ekspresi assignment (<code>a = b</code>) adalah nilai <code>b</code> itu sendiri. Kalau closure ditulis dengan tanda panah <code>=&gt;</code>, closure tersebut otomatis <strong>mengembalikan</strong> hasil assignment-nya — dalam kasus ini sebuah <code>Future&lt;Umkm?&gt;</code>, karena <code>getUmkmSaya()</code> adalah fungsi <code>async</code>. Flutter sengaja melempar error <code>"setState() callback argument returned a Future"</code> begitu mendeteksi ini, karena khawatir pemanggilnya bermaksud menunggu proses asinkron di dalam <code>setState</code> (yang tidak didukung). Memakai blok <code>{ }</code> membuat closure mengembalikan <code>void</code>, menghilangkan masalah ini sepenuhnya. Pola <code>setState(() =&gt; _variabel = nilai)</code> tetap aman dipakai selama nilai di kanan <strong>bukan</strong> hasil pemanggilan fungsi <code>async</code> (lihat <code>_muatUlangProduk()</code> di bawah, yang aman karena <code>_produkKey++</code> bertipe <code>int</code>).</p></div>
     <div class="note"><span class="lbl">Kenapa daftar produk jadi widget terpisah, bukan FutureBuilder langsung di dalam build()?</span><p>Pertemuan 6 mengajarkan "<code>Future</code> dibuat sekali di <code>initState</code>, bukan di <code>build()</code>" — supaya tidak memicu request berulang setiap rebuild. Di sini ada masalah baru: produk perlu di-<em>refresh</em> setelah ditambah/diubah/dihapus, padahal <code>MyUmkmScreen</code> sendiri juga rebuild karena alasan lain (mis. <code>setState</code> dari UMKM). Solusinya <strong>bukan</strong> memanggil ulang <code>getProdukByUmkm</code> langsung di <code>build()</code> (melanggar aturan di atas), melainkan membungkus daftar produk dalam widget <code>StatefulWidget</code> terpisah (<code>_DaftarProduk</code>) yang fetch sekali di <code>initState</code>-nya sendiri, lalu memberinya <code>key: ValueKey(_produkKey)</code>. Mengganti nilai <code>key</code> memberi tahu Flutter untuk <strong>membuang widget lama dan membuat yang baru dari nol</strong> — termasuk memanggil <code>initState</code> lagi — persis saat dibutuhkan (setelah produk berubah), tidak lebih sering dari itu.</p></div>
 
     <h2 id="s13"><span class="badge">13</span>Form UMKM &amp; Form Produk (Buat/Ubah + Upload Foto)</h2>
