@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 15 — Upload Aplikasi ke Google Play Store</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82;
+    --red:#C9483B; --red-dim:#FBE6E0; --green:#1F7A4D; --green-dim:#DCEFDD; --purple:#8A5FBF; --purple-dim:#F1E8FA;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px; text-decoration:none;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .try{background:#EAF4EF; border:1px solid #BFE0D8; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .try .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:8px;}
+  .try .lbl::before{content:"▶"; font-size:11px;}
+  .try pre{margin:0 0 10px; padding:10px 12px; background:var(--code-bg); border-radius:6px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .try pre:last-child{margin-bottom:0;}
+  .try p{margin:0 0 8px; font-size:14.5px;}
+  .try p:last-child{margin-bottom:0;}
+  .try .exp{color:var(--muted); font-size:13px;}
+  .try .exp strong{color:var(--green);}
+  .task{background:var(--purple-dim); border:1px solid #D9C3EE; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .task .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--purple); font-size:13px; margin-bottom:8px;}
+  .task .lbl::before{content:"★"; font-size:12px;}
+  .task p{margin:0 0 8px; font-size:14.5px;}
+  .task p:last-child{margin-bottom:0;}
+  .task ul,.task ol{margin:0 0 8px;}
+  .task ul:last-child,.task ol:last-child{margin-bottom:0;}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  .seriesnav{display:flex; justify-content:space-between; gap:16px; margin:0 0 28px; font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+  .seriesnav span{color:var(--muted);}
+  .seriesnav a{padding:8px 16px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none; color:var(--text);}
+  .seriesnav a:hover{background:var(--accent-dim); border-color:var(--accent);}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang Pertemuan Ini</a></li>
+      <li><a href="#s2">Persiapan Sebelum Upload</a></li>
+      <li><a href="#s3">App Signing & Keystore</a></li>
+      <li><a href="#s4">Build App Bundle (.aab)</a></li>
+      <li><a href="#s5">Setup Google Play Console</a></li>
+      <li><a href="#s6">Store Listing</a></li>
+      <li><a href="#s7">Content Rating & Data Safety</a></li>
+      <li><a href="#s8">Rilis ke Internal Testing</a></li>
+      <li><a href="#s9">Troubleshooting Umum</a></li>
+      <li><a href="#s10">Checklist & Rangkuman</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 15 &middot; Rilis Aplikasi</span>
+      <h1>Upload Aplikasi ke Google Play Store</h1>
+      <p class="sub">Aplikasi yang hanya bisa dijalankan lewat <code>flutter run</code> dari laptop pembuatnya belum benar-benar "rilis" — Tahap 5 (Deployment) dari kerangka yang dipakai sejak Pertemuan 10 baru selesai kalau orang lain bisa menginstal dan memakainya sendiri. Pertemuan ini menuntaskan itu: dari keystore, build <code>.aab</code>, sampai aplikasi tayang di track testing Google Play Console, memakai aplikasi UAS kamu sendiri dari rangkaian Pertemuan 10-14.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang Pertemuan Ini</h2>
+    <p>Materi ini murni tentang <strong>distribusi</strong> — tidak ada kode fitur baru yang ditulis. Prasyarat: aplikasi Flutter-mu (dari Pertemuan 8 &amp; dikembangkan penuh di Pertemuan 10-14) sudah bisa dijalankan tanpa error dalam mode <em>debug</em>, dan backend-nya (kalau ada) sudah berjalan di tempat yang bisa diakses dari internet — bukan lagi <code>localhost</code> (lihat Pertemuan 14 Bagian 03 soal opsi hosting gratis).</p>
+    <div class="warn"><span class="lbl">Akun Google Play Developer berbayar sekali</span><p>Mendaftar sebagai developer di Google Play Console mewajibkan biaya pendaftaran <strong>satu kali seumur hidup</strong> (bukan langganan), dibayar lewat kartu yang mendukung pembayaran internasional. Kalau kelas/kampus punya akun developer bersama, tanyakan ke dosen/asisten dulu sebelum mendaftar akun baru sendiri-sendiri — banyak kampus menyediakan ini supaya mahasiswa tidak perlu bayar pribadi.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Persiapan Sebelum Upload</h2>
+    <p>Siapkan dulu aset &amp; keputusan berikut — mengerjakannya belakangan di tengah proses upload biasanya bikin bolak-balik:</p>
+    <table>
+      <tr><th>Yang disiapkan</th><th>Keterangan</th></tr>
+      <tr><td>Nama aplikasi</td><td>Tampil di Play Store &amp; home screen perangkat — beda dari nama proyek Flutter.</td></tr>
+      <tr><td>Package name (<code>applicationId</code>)</td><td>Format <code>com.&lt;namamu&gt;&lt;npm&gt;.&lt;nama_aplikasi&gt;</code> sudah ditentukan sejak Pertemuan 8 — <strong>tidak bisa diubah lagi</strong> setelah pertama kali diupload ke Play Store, jadi pastikan sudah benar sebelum lanjut.</td></tr>
+      <tr><td>Ikon aplikasi</td><td>Minimal 512&times;512px, format PNG, dipakai sebagai ikon di listing Play Store (beda file dari ikon yang tampil di home screen, walau biasa dari sumber yang sama).</td></tr>
+      <tr><td>Screenshot</td><td>Minimal 2 screenshot per jenis perangkat yang didukung (ponsel wajib) — ambil langsung dari emulator/device sungguhan, bukan mockup palsu.</td></tr>
+      <tr><td>Deskripsi singkat &amp; lengkap</td><td>Deskripsi singkat maks. 80 karakter, deskripsi lengkap maks. 4000 karakter — jelaskan apa yang dilakukan aplikasi, bukan daftar fitur teknis.</td></tr>
+      <tr><td>Privacy policy (URL)</td><td><strong>Wajib</strong> kalau aplikasi meminta data pengguna (login, lokasi, kamera, dst) — bisa pakai generator gratis atau halaman statis sederhana yang kamu hosting sendiri (GitHub Pages cukup).</td></tr>
+    </table>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Siapkan keenam item di tabel di atas untuk aplikasi UAS-mu. Simpan di satu folder — semuanya akan diminta berurutan saat mengisi Play Console nanti.</p>
+    </div>
+
+    <h2 id="s3"><span class="badge">03</span>App Signing & Keystore</h2>
+    <p>Setiap aplikasi Android yang dirilis harus ditandatangani secara digital dengan sebuah <em>keystore</em> — ini yang membuktikan ke Google Play bahwa update aplikasi di masa depan benar-benar datang dari pengembang yang sama, bukan orang lain yang mengaku-aku.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal — membuat keystore</span></div><pre><code>keytool -genkey -v -keystore ~/upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -alias upload</code></pre></div>
+    <p>Perintah ini meminta beberapa pertanyaan (password, nama, organisasi) — <strong>catat password-nya di tempat aman</strong>, karena kalau keystore ini hilang, kamu tidak akan bisa merilis update untuk aplikasi yang sama lagi selamanya (harus rilis sebagai aplikasi baru dengan package name berbeda).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">android/key.properties — buat berkas baru</span></div><pre><code>storePassword=&lt;password keystore&gt;
+keyPassword=&lt;password key&gt;
+keyAlias=upload
+storeFile=/lokasi/lengkap/ke/upload-keystore.jks</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">android/app/build.gradle — tambahkan signingConfig</span></div><pre><code>def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    // ...
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}</code></pre></div>
+    <div class="warn"><span class="lbl">key.properties dan .jks TIDAK PERNAH masuk Git</span><p>Tambahkan <code>key.properties</code> dan <code>*.jks</code> ke <code>.gitignore</code> sebelum commit apa pun — berkas ini berisi kredensial yang kalau bocor ke repo publik (atau bahkan privat yang dibagikan), siapa pun yang memilikinya bisa merilis update palsu atas nama aplikasimu.</p></div>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Buat keystore untuk aplikasi UAS-mu, simpan passwordnya di password manager (bukan di catatan biasa yang gampang hilang), lalu konfigurasikan <code>key.properties</code> dan <code>build.gradle</code> seperti di atas. Pastikan <code>.gitignore</code> sudah menolak kedua berkas sensitif ini.</p>
+    </div>
+
+    <h2 id="s4"><span class="badge">04</span>Build App Bundle (.aab)</h2>
+    <p>Google Play mewajibkan format <strong>Android App Bundle (<code>.aab</code>)</strong>, bukan <code>.apk</code> biasa, untuk aplikasi baru — Google Play yang nanti meracik APK optimal per jenis perangkat dari satu <code>.aab</code> ini, sehingga pengguna mengunduh ukuran yang lebih kecil daripada APK universal.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>flutter build appbundle --release</code></pre></div>
+    <p>Hasilnya ada di <code>build/app/outputs/bundle/release/app-release.aab</code> — berkas inilah yang diunggah ke Play Console, bukan APK. Kalau cuma butuh APK untuk dibagikan langsung (misalnya untuk demo manual tanpa lewat Play Store), tetap bisa pakai <code>flutter build apk --release</code> seperti yang sudah dipakai sejak Pertemuan 14.</p>
+    <div class="note"><span class="lbl">Selalu uji build release, bukan cuma debug</span><p>Build <em>release</em> mengaktifkan optimisasi (minifikasi kode, dsb) yang tidak aktif di mode <em>debug</em> — kadang ada bug yang cuma muncul di build release. Install hasil <code>flutter build apk --release</code> ke device sungguhan dan coba alur penuh (login, CRUD, upload foto) sebelum mengunggah <code>.aab</code> ke Play Console.</p></div>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Jalankan <code>flutter build appbundle --release</code> untuk aplikasimu. Kalau gagal karena signing, kembali ke Bagian 03 dan cek lagi konfigurasinya. Install dulu versi <code>--release</code> APK ke device sungguhan dan uji alur penuh sebelum lanjut ke Bagian 05.</p>
+    </div>
+
+    <h2 id="s5"><span class="badge">05</span>Setup Google Play Console</h2>
+    <ol class="steps">
+      <li>Buka <a href="https://play.google.com/console" target="_blank" rel="noopener">play.google.com/console</a>, daftar sebagai developer (biaya satu kali, lihat peringatan Bagian 01).</li>
+      <li>Klik "Create app" — isi nama aplikasi, bahasa default, pilih "App" (bukan "Game"), tentukan gratis/berbayar.</li>
+      <li>Google Play akan menampilkan daftar langkah yang harus diselesaikan sebelum bisa rilis — biasanya mencakup: App content (rating, data safety, target audience), Store listing, dan Main store listing.</li>
+    </ol>
+    <div class="note"><span class="lbl">Review pertama kali bisa lebih lama</span><p>Aplikasi yang pertama kali diunggah oleh akun developer baru sering butuh waktu review lebih lama (bisa beberapa hari) dibanding developer yang sudah established. Jangan menunggu sampai hari terakhir deadline untuk mulai proses ini.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Store Listing</h2>
+    <p>Ini halaman yang dilihat calon pengguna di Play Store sebelum menginstal — isi dengan aset yang sudah disiapkan di Bagian 02:</p>
+    <table>
+      <tr><th>Bagian</th><th>Ketentuan umum</th></tr>
+      <tr><td>Ikon aplikasi</td><td>512&times;512px, PNG, tanpa transparansi di tepi yang dianggap penting.</td></tr>
+      <tr><td>Feature graphic</td><td>1024&times;500px — banner yang tampil di bagian atas listing.</td></tr>
+      <tr><td>Screenshot ponsel</td><td>Minimal 2, rasio sesuai perangkat yang discreenshot — ambil dari alur penting aplikasimu (home, detail, form), bukan layar kosong.</td></tr>
+      <tr><td>Deskripsi singkat</td><td>Maks. 80 karakter — satu kalimat inti tentang apa aplikasimu.</td></tr>
+      <tr><td>Deskripsi lengkap</td><td>Maks. 4000 karakter — jelaskan masalah yang diselesaikan (ingat Pertemuan 10 Bagian 03) dan fitur utamanya.</td></tr>
+      <tr><td>Kategori</td><td>Pilih kategori yang paling relevan dengan fungsi aplikasimu (mis. "Business", "Shopping", "Productivity").</td></tr>
+    </table>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Isi seluruh Store Listing di Play Console memakai aset dari Bagian 02. Tulis deskripsi singkat &amp; lengkap berdasarkan dokumen kebutuhan yang sudah kamu tulis di Pertemuan 10 Bagian 03 — masalah dan kebutuhan fungsional yang kamu rumuskan di sana adalah bahan baku terbaik untuk deskripsi ini.</p>
+    </div>
+
+    <h2 id="s7"><span class="badge">07</span>Content Rating & Data Safety</h2>
+    <p>Dua formulir wajib diisi sebelum aplikasi bisa dipublikasikan, keduanya berupa kuesioner di Play Console:</p>
+    <ul>
+      <li><strong>Content rating</strong> — kuesioner tentang konten aplikasi (kekerasan, konten dewasa, perjudian, dst). Untuk aplikasi UAS kebanyakan kategori "Everyone" sudah cukup, asal dijawab jujur sesuai isi aplikasi sungguhan.</li>
+      <li><strong>Data safety</strong> — deklarasi data apa saja yang dikumpulkan aplikasimu (email, nama, lokasi, dst) dan untuk apa. Ini harus <strong>konsisten</strong> dengan privacy policy yang kamu siapkan di Bagian 02 — isian yang tidak sesuai (mis. bilang tidak mengumpulkan data padahal ada fitur login) bisa membuat aplikasi ditolak.</li>
+    </ul>
+    <div class="warn"><span class="lbl">Jangan asal klik "tidak mengumpulkan data apa pun"</span><p>Aplikasi dengan fitur login/register sudah pasti mengumpulkan data (minimal email). Mendeklarasikan secara tidak akurat bisa melanggar kebijakan Google Play, bahkan untuk aplikasi tugas kuliah yang tidak dipublikasikan secara luas.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Rilis ke Internal Testing</h2>
+    <p>Untuk tugas kuliah, <strong>tidak perlu langsung rilis ke Production</strong> (publik luas) — cukup track <strong>Internal testing</strong>, yang bisa diakses oleh daftar email tester yang kamu tentukan sendiri (termasuk dosen/asisten), dan proses reviewnya jauh lebih cepat daripada Production.</p>
+    <ol class="steps">
+      <li>Di Play Console, buka menu <strong>Testing &rarr; Internal testing</strong>, klik "Create new release".</li>
+      <li>Upload berkas <code>.aab</code> hasil Bagian 04.</li>
+      <li>Isi release notes singkat (boleh "Rilis awal untuk UAS Pemrograman IV").</li>
+      <li>Tambahkan email tester (dosen/asisten/diri sendiri) di tab "Testers".</li>
+      <li>Simpan &amp; review, lalu "Start rollout to Internal testing".</li>
+      <li>Bagikan link opt-in testing ke daftar tester — mereka harus membuka link itu dan "Become a tester" sebelum bisa menginstal lewat Play Store.</li>
+    </ol>
+    <div class="verify"><span class="lbl">Checkpoint</span><p>Internal testing biasanya aktif dalam hitungan menit (jauh lebih cepat dari Production). Kalau tester bisa menginstal &amp; membuka aplikasimu lewat link Play Store (bukan APK manual), berarti seluruh rantai signing &amp; upload sudah benar.</p></div>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Rilis aplikasimu ke Internal testing track, tambahkan dosen/asisten sebagai tester, lalu uji instalasi lewat link Play Store (bukan APK manual) di device yang berbeda dari device development-mu.</p>
+    </div>
+
+    <h2 id="s9"><span class="badge">09</span>Troubleshooting Umum</h2>
+    <table>
+      <tr><th>Masalah</th><th>Penyebab umum</th><th>Solusi</th></tr>
+      <tr><td>Upload <code>.aab</code> ditolak: "You uploaded an APK/App Bundle with a debuggable Application"</td><td>Build masih pakai signing config debug, bukan release.</td><td>Cek lagi <code>signingConfigs.release</code> di <code>build.gradle</code> sudah benar dan <code>buildTypes.release</code> memakainya.</td></tr>
+      <tr><td>"Your app bundle must support 64-bit"</td><td>Dependency native lama yang belum mendukung arsitektur 64-bit.</td><td>Update semua dependency ke versi terbaru, pastikan <code>flutter build appbundle</code> (bukan konfigurasi custom) yang dipakai.</td></tr>
+      <tr><td>Versi tidak bisa diupload: "Version code X has already been used"</td><td><code>versionCode</code> di <code>pubspec.yaml</code> (bagian <code>version: x.y.z+N</code>, angka setelah <code>+</code>) sama dengan rilis sebelumnya.</td><td>Naikkan angka setelah <code>+</code> di <code>pubspec.yaml</code> setiap kali build ulang untuk diupload.</td></tr>
+      <tr><td>Keystore password lupa/hilang</td><td>Tidak disimpan di tempat aman saat dibuat.</td><td>Tidak ada cara memulihkan keystore yang hilang — kalau ini aplikasi yang belum pernah dirilis, buat keystore baru. Kalau sudah pernah dirilis dengan keystore lama, harus rilis sebagai aplikasi baru (package name baru).</td></tr>
+      <tr><td>Data safety form dianggap tidak lengkap</td><td>Jawaban kuesioner tidak konsisten dengan fitur aplikasi sungguhan.</td><td>Tinjau ulang semua fitur yang mengumpulkan data (login, upload foto, lokasi) dan cocokkan dengan deklarasi di form.</td></tr>
+    </table>
+
+    <h2 id="s10"><span class="badge">10</span>Checklist & Rangkuman</h2>
+    <ul class="checklist">
+      <li>Keystore dibuat, password tersimpan aman, <code>key.properties</code> &amp; <code>.jks</code> masuk <code>.gitignore</code>.</li>
+      <li>Build <code>--release</code> sudah diuji penuh di device sungguhan sebelum diupload.</li>
+      <li><code>.aab</code> berhasil dibuat dan diupload ke Play Console tanpa error signing.</li>
+      <li>Store listing lengkap: ikon, screenshot, deskripsi, kategori.</li>
+      <li>Content rating &amp; Data safety terisi jujur dan konsisten dengan privacy policy.</li>
+      <li>Rilis ke Internal testing berhasil, minimal 1 tester (dosen/asisten) bisa menginstal lewat Play Store.</li>
+    </ul>
+    <p>Dengan ini, aplikasi UAS-mu sudah melewati seluruh siklus pengembangan penuh: identifikasi masalah &amp; desain (Pertemuan 10), backend (Pertemuan 11), Flutter dari fundamental sampai CRUD lengkap (Pertemuan 12-13), testing &amp; trace request (Pertemuan 14), dan sekarang distribusi nyata (pertemuan ini) — persis siklus lima tahap yang diperkenalkan sejak Pertemuan 9/10, dari awal sampai benar-benar di tangan pengguna.</p>
+
+    <footer>Materi ini melengkapi Tahap 5 (Deployment) dari kerangka lima tahap pengembangan aplikasi — distribusi nyata ke Google Play, bukan lagi sekadar <code>flutter run</code> di laptop sendiri. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>

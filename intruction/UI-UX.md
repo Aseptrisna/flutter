@@ -1,0 +1,2 @@
+Bro, Rubah Total UI nya agar lebih menarik bro, kamu boleh improve bro, buatkan yang beda banget dari sekarang bro
+buatkan plant anda dulu bro, mau buat UI seperti apa bro secara warna dan lain lain nya seperti =UI/1853e407b1c8409fc93cb72179c1b2ca.jpg

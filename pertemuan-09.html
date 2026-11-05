@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 9 — Tahapan Membangun Aplikasi & Bedah Proyek UMKM</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82;
+    --red:#C9483B; --red-dim:#FBE6E0; --green:#1F7A4D; --green-dim:#DCEFDD;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px; text-decoration:none;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .try{background:#EAF4EF; border:1px solid #BFE0D8; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .try .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:8px;}
+  .try .lbl::before{content:"▶"; font-size:11px;}
+  .try pre{margin:0 0 10px; padding:10px 12px; background:var(--code-bg); border-radius:6px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .try pre:last-child{margin-bottom:0;}
+  .try p{margin:0 0 8px; font-size:14.5px;}
+  .try p:last-child{margin-bottom:0;}
+  .try .exp{color:var(--muted); font-size:13px;}
+  .try .exp strong{color:var(--green);}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang Pertemuan Ini</a></li>
+      <li><a href="#s2">Tahapan Membangun Aplikasi</a></li>
+      <li><a href="#s3">Tahap 1: Identifikasi Masalah</a></li>
+      <li><a href="#s4">Tahap 2: Desain</a></li>
+      <li><a href="#s5">Tahap 3: Development</a></li>
+      <li><a href="#s6">Tahap 4: Testing</a></li>
+      <li><a href="#s7">Tahap 5: Deployment & Maintenance</a></li>
+      <li><a href="#s8">Golang: Peta Arsitektur UMKM API</a></li>
+      <li><a href="#s9">Golang: Autentikasi & Keamanan</a></li>
+      <li><a href="#s10">Golang: Service Layer</a></li>
+      <li><a href="#s11">Golang: Repository & SQL</a></li>
+      <li><a href="#s12">Golang: Upload Foto & Migration</a></li>
+      <li><a href="#s13">Fundamental Flutter: Layout & Konek API</a></li>
+      <li><a href="#s14">Flutter: Peta Halaman UMKM App</a></li>
+      <li><a href="#s15">Flutter: Splash, Login, Register</a></li>
+      <li><a href="#s16">Flutter: Home, Daftar & Detail UMKM</a></li>
+      <li><a href="#s17">Flutter: UMKM Saya (CRUD)</a></li>
+      <li><a href="#s18">Flutter: Profil & Ubah Password</a></li>
+      <li><a href="#s19">Flutter: ApiService & TokenStorage</a></li>
+      <li><a href="#s20">Trace Request: Membuat UMKM + Foto</a></li>
+      <li><a href="#s21">Trace Request: Login</a></li>
+      <li><a href="#s22">Pola yang Berulang di Kedua Sisi</a></li>
+      <li><a href="#s23">Rangkuman</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 9 · Tinjauan & Studi Kasus</span>
+      <h1>Tahapan Membangun Aplikasi & Bedah Proyek UMKM</h1>
+      <p class="sub">Pertemuan ini tidak memperkenalkan fitur baru — tujuannya adalah <strong>menengok ke belakang</strong>: memahami tahapan umum membangun aplikasi Android dari nol, lalu memetakan tahapan itu ke proyek nyata yang sudah dibangun bersama sejak Pertemuan 4 dan 7 — <strong>UMKM API</strong> (Golang) dan <strong>umkm-app</strong> (Flutter) — dibedah <em>per fungsi</em> dan <em>per halaman</em>, lengkap dengan alasan setiap keputusan desainnya.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang Pertemuan Ini</h2>
+    <p>Sampai Pertemuan 8, kalian sudah menulis banyak kode: backend Go dengan JWT dan upload foto, lalu aplikasi Flutter penuh yang terhubung ke backend itu. Masalahnya, saat menulis kode sambil mengikuti tutorial langkah demi langkah, mudah sekali kehilangan <strong>gambaran besar</strong> — kenapa kode dipecah jadi handler/service/repository, kenapa ada middleware, kenapa satu fungsi dipakai untuk create <em>dan</em> update sekaligus.</p>
+    <p>Pertemuan 9 menjawab itu dalam dua bagian:</p>
+    <ul>
+      <li><strong>Bagian pertama</strong> — tahapan umum membangun aplikasi Android dari masalah sampai rilis, berlaku untuk proyek apa pun (termasuk proyek UAS kalian nanti).</li>
+      <li><strong>Bagian kedua</strong> — bedah detail <code>umkm-api</code> dan <code>umkm-app</code> sebagai contoh konkret dari tahapan tersebut, per fungsi dan per halaman.</li>
+    </ul>
+
+    <h2 id="s2"><span class="badge">02</span>Tahapan Membangun Aplikasi Android dari Nol</h2>
+    <p>Tidak ada aplikasi yang baik lahir langsung dari <code>flutter create</code>. Ada lima tahap yang selalu dilalui, baik disadari maupun tidak — mengabaikan salah satunya biasanya terasa belakangan dalam bentuk bug, fitur yang salah sasaran, atau kode yang sulit diubah.</p>
+    <ol class="steps">
+      <li><strong>Identifikasi masalah &amp; kebutuhan</strong> — apa masalah nyata yang ingin diselesaikan, siapa penggunanya.</li>
+      <li><strong>Desain</strong> — UX/alur layar, arsitektur sistem, skema database.</li>
+      <li><strong>Development</strong> — menulis backend dan frontend berdasarkan desain, bukan sambil menebak-nebak.</li>
+      <li><strong>Testing</strong> — memverifikasi bahwa yang dibangun benar-benar bekerja, termasuk kasus gagal.</li>
+      <li><strong>Deployment &amp; maintenance</strong> — merilis dan menjaga aplikasi tetap hidup setelah rilis.</li>
+    </ol>
+    <div class="note"><span class="lbl">Kenapa UMKM API & umkm-app jadi contoh di pertemuan ini?</span><p>Karena kalian sudah membangunnya sendiri sejak Pertemuan 4-7, sehingga tiap tahap di bawah bisa langsung ditunjuk ke kode yang sudah pernah kalian tulis — bukan contoh abstrak dari proyek orang lain.</p></div>
+
+    <h2 id="s3"><span class="badge">03</span>Tahap 1: Identifikasi Masalah & Kebutuhan</h2>
+    <p>Sebelum baris kode pertama ditulis, pertanyaan yang harus dijawab: <strong>masalah apa</strong> yang diselesaikan, dan <strong>untuk siapa</strong>. Untuk proyek UMKM, masalahnya sederhana: pelaku UMKM kecil tidak punya etalase digital yang mudah dibuat sendiri, dan calon pembeli kesulitan menemukan UMKM di sekitar mereka beserta produknya.</p>
+    <p>Dari masalah itu, diturunkan kebutuhan fungsional minimal — inilah yang nantinya menentukan tabel database dan endpoint API:</p>
+    <ul>
+      <li>Pengguna bisa mendaftar &amp; login (butuh identitas, jadi butuh tabel <code>users</code>).</li>
+      <li>Satu pengguna bisa mendaftarkan <strong>satu</strong> UMKM miliknya (keputusan bisnis: 1 user = 1 UMKM, bukan banyak).</li>
+      <li>Satu UMKM punya banyak produk (relasi satu-ke-banyak: <code>umkm</code> → <code>produk</code>).</li>
+      <li>Orang lain (tanpa login) harus bisa menjelajah daftar UMKM &amp; produk — artinya sebagian endpoint harus publik, sebagian lagi butuh autentikasi.</li>
+    </ul>
+    <h3>Cara mengumpulkan & merumuskan kebutuhan</h3>
+    <p>Dalam konteks tugas kuliah, tahap ini tidak harus formal, tapi tetap perlu ditulis, bukan cuma dipikirkan di kepala:</p>
+    <table>
+      <tr><th>Teknik</th><th>Tools</th><th>Kapan dipakai</th></tr>
+      <tr><td>Wawancara/observasi singkat</td><td>Catatan manual, atau Google Forms kalau respondennya banyak</td><td>Saat masalahnya menyangkut orang lain (mis. survei ke pelaku UMKM sungguhan) — bukan cuma asumsi sendiri.</td></tr>
+      <tr><td>Analisis kompetitor</td><td>Cari 2-3 aplikasi sejenis di Play Store, catat fitur yang ada/tidak ada</td><td>Untuk tahu fitur apa yang sudah jadi standar di kategori aplikasi tersebut, dan celah apa yang bisa jadi pembeda.</td></tr>
+      <tr><td>User persona</td><td>Template 1 halaman (bisa di Figma/Canva/dokumen biasa): nama fiktif, peran, tujuan, frustrasi</td><td>Supaya "siapa penggunanya" tidak abstrak — setiap keputusan desain bisa dicek balik: "apakah ini membantu persona ini?"</td></tr>
+      <tr><td>Daftar kebutuhan fungsional & non-fungsional</td><td>Daftar centang sederhana (Notion, Google Docs, atau <code>.md</code> di repo)</td><td>Hasil akhir tahap ini — daftar singkat "aplikasi harus bisa X, Y, Z" yang dipakai sebagai acuan desain &amp; scope, supaya tidak menambah fitur di tengah jalan tanpa sadar (<em>scope creep</em>).</td></tr>
+    </table>
+    <p>Kebutuhan <strong>non-fungsional</strong> juga perlu ditulis walau sering dilupakan pemula — contohnya untuk UMKM API: foto produk harus bisa diakses publik tanpa login (karena itu endpoint <code>/uploads/</code> disajikan statis, tidak dibungkus auth), dan percobaan login harus dibatasi (karena itu ada rate limiting khusus di endpoint login).</p>
+    <div class="note"><span class="lbl">Ini menentukan segalanya di tahap berikutnya</span><p>Baris terakhir di atas — "sebagian publik, sebagian butuh login" — adalah alasan langsung kenapa <code>main.go</code> di UMKM API membungkus sebagian route dengan middleware <code>RequireAuth</code> dan sebagian tidak (dibahas di Bagian 09). Kebutuhan fungsional yang ditulis di tahap ini langsung menjelma jadi struktur kode di tahap development.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Tahap 2: Desain</h2>
+    <p>Desain punya tiga lapis yang saling bergantung — mengerjakannya berurutan (bukan langsung loncat ke kode) membuat tahap development jauh lebih cepat karena tidak ada keputusan besar yang harus diubah di tengah jalan.</p>
+    <h3>a. Desain alur & UX</h3>
+    <p>Gambarkan dulu layar apa saja yang dibutuhkan dan bagaimana pengguna berpindah di antaranya, sebelum memikirkan widget Flutter apa yang dipakai. Ada tiga level kedalaman, dipilih sesuai waktu yang tersedia — untuk tugas kuliah, level 1-2 biasanya sudah cukup:</p>
+    <table>
+      <tr><th>Level</th><th>Tools</th><th>Output</th></tr>
+      <tr><td><strong>1. User flow</strong> (alur berpindah layar)</td><td>Pensil & kertas, atau <a href="https://excalidraw.com" target="_blank" rel="noopener">Excalidraw</a> / <a href="https://draw.io" target="_blank" rel="noopener">draw.io</a> (gratis, langsung di browser)</td><td>Diagram kotak-panah: Splash → Login/Register → Home → Detail → Form, dst. Ini yang nantinya jadi peta <code>routes</code>/<code>Navigator</code>.</td></tr>
+      <tr><td><strong>2. Wireframe</strong> (sketsa kasar tiap layar)</td><td><a href="https://www.figma.com" target="_blank" rel="noopener">Figma</a> (gratis untuk pelajar, kolaboratif) atau <a href="https://balsamiq.com" target="_blank" rel="noopener">Balsamiq</a></td><td>Kotak abu-abu berlabel per layar — posisi tombol, form, list — tanpa warna/font final, fokus ke tata letak dan kelengkapan elemen.</td></tr>
+      <tr><td><strong>3. Mockup/prototype</strong> (tampilan hampir final + interaksi)</td><td>Figma (frame + Auto Layout + prototyping mode untuk klik-navigasi antar frame)</td><td>Tampilan mendekati hasil akhir, bisa diklik untuk simulasi alur sebelum satu baris kode Flutter pun ditulis — memudahkan deteksi alur yang membingungkan sejak dini.</td></tr>
+    </table>
+    <p>Untuk UMKM App, hasil tahap ini adalah: Splash → Login/Register → Home (tab Semua UMKM / UMKM Saya / Profil) → Detail UMKM → Form tambah/edit. Alur inilah yang akhirnya menentukan struktur <code>lib/screens/</code> yang kalian pakai sejak Pertemuan 6-7 — nama folder/file screen sengaja dibuat mengikuti nama layar di alur ini, bukan nama teknis yang sewenang-wenang.</p>
+    <h3>b. Desain arsitektur sistem</h3>
+    <p>Memutuskan: aplikasi mobile-only atau butuh backend terpisah? Kalau butuh backend, dipecah jadi layer apa saja? Tools untuk tahap ini biasanya sama seperti user flow di atas (draw.io/Excalidraw/Figma) — dibuat diagram kotak yang merepresentasikan layer kode (bukan layar UI). UMKM API memilih arsitektur <strong>handler → service → repository → domain</strong> (lihat Bagian 08) — keputusan ini diambil di tahap desain, bukan ditemukan sambil menulis kode.</p>
+    <h3>c. Desain database</h3>
+    <p>Dari kebutuhan fungsional di Tahap 1, diturunkan skema tabel memakai diagram <strong>ERD (Entity Relationship Diagram)</strong> — dibuat dengan tool seperti <a href="https://dbdiagram.io" target="_blank" rel="noopener">dbdiagram.io</a> (gratis, cukup ketik definisi tabel dalam teks dan diagramnya digambar otomatis) atau draw.io. Untuk UMKM App hasilnya: <code>users</code>, <code>umkm</code> (punya <code>user_id</code> sebagai foreign key, menegakkan aturan "1 user = 1 UMKM" di level database lewat <code>UNIQUE</code>), dan <code>produk</code> (punya <code>umkm_id</code> sebagai foreign key dengan <code>ON DELETE CASCADE</code> — supaya produk ikut terhapus otomatis saat UMKM induknya dihapus).</p>
+
+    <h4>Tool untuk menggambar relasi antar tabel</h4>
+    <p>Tujuan ERD bukan sekadar daftar kolom per tabel — intinya justru <strong>garis relasi</strong> yang menghubungkan satu tabel ke tabel lain (1-ke-1, 1-ke-banyak, banyak-ke-banyak). Tool di bawah ini dipilih karena bisa menggambar garis itu otomatis dari foreign key yang kamu tulis, tanpa perlu menarik-narik garis manual satu per satu:</p>
+    <table>
+      <tr><th>Tool</th><th>Cara kerja</th><th>Kenapa cocok untuk pemula</th></tr>
+      <tr><td><a href="https://dbdiagram.io" target="_blank" rel="noopener"><strong>dbdiagram.io</strong></a> (rekomendasi)</td><td>Ketik definisi tabel pakai bahasa <strong>DBML</strong> (mirip SQL yang disederhanakan) di panel kiri, diagram ERD lengkap dengan garis relasi muncul otomatis di panel kanan.</td><td>Gratis tanpa akun, tidak perlu menggambar manual — cukup tulis <code>ref:</code> sekali dan garis beserta notasi "satu-ke-banyak" langsung tergambar sendiri. Bisa export jadi gambar PNG atau SQL langsung.</td></tr>
+      <tr><td><a href="https://drawsql.app" target="_blank" rel="noopener">DrawSQL</a></td><td>Mirip dbdiagram.io tapi lewat UI drag-and-drop (klik kolom, tarik ke tabel lain untuk bikin relasi) alih-alih mengetik kode.</td><td>Cocok yang lebih nyaman visual murni dibanding menulis sintaks DBML.</td></tr>
+      <tr><td><a href="https://draw.io" target="_blank" rel="noopener">draw.io</a> / Excalidraw</td><td>Kanvas bebas — kotak dan garis digambar manual sepenuhnya, termasuk notasi relasinya.</td><td>Paling fleksibel (bisa gabung dengan diagram arsitektur lain di kanvas yang sama), tapi garis relasi harus ditarik &amp; dilabeli sendiri satu per satu — lebih makan waktu untuk skema dengan banyak tabel.</td></tr>
+    </table>
+    <p>Berikut skema UMKM App yang sama persis dengan migration asli (lihat di bawah), ditulis ulang dalam sintaks <strong>DBML</strong> milik dbdiagram.io — tempel langsung ke editor di <a href="https://dbdiagram.io" target="_blank" rel="noopener">dbdiagram.io</a> untuk melihat garis relasinya digambar otomatis:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">dbdiagram.io — skema UMKM App (DBML)</span></div><pre><code>Table users {
+  id integer [primary key]
+  nama varchar
+  email varchar [unique]
+  password varchar
+  created_at timestamp
+}
+
+Table umkm {
+  id integer [primary key]
+  user_id integer [unique]
+  nama varchar
+  deskripsi text
+  alamat varchar
+  foto varchar
+  created_at timestamp
+}
+
+Table produk {
+  id integer [primary key]
+  umkm_id integer
+  nama varchar
+  harga decimal
+  deskripsi text
+  foto varchar
+  created_at timestamp
+}
+
+Ref: umkm.user_id > users.id // satu user, satu umkm (unique di sisi umkm)
+Ref: produk.umkm_id > umkm.id // satu umkm, banyak produk</code></pre></div>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Buka <a href="https://dbdiagram.io" target="_blank" rel="noopener">dbdiagram.io</a> → klik <strong>"Go to App"</strong> / "Create new diagram" (tidak wajib bikin akun untuk coba-coba) → hapus contoh bawaan di editor kiri → tempel kode DBML di atas.</p>
+      <p class="exp">Perhatikan dua baris <code>Ref:</code> paling bawah: begitu ditempel, dbdiagram.io langsung menggambar garis dari tabel <code>umkm</code> ke <code>users</code>, dan dari <code>produk</code> ke <code>umkm</code>, lengkap dengan notasi "satu-ke-banyak" (simbol kaki-ayam/crow's foot) tepat di ujung garisnya. Coba ganti <code>umkm.user_id > users.id</code> jadi <code>umkm.user_id - users.id</code> (tanda <code>-</code> bukan <code>></code>) dan lihat bedanya — itu notasi relasi "satu-ke-satu" vs "satu-ke-banyak". Diagram inilah yang seharusnya digambar <strong>sebelum</strong> baris <code>CREATE TABLE</code> di bawah ini ditulis, bukan sesudahnya.</p>
+    </div>
+
+    <p>ERD itu cuma gambar — hasil akhirnya tetap harus diterjemahkan jadi perintah SQL sungguhan yang dijalankan ke Postgres. Sebelum masuk ke kode Go yang membungkusnya (Bagian 11), mundur dulu ke dasarnya: apa itu tabel, primary key, foreign key, dan lima perintah SQL (<code>CREATE TABLE</code>, <code>INSERT</code>, <code>SELECT</code>, <code>UPDATE</code>, <code>DELETE</code>) — memakai <strong>skema &amp; query asli</strong> yang dipakai UMKM API, satu per satu, supaya terbayang konkret konsep dasar database di balik ERD di atas.</p>
+
+    <h4>Skema tabel asli — <code>migrations/000001_init.up.sql</code></h4>
+    <p>Ini definisi SQL asli dari ketiga tabel hasil ERD di atas, dijalankan sekali lewat <code>cmd/migrate</code> (lihat Bagian 12) saat database masih kosong:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_init.up.sql</span></div><pre><code>CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE umkm (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    deskripsi TEXT,
+    alamat VARCHAR(255),
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE produk (
+    id SERIAL PRIMARY KEY,
+    umkm_id INTEGER NOT NULL REFERENCES umkm(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    harga NUMERIC(12,2) NOT NULL DEFAULT 0,
+    deskripsi TEXT,
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);</code></pre></div>
+    <ul>
+      <li><strong><code>SERIAL PRIMARY KEY</code></strong> — <code>id</code> adalah kunci utama tiap baris: unik, tidak boleh kosong, dan nilainya otomatis naik sendiri (1, 2, 3, …) setiap kali ada baris baru. Ini yang dipakai tiap kali kode menulis <code>WHERE id = $1</code>.</li>
+      <li><strong><code>REFERENCES users(id)</code></strong> — ini <em>foreign key</em>: kolom <code>user_id</code> di tabel <code>umkm</code> wajib berisi nilai yang benar-benar ada sebagai <code>id</code> di tabel <code>users</code>. Postgres sendiri yang menolak kalau kamu coba menyisipkan <code>user_id</code> yang tidak pernah terdaftar — bukan validasi di Go.</li>
+      <li><strong><code>UNIQUE</code> di <code>umkm.user_id</code></strong> — inilah yang sebenarnya menegakkan aturan "1 akun cuma boleh punya 1 UMKM" di level database, bukan cuma di <code>UmkmService.CreateOwn</code> (Bagian 10). Kalaupun ada bug di Go yang lolos mengirim <code>INSERT</code> kedua untuk <code>user_id</code> yang sama, Postgres sendiri yang akan menolaknya dengan error <em>unique violation</em>.</li>
+      <li><strong><code>ON DELETE CASCADE</code></strong> — kalau satu baris <code>users</code> dihapus, semua baris <code>umkm</code> yang menunjuk ke situ ikut terhapus otomatis oleh Postgres; begitu juga <code>umkm</code> → <code>produk</code>. Rantai inilah yang membuat kode Go tidak pernah perlu menulis "hapus dulu semua produknya, baru hapus UMKM-nya" secara manual.</li>
+      <li><strong>Kenapa <code>produk</code> tidak punya kolom <code>user_id</code> sendiri?</strong> Karena kepemilikan produk cukup ditelusuri lewat <code>umkm_id</code> → <code>umkm.user_id</code> (dua <code>SELECT</code> berantai, persis yang dilakukan <code>authorizeOwner</code> di Bagian 10) — menyimpan <code>user_id</code> di kedua tabel akan jadi data yang bisa saling bertentangan kalau salah satunya lupa diperbarui.</li>
+    </ul>
+
+    <h4>Query di balik tiap aksi nyata di aplikasi, satu per satu</h4>
+    <p>Supaya tidak abstrak, berikut ditelusuri <strong>urutan aksi yang sebenarnya dilakukan pengguna</strong> di UMKM App — <strong>Register → Login → Buat UMKM → Lihat Daftar UMKM → Lihat Detail UMKM → Edit UMKM → Hapus UMKM</strong> — satu per satu, masing-masing cukup <strong>satu query sederhana</strong> (bukan gabungan rumit), supaya kebayang persis apa yang terjadi di database setiap kali satu tombol di Flutter ditekan.</p>
+
+    <p><strong>1. Register — bikin akun baru</strong></p>
+    <p>Saat kamu mengisi form Register lalu menekan tombol "Daftar", Flutter mengirim <code>nama</code>/<code>email</code>/<code>password</code> ke Go, Go meng-hash password-nya pakai bcrypt, baru <code>userRepository.Create</code> menjalankan ini:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">userRepository.Create</span></div><pre><code>INSERT INTO users (nama, email, password)
+VALUES ('Budi', 'budi@mail.com', '$2a$10$hasilHashBcrypt...')
+RETURNING id;</code></pre></div>
+    <p>Satu baris baru masuk ke tabel <code>users</code>, dan Postgres langsung membalas <code>id</code> yang baru dibuatnya lewat <code>RETURNING</code> — Go tidak perlu <code>SELECT</code> terpisah untuk tahu ID akun yang baru saja dibuat.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Tempel &amp; jalankan di Neon SQL Editor — ganti nama/email dengan milikmu sendiri (password cukup teks bebas, karena ini cuma simulasi, bukan hash bcrypt asli):</p>
+      <pre><code>INSERT INTO users (nama, email, password)
+VALUES ('Nama Kamu Sendiri', 'emailkamu@mail.com', 'password_simulasi')
+RETURNING id;</code></pre>
+      <p class="exp"><strong>Catat angka <code>id</code> yang muncul di hasilnya</strong> — ini dipakai lagi di langkah 3 (Buat UMKM), persis seperti saat registrasi sungguhan: akun yang baru dibuat langsung "dikenali" lewat ID-nya.</p>
+    </div>
+
+    <p><strong>2. Login — masuk pakai akun yang tadi dibuat</strong></p>
+    <p>Saat kamu mengisi email &amp; password lalu menekan "Masuk", Go <strong>tidak</strong> langsung mencocokkan password di SQL — SQL cuma bertugas mengambil barisnya dulu lewat <code>userRepository.FindByEmail</code>, baru Go yang membandingkan password-nya pakai <code>bcrypt.CompareHashAndPassword</code> (Bagian 09):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">userRepository.FindByEmail</span></div><pre><code>SELECT id, nama, email, password FROM users
+WHERE email = 'budi@mail.com';</code></pre></div>
+    <p>Perhatikan: query ini <strong>tidak punya syarat password sama sekali</strong> di <code>WHERE</code>-nya — ia hanya mengambil baris berdasarkan email, lalu kolom <code>password</code> (yang isinya hash bcrypt) dibawa ke Go untuk dibandingkan di sana. Mencocokkan password lewat <code>WHERE password = '...'</code> di SQL justru tidak mungkin dilakukan, karena password yang tersimpan sudah di-hash, bukan teks asli.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code>SELECT id, nama, email FROM users WHERE email = 'emailkamu@mail.com';</code></pre>
+      <p class="exp">Harus keluar satu baris — persis akun yang dibuat di langkah 1. Ini membuktikan proses "Login" di level database sebenarnya cuma satu <code>SELECT</code> sederhana; bagian "mengecek apakah password benar" terjadi di kode Go, bukan di SQL ini.</p>
+    </div>
+
+    <p><strong>3. Buat UMKM — submit form "Tambah UMKM"</strong></p>
+    <p>Setelah login, token JWT-mu menyimpan <code>user_id</code>-mu (Bagian 09). Saat kamu submit form "Tambah UMKM" di Flutter, Go membaca <code>user_id</code> dari token itu (bukan dari isian form) lalu <code>umkmRepository.Create</code> menjalankan:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkmRepository.Create</span></div><pre><code>INSERT INTO umkm (user_id, nama, deskripsi, alamat)
+VALUES (3, 'Warung Kopi Budi', 'Jual kopi &amp; gorengan', 'Jl. Melati No. 2')
+RETURNING id;</code></pre></div>
+    <p>Angka <code>3</code> di situ bukan diketik pengguna — itu <code>id</code> akun yang sedang login, disisipkan otomatis oleh Go. Inilah yang membuat satu akun hanya bisa membuat UMKM atas namanya sendiri, tidak bisa membuatkan UMKM untuk akun orang lain.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Ganti angka <code>1</code> di bawah dengan <code>id</code> yang kamu catat dari langkah 1:</p>
+      <pre><code>INSERT INTO umkm (user_id, nama, deskripsi, alamat)
+VALUES (1, 'Warung Hasil Latihan SQL', 'Dibuat manual lewat SQL Editor, bukan lewat Flutter', 'Jl. Percobaan No. 1')
+RETURNING id;</code></pre>
+      <p class="exp">Kalau angka <code>user_id</code> yang kamu pakai memang hasil <code>RETURNING</code> langkah 1, baris ini akan berhasil tersimpan. Coba sekali lagi dengan <code>user_id</code> yang <strong>tidak pernah ada</strong> (misalnya <code>99999</code>) — harus muncul error <em>foreign key violation</em>, membuktikan <code>REFERENCES users(id)</code> di skema tabel benar-benar ditegakkan oleh Postgres, bukan cuma validasi di Go. Catat juga <code>id</code> UMKM yang baru dibuat ini untuk langkah berikutnya.</p>
+    </div>
+
+    <p><strong>4. Lihat Daftar UMKM — buka tab "Semua UMKM"</strong></p>
+    <p>Tab ini memanggil endpoint publik (tidak perlu login) yang menjalankan <code>umkmRepository.FindAll</code> dan <code>umkmRepository.Count</code> berpasangan:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkmRepository.FindAll + Count</span></div><pre><code>SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm
+WHERE nama ILIKE '%warung%'
+ORDER BY id DESC LIMIT 10 OFFSET 0;
+
+SELECT COUNT(*) FROM umkm WHERE nama ILIKE '%warung%';</code></pre></div>
+    <p><code>ILIKE '%warung%'</code> = pencarian teks tanpa peduli huruf besar/kecil, cocok dengan kotak pencarian di layar. <code>ORDER BY id DESC</code> = UMKM terbaru tampil paling atas. <code>LIMIT 10 OFFSET 0</code> = ambil 10 baris pertama saja (halaman 1) — <code>Count</code> dijalankan terpisah supaya Flutter tahu total keseluruhan data untuk menghitung jumlah halaman, tanpa harus mengunduh semuanya sekaligus.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code>SELECT id, nama, alamat FROM umkm
+WHERE nama ILIKE '%Hasil Latihan SQL%'
+ORDER BY id DESC LIMIT 10 OFFSET 0;</code></pre>
+      <p class="exp">Harus keluar UMKM yang dibuat di langkah 3. Kalau kamu buka tab <strong>"Semua UMKM"</strong> di aplikasi Flutter-mu sendiri, UMKM ini juga akan muncul di situ — karena dibuat langsung di tabel yang sama persis yang dibaca endpoint tersebut, walau dibuat lewat SQL manual bukan lewat form Flutter.</p>
+    </div>
+
+    <p><strong>5. Lihat Detail UMKM — buka satu UMKM untuk lihat produknya</strong></p>
+    <p>Tombol detail memanggil <code>umkmRepository.FindByID</code> (satu <code>SELECT</code>, cuma tabel <code>umkm</code>), lalu <em>terpisah</em> <code>produkRepository.FindByUmkmID</code> untuk daftar produknya — dua <code>SELECT</code> berurutan, bukan satu <code>JOIN</code> (lihat juga <code>authorizeOwner</code> di Bagian 10 yang memakai pola serupa). Tapi sebagai pembelajaran, berikut cara menyatukan keduanya jadi satu query lewat <code>JOIN</code> — cara SQL <strong>sebenarnya</strong> membuktikan relasi yang digambar di dbdiagram.io sebelumnya:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">Relasi umkm ↔ produk (versi JOIN)</span></div><pre><code>SELECT um.nama AS nama_umkm, um.alamat, p.nama AS nama_produk, p.harga
+FROM umkm um
+JOIN produk p ON p.umkm_id = um.id
+WHERE um.nama = 'Warung Hasil Latihan SQL';</code></pre></div>
+    <p><code>JOIN ... ON p.umkm_id = um.id</code> menyatukan setiap baris <code>produk</code> dengan baris <code>umkm</code> induknya berdasarkan kecocokan foreign key — hasilnya satu tabel gabungan, padahal datanya tersimpan di dua tabel terpisah.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Dulu kamu belum punya produk untuk UMKM latihan ini — buat satu dulu (ganti <code>1</code> dengan <code>id</code> UMKM dari langkah 3), baru jalankan <code>JOIN</code>-nya:</p>
+      <pre><code>INSERT INTO produk (umkm_id, nama, harga, deskripsi)
+VALUES (1, 'Kopi Susu', 12000, 'Produk latihan');
+
+SELECT um.nama AS nama_umkm, p.nama AS nama_produk, p.harga
+FROM umkm um
+JOIN produk p ON p.umkm_id = um.id
+WHERE um.nama = 'Warung Hasil Latihan SQL';</code></pre>
+      <p class="exp">Harus keluar satu baris berisi nama UMKM-mu bergandengan dengan "Kopi Susu" — bukti paling konkret bahwa relasi yang cuma berupa garis di ERD benar-benar bisa "disatukan" lewat SQL.</p>
+    </div>
+
+    <p><strong>6. Edit UMKM — submit form edit</strong></p>
+    <p>Menekan "Simpan" di form edit memanggil <code>umkmRepository.Update</code>, menulis ulang semua kolom sekaligus (bukan per-kolom yang berubah saja):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkmRepository.Update</span></div><pre><code>UPDATE umkm SET nama = 'Warung Kopi Budi (Cabang Baru)',
+    deskripsi = 'Jual kopi &amp; gorengan', alamat = 'Jl. Melati No. 2',
+    foto = 'umkm/123.jpg' WHERE id = 7;</code></pre></div>
+    <p>Nilai kolom yang <em>tidak</em> diubah pengguna (mis. <code>alamat</code>) tetap dikirim ulang dengan nilai lamanya oleh service layer, bukan dikosongkan — supaya satu <code>UPDATE</code> ini selalu lengkap mengisi semua kolom sekaligus.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code>UPDATE umkm SET nama = 'Warung Hasil Latihan SQL (sudah diedit)'
+WHERE nama = 'Warung Hasil Latihan SQL';
+
+SELECT id, nama, alamat FROM umkm WHERE nama ILIKE '%Hasil Latihan SQL%';</code></pre>
+      <p class="exp">Baris kedua membuktikan baris pertama bekerja: nama UMKM latihan sekarang berakhiran "(sudah diedit)". Refresh tab "Semua UMKM" di Flutter-mu — nama yang berubah ikut muncul di situ.</p>
+    </div>
+
+    <p><strong>7. Hapus UMKM — tombol hapus di "UMKM Saya"</strong></p>
+    <p>Ini satu-satunya aksi yang efeknya <strong>lebih luas dari satu tabel</strong>: <code>umkmRepository.Delete</code> cuma menghapus dari tabel <code>umkm</code>, tapi berkat <code>ON DELETE CASCADE</code> di skema tabel <code>produk</code> (lihat skema tabel asli di atas), semua produk UMKM itu ikut terhapus otomatis oleh Postgres:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkmRepository.Delete</span></div><pre><code>DELETE FROM umkm WHERE id = 7;</code></pre></div>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code>-- hitung dulu produknya sebelum dihapus
+SELECT COUNT(*) FROM produk WHERE umkm_id = (
+  SELECT id FROM umkm WHERE nama ILIKE '%Hasil Latihan SQL%'
+);
+
+-- hapus UMKM-nya (bukan produknya)
+DELETE FROM umkm WHERE nama ILIKE '%Hasil Latihan SQL%';
+
+-- hitung ulang -- harus jadi 0, padahal baris ini TIDAK PERNAH menyentuh tabel produk
+SELECT COUNT(*) FROM produk WHERE umkm_id = (
+  SELECT id FROM umkm WHERE nama ILIKE '%Hasil Latihan SQL%'
+);
+
+-- beres-beres: hapus juga akun latihannya (tidak wajib, tapi rapi)
+DELETE FROM users WHERE nama = 'Nama Kamu Sendiri';</code></pre>
+      <p class="exp">Hitungan pertama harus <code>1</code> (dari "Kopi Susu" di langkah 5), hitungan kedua (setelah UMKM dihapus) harus <code>0</code> — padahal query penghapusnya cuma menyebut tabel <code>umkm</code>, tidak pernah menyentuh tabel <code>produk</code> sama sekali. <code>ON DELETE CASCADE</code>-lah yang bekerja di belakang layar. Baris terakhir cuma beres-beres supaya database latihanmu tidak menumpuk data sampah permanen.</p>
+    </div>
+
+    <h3>d. Desain kontrak API</h3>
+    <p>Khusus proyek yang punya backend terpisah (seperti UMKM API + UMKM App), ada satu desain tambahan yang sering terlewat: <strong>bentuk request/response tiap endpoint</strong> disepakati di atas kertas dulu sebelum Flutter dan Go ditulis bersamaan. UMKM API memakai <strong>Swagger/OpenAPI</strong> (bisa dicoba langsung di <code>/swagger/</code>) untuk ini — mendefinisikan endpoint, field request, dan bentuk response JSON secara eksplisit, supaya tim backend dan frontend (atau diri sendiri di waktu berbeda) tidak saling menebak bentuk data yang dipertukarkan.</p>
+    <div class="warn"><span class="lbl">Kesalahan paling umum pemula</span><p>Langsung menulis kode Flutter sebelum tahu endpoint API apa saja yang dibutuhkan, lalu membangun backend belakangan sambil menebak-nebak bentuk responsnya. Hasilnya: bolak-balik mengubah kedua sisi. Desain dulu bentuk API (endpoint, request, response) di atas kertas/Swagger sebelum menulis Flutter yang memanggilnya.</p></div>
+
+    <h2 id="s5"><span class="badge">05</span>Tahap 3: Development</h2>
+    <p>Urutan yang terbukti efisien: <strong>backend dulu, baru frontend</strong> — karena Flutter butuh sesuatu yang nyata untuk dipanggil. Di dalam backend sendiri, urutan membangunnya mengikuti lapisan arsitektur dari dalam ke luar:</p>
+    <ol class="steps">
+      <li><strong>Domain</strong> — definisikan struct data dan jenis error bisnis dulu (<code>User</code>, <code>Umkm</code>, <code>Produk</code>, <code>ErrNotFound</code>, dst).</li>
+      <li><strong>Repository</strong> — implementasikan akses database mentah untuk tiap domain.</li>
+      <li><strong>Service</strong> — tambahkan aturan bisnis &amp; otorisasi di atas repository (misal: cek kepemilikan sebelum izinkan update).</li>
+      <li><strong>Handler</strong> — bungkus service jadi endpoint HTTP, baru di tahap ini bentuk request/response JSON diputuskan secara konkret.</li>
+      <li><strong>Flutter</strong> — setelah API berjalan dan bisa dites lewat Swagger, baru model (<code>fromJson</code>), <code>ApiService</code>, lalu layar-layar UI ditulis mengonsumsi API tersebut.</li>
+    </ol>
+    <p>Ini persis urutan yang kalian jalani dari Pertemuan 4 (backend) menuju Pertemuan 6-7 (Flutter mengonsumsinya) — bukan kebetulan, tapi memang urutan yang masuk akal secara rekayasa perangkat lunak.</p>
+    <h3>Tools yang dipakai selama development</h3>
+    <table>
+      <tr><th>Kebutuhan</th><th>Tools yang dipakai di proyek ini</th></tr>
+      <tr><td>Editor kode</td><td>VS Code, dengan ekstensi Go (<code>golang.go</code>) dan Flutter/Dart resmi — autocomplete, format-on-save (<code>gofmt</code>/<code>dart format</code>), dan debugging terintegrasi.</td></tr>
+      <tr><td>Version control</td><td>Git + GitHub — setiap pertemuan jadi commit/branch terpisah, memudahkan membandingkan versi kode sebelum/sesudah fitur ditambahkan.</td></tr>
+      <tr><td>Manajemen dependency</td><td><code>go.mod</code>/<code>go.sum</code> (Go modules) di <code>umkm-api</code>, <code>pubspec.yaml</code> + <code>flutter pub get</code> di <code>umkm-app</code>.</td></tr>
+      <tr><td>Uji coba API manual selama coding</td><td>Swagger UI bawaan (<code>/swagger/</code>) untuk coba endpoint satu-satu tanpa perlu Flutter sudah siap, atau Postman/Insomnia kalau butuh menyimpan koleksi request.</td></tr>
+      <tr><td>Database client</td><td>psql (CLI bawaan Postgres) atau GUI seperti TablePlus/DBeaver untuk inspeksi isi tabel langsung ke Neon Postgres saat debugging.</td></tr>
+      <tr><td>Emulator/device testing</td><td>Android Emulator (lewat Android Studio) untuk iterasi cepat, real device lewat USB debugging untuk uji performa &amp; kamera/upload foto yang sesungguhnya.</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Development berjalan paralel dengan testing manual</span><p>Pada praktiknya, setiap fungsi yang baru ditulis langsung dicoba manual (lewat Swagger untuk Go, lewat <code>flutter run</code> + hot reload untuk UI) sebelum lanjut ke fungsi berikutnya — bukan menulis semua kode dulu baru dites di akhir. Ini mempersempit area pencarian bug: kalau baru satu fungsi ditambahkan lalu error muncul, penyebabnya hampir pasti ada di fungsi itu.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Tahap 4: Testing</h2>
+    <p>Testing bukan cuma "coba jalankan, kalau tidak merah berarti aman". Untuk proyek seukuran UMKM API/App, minimal ada tiga lapis pengecekan yang relevan:</p>
+    <table>
+      <tr><th>Jenis</th><th>Contoh di proyek UMKM</th></tr>
+      <tr><td>Uji endpoint API langsung</td><td>Coba tiap endpoint lewat Swagger UI (<code>/swagger/</code>) atau Postman — termasuk kasus gagal: login salah password, create UMKM kedua (harus kena <code>409 Conflict</code>), akses endpoint auth tanpa token (harus <code>401</code>).</td></tr>
+      <tr><td>Uji alur UI end-to-end</td><td>Jalankan Flutter sungguhan dari Splash sampai edit produk — pastikan token tersimpan dan terpakai, foto ter-upload dan tampil kembali, logout benar-benar menghapus sesi.</td></tr>
+      <tr><td>Uji kasus tepi (edge case)</td><td>Upload file selain JPG/PNG (harus ditolak baik di Flutter maupun di server — lihat Bagian 12), koneksi internet mati di tengah submit, data kosong (list UMKM kosong tidak boleh membuat UI crash).</td></tr>
+    </table>
+    <h3>Tools untuk tiap jenis testing</h3>
+    <table>
+      <tr><th>Jenis</th><th>Tools</th><th>Contoh konkret</th></tr>
+      <tr><td>Manual API testing</td><td>Swagger UI (<code>/swagger/</code>), Postman/Insomnia</td><td>Simpan satu koleksi request di Postman: register → login (simpan token) → create UMKM pakai token itu → create UMKM kedua (harus gagal 409).</td></tr>
+      <tr><td>Automated unit test (Go)</td><td><code>go test ./...</code> (built-in testing package)</td><td>Uji fungsi murni seperti <code>normalizePagination</code> — beri input aneh (limit negatif, page 0) pastikan hasilnya tetap dalam batas wajar, tanpa perlu database sungguhan.</td></tr>
+      <tr><td>Automated widget test (Flutter)</td><td><code>flutter test</code> + package <code>flutter_test</code> bawaan SDK</td><td>Uji <code>LoginScreen</code> menampilkan pesan error validasi saat password diisi kurang dari 6 karakter, tanpa perlu menjalankan API sungguhan.</td></tr>
+      <tr><td>Static analysis</td><td><code>flutter analyze</code>, <code>go vet</code></td><td>Dijalankan sebelum commit — menangkap kesalahan sintaks/tipe yang lolos dari mata sebelum sempat dijalankan.</td></tr>
+      <tr><td>Manual QA checklist</td><td>Daftar centang tertulis (bisa di Notion/Google Docs/`.md`)</td><td>Daftar langkah tetap yang dijalankan ulang tiap kali ada perubahan besar — mis. "coba login dengan password salah 6x berturut-turut, pastikan percobaan ke-6 ditolak rate limiter".</td></tr>
+    </table>
+    <div class="verify"><span class="lbl">Prinsip: jangan percaya "kelihatannya jalan"</span><p>Kode yang terlihat berfungsi saat jalur normal dicoba belum tentu aman — baru ketahuan bermasalah saat kasus gagal benar-benar terjadi di tangan pengguna. Selalu uji jalur gagal, bukan cuma jalur sukses.</p></div>
+
+    <h2 id="s7"><span class="badge">07</span>Tahap 5: Deployment & Maintenance</h2>
+    <p>Aplikasi yang hanya bisa jalan di laptop pembuatnya belum selesai. Untuk proyek seperti UMKM API/App, tahap ini berarti:</p>
+    <ul>
+      <li><strong>Backend</strong> — database dipindah ke layanan terkelola (proyek ini memakai Neon Postgres, bukan Postgres lokal), server Go dijalankan di suatu tempat yang bisa diakses dari internet/jaringan lokal (bukan cuma <code>localhost</code> — ingat kenapa <code>baseUrl</code> di Flutter memakai IP LAN, bukan <code>localhost</code>, di Bagian 19), dan konfigurasi sensitif (kredensial database, <code>JWT_SECRET</code>) disimpan di <code>.env</code>, tidak ditulis langsung di kode.</li>
+      <li><strong>Mobile app</strong> — build rilis (<code>flutter build apk</code>/<code>appbundle</code>), lalu didistribusikan (internal testing, Play Store, atau dibagikan langsung sebagai APK untuk keperluan tugas kuliah).</li>
+      <li><strong>Maintenance</strong> — skema database yang berubah di kemudian hari dikelola lewat <em>migration</em> yang tercatat dan bisa dijalankan ulang di server mana pun (lihat Bagian 12), bukan mengubah tabel manual lewat <code>psql</code> setiap kali.</li>
+    </ul>
+    <h3>Pilihan tools/layanan untuk tiap bagian</h3>
+    <table>
+      <tr><th>Bagian</th><th>Opsi yang umum dipakai untuk skala tugas kuliah/proyek kecil</th></tr>
+      <tr><td>Database</td><td><a href="https://neon.tech" target="_blank" rel="noopener">Neon</a> (dipakai proyek ini — Postgres gratis, serverless), alternatif: Supabase, Railway Postgres.</td></tr>
+      <tr><td>Hosting server Go</td><td>Railway, Render, atau Fly.io (semua punya tier gratis/murah, deploy langsung dari GitHub repo) — alternatif: VPS murah (mis. Lightsail/DigitalOcean) kalau butuh kendali penuh.</td></tr>
+      <tr><td>Penyimpanan file upload</td><td>Disk lokal server (dipakai proyek ini — cukup untuk skala kecil) — untuk skala produksi sungguhan biasanya dipindah ke object storage seperti Cloudflare R2/AWS S3 supaya tidak hilang saat server di-redeploy.</td></tr>
+      <tr><td>Distribusi Android</td><td>APK dibagikan langsung (cukup untuk tugas kuliah), atau Google Play Console → Internal Testing track untuk simulasi distribusi yang lebih resmi.</td></tr>
+      <tr><td>CI/CD (opsional)</td><td>GitHub Actions — otomatis menjalankan <code>go vet</code>/<code>flutter analyze</code> setiap push, supaya kesalahan ketahuan sebelum di-deploy manual.</td></tr>
+      <tr><td>Pemantauan setelah rilis</td><td>Endpoint <code>GET /healthz</code> dicek berkala (manual atau lewat layanan uptime gratis seperti UptimeRobot) untuk tahu kalau server down.</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Deployment bukan akhir</span><p>Setelah rilis, aplikasi tetap butuh pemantauan (karena itu ada <code>GET /healthz</code> di UMKM API) dan perbaikan bug berkelanjutan — siklus lima tahap ini sebenarnya berputar lagi setiap kali ada fitur baru atau masalah baru ditemukan dari pengguna nyata.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Golang: Peta Arsitektur UMKM API</h2>
+    <p>Sebelum masuk ke fungsi satu-per-satu, ini peta besar bagaimana <code>umkm-api</code> disusun — hasil dari Tahap 2 (desain arsitektur) di atas:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">alur satu request masuk</span></div><pre><code>HTTP Request
+   ↓
+handler/*.go        → decode JSON/multipart, panggil service, map error → status HTTP
+   ↓
+service/*.go        → aturan bisnis: validasi, cek kepemilikan, hash password, dsb
+   ↓
+repository/*.go     → SQL parameterized ke Postgres, pgx.ErrNoRows → domain.ErrNotFound
+   ↓
+domain/*.go         → struct murni + sentinel error (ErrNotFound, ErrConflict, ErrForbidden, ErrInvalidInput)</code></pre></div>
+    <p>Dua hal penting dari peta ini:</p>
+    <ul>
+      <li><strong>Error mengalir ke atas, bukan status HTTP.</strong> <code>domain</code> dan <code>service</code> tidak pernah tahu apa itu "404" atau "409" — mereka hanya mengembalikan error Go biasa (<code>ErrNotFound</code>, dst). Hanya <code>handler</code> yang tahu cara menerjemahkan error itu jadi status HTTP, lewat <code>errors.Is(...)</code>. Ini membuat <code>service</code> dan <code>repository</code> bisa dipakai ulang di konteks lain (misal CLI) tanpa membawa konsep HTTP sama sekali.</li>
+      <li><strong>Native <code>net/http</code>, bukan Gin/Echo/Fiber.</strong> Routing di <code>cmd/api/main.go</code> memakai <code>http.NewServeMux()</code> dengan pattern Go 1.22+ (<code>"POST /umkm"</code>, <code>r.PathValue("id")</code>). Ini sengaja menunjukkan bahwa REST API lengkap — routing, middleware, JSON — bisa dibangun dari standard library saja, tanpa framework pihak ketiga.</li>
+    </ul>
+    <h3>Peta lengkap endpoint</h3>
+    <table>
+      <tr><th>Method & Path</th><th>Handler</th><th>Auth</th><th>Keterangan</th></tr>
+      <tr><td><code>POST /api/auth/register</code></td><td><code>AuthHandler.Register</code></td><td>Publik</td><td>Dibatasi validasi (nama/email/password&ge;6) di service, bukan di handler.</td></tr>
+      <tr><td><code>POST /api/auth/login</code></td><td><code>AuthHandler.Login</code></td><td>Publik + rate limit 5/menit/IP</td><td>Mengembalikan JWT + data user.</td></tr>
+      <tr><td><code>GET /api/profile</code></td><td><code>AuthHandler.Profile</code></td><td>Wajib login</td><td>Ambil data akun dari token yang aktif.</td></tr>
+      <tr><td><code>PUT /api/profile</code></td><td><code>AuthHandler.UpdateProfile</code></td><td>Wajib login</td><td>Ubah nama/email.</td></tr>
+      <tr><td><code>PUT /api/profile/password</code></td><td><code>AuthHandler.UpdatePassword</code></td><td>Wajib login</td><td>Wajib sertakan password lama.</td></tr>
+      <tr><td><code>GET /api/umkm</code></td><td><code>UmkmHandler.List</code></td><td>Publik</td><td>Pagination (<code>page</code>, <code>limit</code>) + pencarian (<code>q</code>).</td></tr>
+      <tr><td><code>GET /api/umkm/{id}</code></td><td><code>UmkmHandler.Detail</code></td><td>Publik</td><td>Detail satu UMKM.</td></tr>
+      <tr><td><code>GET /api/umkm/saya</code></td><td><code>UmkmHandler.MyUmkm</code></td><td>Wajib login</td><td>UMKM milik user yang sedang login; <code>404</code> kalau belum punya.</td></tr>
+      <tr><td><code>POST /api/umkm</code></td><td><code>UmkmHandler.Create</code></td><td>Wajib login</td><td>Multipart (field + foto); gagal <code>409</code> kalau user sudah punya UMKM.</td></tr>
+      <tr><td><code>PUT /api/umkm/{id}</code></td><td><code>UmkmHandler.Update</code></td><td>Wajib login + pemilik</td><td>Multipart; foto opsional (tidak wajib upload ulang).</td></tr>
+      <tr><td><code>DELETE /api/umkm/{id}</code></td><td><code>UmkmHandler.Delete</code></td><td>Wajib login + pemilik</td><td>Produk terkait ikut terhapus (FK <code>ON DELETE CASCADE</code>); file foto dihapus setelah DB sukses.</td></tr>
+      <tr><td><code>GET /api/umkm/{id}/produk</code></td><td><code>ProdukHandler.ListByUmkm</code></td><td>Publik</td><td>Daftar produk milik satu UMKM.</td></tr>
+      <tr><td><code>GET /api/produk/{id}</code></td><td><code>ProdukHandler.Detail</code></td><td>Publik</td><td>Detail satu produk.</td></tr>
+      <tr><td><code>POST /api/umkm/{umkmId}/produk</code></td><td><code>ProdukHandler.Create</code></td><td>Wajib login + pemilik UMKM</td><td>Multipart; kepemilikan dicek lewat <code>authorizeOwner</code>.</td></tr>
+      <tr><td><code>PUT /api/produk/{id}</code></td><td><code>ProdukHandler.Update</code></td><td>Wajib login + pemilik</td><td>Sama pola dengan update UMKM.</td></tr>
+      <tr><td><code>DELETE /api/produk/{id}</code></td><td><code>ProdukHandler.Delete</code></td><td>Wajib login + pemilik</td><td>File foto produk ikut dihapus.</td></tr>
+      <tr><td><code>GET /uploads/*</code></td><td><code>http.FileServer</code></td><td>Publik</td><td>Statis — foto UMKM/produk disajikan langsung sebagai file, bukan lewat handler custom.</td></tr>
+      <tr><td><code>GET /healthz</code></td><td>inline di <code>main.go</code></td><td>Publik</td><td>Untuk pemantauan uptime (lihat Bagian 07).</td></tr>
+      <tr><td><code>GET /swagger/*</code></td><td>swagger-ui handler</td><td>Publik</td><td>Dokumentasi API interaktif, bisa langsung dicoba dari browser.</td></tr>
+    </table>
+    <h3>Pemetaan error bisnis → status HTTP</h3>
+    <p>Semua handler memakai pola <code>switch</code>/<code>errors.Is</code> yang sama untuk menerjemahkan error dari <code>service</code> menjadi response HTTP yang konsisten:</p>
+    <table>
+      <tr><th>Sentinel error (domain)</th><th>Status HTTP</th><th>Kode error di response</th><th>Contoh pemicu</th></tr>
+      <tr><td><code>ErrInvalidInput</code></td><td><code>400</code></td><td><code>BAD_REQUEST</code></td><td>Email kosong saat register, password kurang dari 6 karakter.</td></tr>
+      <tr><td>(gagal autentikasi di middleware)</td><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>Token tidak ada/tidak valid/kedaluwarsa.</td></tr>
+      <tr><td><code>ErrForbidden</code></td><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>User mencoba update/hapus UMKM atau produk yang bukan miliknya.</td></tr>
+      <tr><td><code>ErrNotFound</code></td><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Akses <code>GET /umkm/{id}</code> dengan id yang tidak ada di database.</td></tr>
+      <tr><td><code>ErrConflict</code></td><td><code>409</code></td><td><code>CONFLICT</code></td><td>Register dengan email yang sudah terdaftar, atau create UMKM kedua.</td></tr>
+    </table>
+
+    <h2 id="s9"><span class="badge">09</span>Golang: Autentikasi & Keamanan</h2>
+    <p><code>internal/middleware/auth.go</code> — fungsi <code>RequireAuth(jwtSecret)</code> membungkus handler mana pun yang butuh login. Dipasang selektif di <code>main.go</code>: <code>/profile</code>, <code>POST/PUT/DELETE /umkm</code>, <code>GET /umkm/saya</code>, dan semua endpoint produk yang mengubah data — tapi <strong>tidak</strong> dipasang di <code>GET /umkm</code> (list publik) atau <code>GET /umkm/{id}</code> (detail publik), sesuai kebutuhan dari Tahap 1: UMKM harus bisa dijelajahi tanpa akun.</p>
+    <ul>
+      <li><strong>Hanya menerima algoritma HS256</strong> (<code>jwt.WithValidMethods([]string{"HS256"})</code>) — mencegah <em>algorithm confusion attack</em>, yaitu token palsu yang mengaku memakai <code>alg: none</code> atau algoritma lain supaya lolos verifikasi.</li>
+      <li>Header <code>Authorization</code> ditoleransi walau prefiks <code>"Bearer "</code> tidak ditulis — sengaja dilonggarkan supaya mahasiswa yang lupa mengetik "Bearer" di Swagger UI tidak langsung gagal.</li>
+      <li>User ID hasil parse token disimpan di <code>context</code> request, diambil lagi di handler lewat <code>middleware.GetUserID(r)</code> — jadi handler tidak perlu parse token sendiri-sendiri.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go — RequireAuth</span></div><pre><code>func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			header := r.Header.Get("Authorization")
+			if header == "" {
+				http.Error(w, `{"error":{"message":"token tidak ditemukan","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
+				return
+			}
+
+			// Terima baik "Bearer &lt;token&gt;" maupun token mentah tanpa prefix.
+			tokenStr := header
+			if len(header) > 7 && strings.EqualFold(header[:7], "Bearer ") {
+				tokenStr = header[7:]
+			}
+			// WithValidMethods memaksa algoritma HS256 saja — mencegah algorithm confusion attack.
+			token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+				return []byte(jwtSecret), nil
+			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+			if err != nil || !token.Valid {
+				http.Error(w, `{"error":{"message":"token tidak valid","code":"UNAUTHORIZED"}}`, http.StatusUnauthorized)
+				return
+			}
+
+			claims, _ := token.Claims.(jwt.MapClaims)
+			sub, _ := claims["sub"].(float64)
+			userID := int64(sub)
+
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}</code></pre></div>
+    <p>Pola yang dipakai di sini disebut <strong>higher-order function</strong>: <code>RequireAuth</code> tidak memproses request sendiri, ia <em>mengembalikan</em> sebuah fungsi pembungkus (<code>func(http.Handler) http.Handler</code>) yang menerima handler asli (<code>next</code>) dan mengembalikan handler baru. Handler baru ini menjalankan pengecekan token dulu — kalau gagal, langsung <code>return</code> tanpa pernah memanggil <code>next.ServeHTTP</code> (handler asli tidak pernah dijalankan). Kalau token valid, <code>userID</code> ditempel ke <code>context</code> request lalu diteruskan ke <code>next</code>. Ini sebabnya dipasang di <code>main.go</code> dengan cara membungkus: <code>auth(http.HandlerFunc(umkmHandler.Create))</code> — <code>auth</code> adalah hasil pemanggilan <code>RequireAuth(cfg.JWTSecret)</code>.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Jalankan server (<code>go run ./cmd/api</code>), lalu dari terminal lain jalankan tiga perintah ini satu-satu dan bandingkan hasilnya:</p>
+      <pre><code># 1. Tanpa token sama sekali -> harus 401
+curl -i http://localhost:8080/api/profile
+
+# 2. Token asal-asalan -> harus 401 juga (bukan error server/panik)
+curl -i http://localhost:8080/api/profile -H "Authorization: Bearer token-ngasal-123"
+
+# 3. Tanpa prefix "Bearer " -> tetap diterima (lihat baris 24-31 kode di atas)
+curl -i http://localhost:8080/api/profile -H "Authorization: &lt;token_hasil_login&gt;"</code></pre>
+      <p class="exp">Dapatkan <code>&lt;token_hasil_login&gt;</code> dari respons <code>POST /api/auth/login</code> (lihat kotak "Coba Sendiri" di bagian Register/Login tepat di bawah ini). <strong>Yang harus kalian amati:</strong> perintah 1 dan 2 sama-sama balas <code>401 Unauthorized</code> dengan body <code>{"error":{"message":"token tidak ditemukan atau tidak valid",...}}</code>, sedangkan perintah 3 balas <code>200 OK</code> walau tanpa kata "Bearer" di depan token. Kalau hasilnya beda, cek lagi apakah server benar-benar jalan di port 8080 dan <code>JWT_SECRET</code> di <code>.env</code> konsisten.</p>
+    </div>
+    <p><code>internal/middleware/ratelimit.go</code> — <code>ipRateLimiter</code> hanya dipasang di <code>POST /auth/login</code> (5 request/menit per IP). Ini membatasi percobaan <em>brute-force</em> password tanpa mengganggu pengguna lain yang kebetulan berbagi endpoint yang sama.</p>
+    <p><code>internal/service/auth_service.go</code> — <code>Register</code> meng-hash password dengan <code>bcrypt.DefaultCost</code> (password asli tidak pernah disimpan), <code>Login</code> membandingkannya lewat <code>bcrypt.CompareHashAndPassword</code>, dan <code>generateToken</code> menandatangani JWT berisi klaim <code>sub</code> (user ID) dengan masa berlaku 24 jam. <code>UpdatePassword</code> mewajibkan password lama diverifikasi dulu sebelum password baru diterima — mencegah orang lain mengganti password hanya karena sesi login sedang aktif di perangkat yang tertinggal.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/auth_service.go — Register, Login, generateToken</span></div><pre><code>func (s *AuthService) Register(ctx context.Context, nama, email, password string) (*domain.User, error) {
+	if nama == "" || email == "" || len(password) < 6 {
+		return nil, domain.ErrInvalidInput
+	}
+	_, err := s.userRepo.FindByEmail(ctx, email)
+	if err == nil {
+		return nil, domain.ErrConflict // email sudah dipakai
+	}
+	if !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
+	}
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	user := &domain.User{Nama: nama, Email: email, Password: string(hashed)}
+	if err := s.userRepo.Create(ctx, user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (s *AuthService) Login(ctx context.Context, email, password string) (string, *domain.User, error) {
+	user, err := s.userRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return "", nil, domain.ErrNotFound
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return "", nil, domain.ErrInvalidInput // password salah
+	}
+	token, err := s.generateToken(user.ID)
+	if err != nil {
+		return "", nil, err
+	}
+	return token, user, nil
+}
+
+func (s *AuthService) generateToken(userID int64) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(24 * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
+}</code></pre></div>
+    <p>Perhatikan <code>Register</code> memanggil <code>FindByEmail</code> lebih dulu dan membaca hasil errornya dengan cermat: kalau <code>err == nil</code> berarti email <strong>sudah ketemu</strong> → <code>ErrConflict</code>. Kalau error-nya <em>bukan</em> <code>ErrNotFound</code> (artinya ada error lain, mis. koneksi database putus) → error itu diteruskan apa adanya, bukan ditelan diam-diam. Hanya ketika error memang <code>ErrNotFound</code> (email belum terdaftar) proses lanjut ke hashing password. Tiga cabang ini — konflik, error tak terduga, dan jalur normal — ditangani eksplisit satu-satu, bukan asumsi "kalau tidak ada data berarti aman lanjut".</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code># 1. Register akun baru
+curl -i -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"nama":"Budi Tes","email":"budi.tes@mail.com","password":"rahasia123"}'
+
+# 2. Register LAGI dengan email yang sama -> harus 409 Conflict
+curl -i -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"nama":"Budi Lain","email":"budi.tes@mail.com","password":"lainlagi"}'
+
+# 3. Login dengan akun yang baru dibuat, simpan token-nya
+curl -i -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"budi.tes@mail.com","password":"rahasia123"}'
+
+# 4. Login dengan password SALAH -> harus 400, pesan "password salah"
+curl -i -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"budi.tes@mail.com","password":"ngasal"}'</code></pre>
+      <p class="exp"><strong>Eksperimen tambahan:</strong> buka tabel <code>users</code> lewat psql/TablePlus setelah perintah 1 dijalankan — lihat kolom <code>password</code>, isinya string hash bcrypt yang diawali <code>$2a$...</code>, <strong>bukan</strong> <code>"rahasia123"</code>. Ini bukti nyata bahwa <code>bcrypt.GenerateFromPassword</code> benar-benar jalan, bukan cuma klaim di teks penjelasan. Token dari perintah 3 bisa langsung dipakai untuk kotak "Coba Sendiri" di bagian <code>RequireAuth</code> di atas.</p>
+    </div>
+
+    <h2 id="s10"><span class="badge">10</span>Golang: Service Layer — Aturan Bisnis & Otorisasi</h2>
+    <p><code>umkm_service.go</code> dan <code>produk_service.go</code> adalah tempat aturan bisnis dari Tahap 1 benar-benar ditegakkan di kode:</p>
+    <ul>
+      <li><strong>"1 user = 1 UMKM"</strong> ditegakkan di <code>CreateOwn</code>: cek dulu lewat <code>FindByUserID</code>, kalau sudah ada → <code>ErrConflict</code> (jadi <code>409</code> di handler).</li>
+      <li><strong>Kepemilikan UMKM</strong> diverifikasi manual: <code>umkm.UserID != userID</code> → <code>ErrForbidden</code> (<code>403</code>) sebelum izinkan update/hapus.</li>
+      <li><strong>Kepemilikan produk tidak langsung</strong> — tabel <code>produk</code> tidak punya kolom <code>user_id</code> sendiri, jadi <code>ProdukService</code> punya fungsi privat <code>authorizeOwner</code> yang menembus dua tabel: ambil produk → ambil UMKM induknya → baru bandingkan <code>UserID</code>-nya. Ini contoh nyata kenapa otorisasi sebaiknya ditaruh di service, bukan di middleware generik — aturannya spesifik per domain data.</li>
+      <li><strong>Pola <code>(entity, fotoLama, err)</code> pada Update</strong> — foto lama hanya dikembalikan ke handler kalau memang digantikan foto baru. Kalau pengguna tidak upload foto baru saat edit, <code>fotoLama</code> dikosongkan sehingga <code>deleteFile</code> di handler otomatis tidak melakukan apa-apa. Ini mencegah foto lama terhapus tanpa sengaja saat pengguna hanya mengubah nama/deskripsi.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/produk_service.go — authorizeOwner & UpdateOwn</span></div><pre><code>// authorizeOwner memastikan userID adalah pemilik UMKM tempat produk berada.
+func (s *ProdukService) authorizeOwner(ctx context.Context, userID, produkID int64) (*domain.Produk, error) {
+	produk, err := s.produkRepo.FindByID(ctx, produkID)
+	if err != nil {
+		return nil, err
+	}
+	umkm, err := s.umkmRepo.FindByID(ctx, produk.UmkmID)
+	if err != nil {
+		return nil, err
+	}
+	if umkm.UserID != userID {
+		return nil, domain.ErrForbidden
+	}
+	return produk, nil
+}
+
+func (s *ProdukService) UpdateOwn(ctx context.Context, userID, produkID int64, nama string, harga float64, deskripsi, fotoBaru string) (produk *domain.Produk, fotoLama string, err error) {
+	if nama == "" || harga < 0 {
+		return nil, "", domain.ErrInvalidInput
+	}
+	produk, err = s.authorizeOwner(ctx, userID, produkID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	fotoLama = produk.Foto
+	produk.Nama = nama
+	produk.Harga = harga
+	produk.Deskripsi = deskripsi
+	if fotoBaru != "" {
+		produk.Foto = fotoBaru
+	} else {
+		fotoLama = "" // tidak ada foto baru -> jangan hapus foto lama
+	}
+
+	if err := s.produkRepo.Update(ctx, produk); err != nil {
+		return nil, "", err
+	}
+	return produk, fotoLama, nil
+}</code></pre></div>
+    <p>Baca baris demi baris <code>authorizeOwner</code>: dua kali <code>FindByID</code> dipanggil berturut-turut — pertama ambil produknya (untuk tahu <code>UmkmID</code>-nya), lalu ambil UMKM-nya (untuk tahu <code>UserID</code> pemiliknya) — baru dibandingkan dengan <code>userID</code> yang login. Dua query berantai ini adalah harga yang dibayar karena tabel <code>produk</code> sengaja tidak menyimpan <code>user_id</code> sendiri (lihat ERD di Bagian 04): kepemilikan produk selalu ditelusuri lewat UMKM induknya, tidak disimpan redundan.</p>
+    <p>Di <code>UpdateOwn</code>, perhatikan baris <code>if fotoBaru != "" { produk.Foto = fotoBaru } else { fotoLama = "" }</code> — ini jantung dari pola "jangan hapus foto kalau tidak diganti" yang dijelaskan di atas. <code>fotoLama</code> awalnya diisi dari foto yang sedang tersimpan; kalau pengguna <em>tidak</em> mengirim foto baru (<code>fotoBaru == ""</code>), variabel itu sengaja dikosongkan lagi sebelum dikembalikan, supaya pemanggil (handler) tahu "tidak ada apa-apa yang perlu dihapus".</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Untuk benar-benar melihat <code>ErrForbidden</code> terpicu, butuh <strong>dua akun berbeda</strong>:</p>
+      <pre><code># 1. Daftar & login akun A, akun B (ulangi langkah register/login di atas
+#    dengan email berbeda), simpan dua token: $TOKEN_A dan $TOKEN_B
+
+# 2. Akun A membuat UMKM + 1 produk (pakai $TOKEN_A di Authorization)
+curl -s -X POST http://localhost:8080/api/umkm -H "Authorization: Bearer $TOKEN_A" \
+  -F "nama=Warung A" | tee /tmp/umkm_a.json
+
+curl -s -X POST http://localhost:8080/api/umkm/ID_UMKM_A/produk \
+  -H "Authorization: Bearer $TOKEN_A" -F "nama=Kopi" -F "harga=15000" | tee /tmp/produk_a.json
+
+# 3. Akun B mencoba EDIT produk milik akun A -> harus 403 Forbidden
+curl -i -X PUT http://localhost:8080/api/produk/ID_PRODUK_DARI_LANGKAH_2 \
+  -H "Authorization: Bearer $TOKEN_B" -F "nama=Kopi Dicuri" -F "harga=1"</code></pre>
+      <p class="exp">Kalau hasilnya memang <code>403</code> dengan pesan <code>"Anda bukan pemilik UMKM ini"</code>, berarti rantai <code>authorizeOwner</code> → bandingkan <code>umkm.UserID != userID</code> benar-benar bekerja. Coba juga kebalikannya — akun A mengedit produknya sendiri — harus berhasil <code>200 OK</code>, supaya yakin middleware tidak asal menolak semua orang.</p>
+    </div>
+    <p><code>pagination.go</code> — fungsi <code>normalizePagination</code> adalah satu-satunya tempat default <code>limit=10</code>, <code>maxLimit=100</code>, dan minimal <code>page=1</code> ditentukan, dipakai bersama oleh <code>UmkmService.List</code> maupun <code>ProdukService.ListByUmkm</code> — menghindari dua aturan pagination yang beda sendiri-sendiri di dua tempat.</p>
+
+    <h2 id="s11"><span class="badge">11</span>Golang: Repository & Pola Anti SQL Injection</h2>
+    <p>Ketiga repository (<code>user</code>, <code>umkm</code>, <code>produk</code>) mengikuti pola identik di atas <code>pgxpool.Pool</code>:</p>
+    <ul>
+      <li><strong>Selalu parameterized query</strong> (<code>$1, $2, ...</code>), tidak pernah menyambung string SQL dengan input pengguna — ini yang mencegah SQL injection, bukan validasi input semata.</li>
+      <li><strong><code>pgx.ErrNoRows</code> dikonversi jadi <code>domain.ErrNotFound</code> tepat di repository</strong> — supaya layer di atasnya (service, handler) tidak perlu tahu apa-apa soal pgx atau SQL sama sekali. Kalau suatu saat database diganti, hanya repository yang perlu disentuh.</li>
+      <li><strong><code>list := []domain.Umkm{}</code>, bukan <code>var list []domain.Umkm</code></strong> — detail kecil tapi penting: <code>var</code> menghasilkan <code>nil</code> slice yang di-serialize JSON jadi <code>null</code>, sedangkan inisialisasi eksplisit menghasilkan <code>[]</code>. Flutter yang menerima <code>null</code> untuk field yang diharapkan berupa list harus menangani kasus itu terus-menerus — jauh lebih sederhana kalau API konsisten mengembalikan array kosong.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/repository/umkm_repository.go — FindAll & FindByID</span></div><pre><code>func (r *umkmRepository) FindAll(ctx context.Context, q string, limit, offset int) ([]domain.Umkm, error) {
+	query := `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm
+              WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')
+              ORDER BY id DESC LIMIT $2 OFFSET $3`
+	rows, err := r.db.Query(ctx, query, q, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	list := []domain.Umkm{} // slice kosong, bukan nil, agar JSON-nya "[]" bukan "null"
+	for rows.Next() {
+		var u domain.Umkm
+		if err := rows.Scan(&u.ID, &u.UserID, &u.Nama, &u.Deskripsi, &u.Alamat, &u.Foto); err != nil {
+			return nil, err
+		}
+		list = append(list, u)
+	}
+	return list, rows.Err()
+}
+
+func (r *umkmRepository) FindByID(ctx context.Context, id int64) (*domain.Umkm, error) {
+	var u domain.Umkm
+	query := `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE id = $1`
+	err := r.db.QueryRow(ctx, query, id).Scan(&u.ID, &u.UserID, &u.Nama, &u.Deskripsi, &u.Alamat, &u.Foto)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}</code></pre></div>
+    <p>Perhatikan parameter <code>$1</code> dipakai dua kali di query <code>FindAll</code> — sekali untuk cek apakah pencarian kosong (<code>$1 = ''</code>), sekali lagi untuk pola <code>ILIKE</code> (<code>ILIKE</code> = perbandingan teks tanpa peduli huruf besar/kecil di Postgres). Nilai <code>q</code> yang dikirim pengguna tidak pernah disisipkan langsung ke string SQL — ia selalu lewat sebagai <em>parameter terpisah</em> yang dikirim ke database oleh driver <code>pgx</code>, bukan digabung dengan <code>fmt.Sprintf</code> atau operator <code>+</code>. Walaupun pengguna mengetik sesuatu seperti <code>'; DROP TABLE umkm;--</code> di kotak pencarian, string itu tetap diperlakukan database sebagai <em>nilai</em> yang dicari, bukan sebagai <em>perintah SQL</em> yang dijalankan.</p>
+    <p>Di <code>FindByID</code>, satu baris <code>if errors.Is(err, pgx.ErrNoRows) { return nil, domain.ErrNotFound }</code> adalah titik tunggal tempat "bahasa" pgx (<code>pgx.ErrNoRows</code>) diterjemahkan jadi "bahasa" domain aplikasi (<code>domain.ErrNotFound</code>). Semua kode di atas repository — <code>service</code>, <code>handler</code> — hanya pernah melihat <code>domain.ErrNotFound</code>, tidak pernah tahu bahwa di baliknya ada pgx atau Postgres sama sekali.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code># 1. ID yang tidak ada -> harus 404, bukan 500 crash
+curl -i http://localhost:8080/api/umkm/999999
+
+# 2. Pencarian normal
+curl -s "http://localhost:8080/api/umkm?q=warung" | head -c 300
+
+# 3. Coba "serang" kotak pencarian dengan sintaks SQL -> HARUS tetap
+#    aman, hasilnya kosong/wajar, server TIDAK boleh error 500 atau
+#    membocorkan data tabel lain
+curl -s "http://localhost:8080/api/umkm?q=';DROP TABLE umkm;--" | head -c 300</code></pre>
+      <p class="exp">Kalau perintah 3 membalas <code>200 OK</code> dengan <code>{"data":[],...}</code> (list kosong karena memang tidak ada UMKM bernama persis string aneh itu) — <strong>dan</strong> tabel <code>umkm</code> masih ada &amp; isinya utuh saat dicek ulang lewat perintah 2 — berarti parameterized query di Bagian 11 benar-benar mencegah SQL injection. Kalau sampai ada error 500 atau tabel hilang, itu baru jadi bug serius yang harus dilaporkan.</p>
+    </div>
+
+    <h2 id="s12"><span class="badge">12</span>Golang: Upload Foto & Migration Database</h2>
+    <h3>Upload foto — <code>internal/handler/upload.go</code></h3>
+    <ul>
+      <li><code>saveUploadedFile</code> memvalidasi ekstensi file dengan <em>whitelist</em> (hanya <code>.jpg</code>/<code>.jpeg</code>/<code>.png</code>) — menolak tipe lain lewat <code>errInvalidFileType</code>, bukan percaya begitu saja apa yang dikirim klien.</li>
+      <li>Nama file baru dibuat dari <code>time.Now().UnixNano()</code> untuk menghindari dua file bertabrakan nama, dan path yang disimpan ke database adalah path <strong>relatif</strong> (mis. <code>"umkm/169...jpg"</code>) — bukan path absolut di server — supaya mudah digabung jadi URL publik (<code>/uploads/&lt;path&gt;</code>) dari sisi mana pun API itu diakses.</li>
+      <li><code>deleteFile</code> dipanggil setelah update/delete sukses di database, supaya tidak ada file foto "yatim" yang menumpuk di disk setiap kali foto diganti atau datanya dihapus.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/upload.go</span></div><pre><code>var allowedImageExt = map[string]bool{".jpg": true, ".jpeg": true, ".png": true}
+
+func saveUploadedFile(r *http.Request, fieldName, uploadDir, subDir string) (string, error) {
+	file, header, err := r.FormFile(fieldName)
+	if err == http.ErrMissingFile {
+		return "", nil // foto bersifat opsional
+	}
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if !allowedImageExt[ext] {
+		return "", errInvalidFileType
+	}
+
+	targetDir := filepath.Join(uploadDir, subDir)
+	os.MkdirAll(targetDir, 0755)
+
+	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	dst, err := os.Create(filepath.Join(targetDir, filename))
+	if err != nil {
+		return "", err
+	}
+	defer dst.Close()
+	io.Copy(dst, file)
+
+	return subDir + "/" + filename, nil // path RELATIF
+}
+
+func deleteFile(uploadDir, relPath string) {
+	if relPath == "" {
+		return
+	}
+	_ = os.Remove(filepath.Join(uploadDir, relPath))
+}</code></pre></div>
+    <p>Urutan pengecekan di <code>saveUploadedFile</code> penting: ekstensi dicek (<code>allowedImageExt[ext]</code>) <strong>sebelum</strong> file ditulis ke disk. Kalau urutan dibalik — tulis dulu baru cek — file berbahaya sudah sempat tersimpan sebelum ditolak. <code>header.Filename</code> adalah nama asli dari perangkat pengirim (tidak bisa dipercaya), karena itu nama file yang benar-benar disimpan ke disk dibuat ulang dari <code>time.Now().UnixNano()</code> — bukan memakai <code>header.Filename</code> mentah, yang berisiko mengandung karakter aneh atau sengaja dibuat untuk menimpa file lain (path traversal).</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code># Siapkan dulu satu foto asli (foto.jpg) dan satu file apa saja
+# yang diubah namanya jadi berekstensi gambar tapi isinya bukan gambar
+echo "ini bukan foto" > palsu.jpg
+echo "ini dokumen" > dokumen.pdf
+
+# 1. Upload foto.jpg sungguhan -> harus 201, field foto di response terisi
+curl -s -X POST http://localhost:8080/api/umkm -H "Authorization: Bearer $TOKEN_A" \
+  -F "nama=Toko Uji Foto" -F "foto=@foto.jpg" | head -c 300
+
+# 2. Upload dokumen.pdf sebagai foto -> HARUS 400, pesan ekstensi tidak didukung
+curl -i -X PUT http://localhost:8080/api/umkm/ID_UMKM_DARI_LANGKAH_1 \
+  -H "Authorization: Bearer $TOKEN_A" -F "nama=Toko Uji Foto" -F "foto=@dokumen.pdf"</code></pre>
+      <p class="exp">Perintah 2 memverifikasi whitelist ekstensi di <code>allowedImageExt</code> benar-benar jalan — bandingkan juga dengan <code>produk_form_screen.dart</code>/<code>umkm_form_screen.dart</code> di Flutter yang menolak file non-JPG/PNG <strong>sebelum</strong> sempat dikirim ke server (coba pilih file <code>.pdf</code> lewat <code>image_picker</code> di app — galeri foto memang biasanya hanya menampilkan gambar, jadi validasi sisi klien ini lebih kerasa saat menguji lewat curl seperti di atas).</p>
+    </div>
+    <h3>Migration — <code>cmd/migrate/main.go</code></h3>
+    <p>Alat migrasi di proyek ini bukan CLI eksternal yang diinstal terpisah, melainkan program Go kecil yang memanggil library <code>golang-migrate/migrate/v4</code> secara langsung (dijalankan dengan <code>go run ./cmd/migrate up</code>, dst, membaca <code>.env</code> lewat <code>godotenv</code>). Tujuannya: perintah migrasi tetap identik di Windows/macOS/Linux tanpa mahasiswa perlu menginstal binary tambahan atau mengatur <code>DATABASE_URL</code> manual di setiap OS.</p>
+    <div class="note"><span class="lbl">Kenapa migration, bukan ubah tabel manual lewat psql?</span><p>Migration membuat setiap perubahan skema database (buat tabel, tambah kolom, dst) tercatat sebagai file bernomor urut yang bisa dijalankan ulang di server mana pun dengan hasil yang sama persis — sejalan dengan Tahap 5 (Maintenance): skema database ikut "berversi" seperti kode, bukan diubah diam-diam di satu server saja.</p></div>
+
+    <h2 id="s13"><span class="badge">13</span>Fundamental Flutter: Membangun Layout & Konek ke API</h2>
+    <p>Sebelum membedah tiap halaman <code>umkm-app</code> satu per satu (Bagian 14 dst), mundur dulu ke dasarnya — sama seperti Bagian 04 mundur ke SQL mentah sebelum membedah kode Go. Di sini dibedah dua hal paling fundamental di Flutter: <strong>bagaimana widget disusun jadi tampilan</strong>, dan <strong>bagaimana tampilan itu "terisi" data asli dari server</strong> — keduanya dijelaskan pakai potongan kode <strong>asli</strong> dari <code>umkm-app</code>, bukan contoh karangan.</p>
+
+    <h3>a. Widget dasar tata letak (layout)</h3>
+    <p>Di Flutter, <strong>semuanya adalah widget</strong> — teks, tombol, bahkan jarak kosong sekalipun. Menyusun tampilan berarti menyusun widget jadi sebuah <em>pohon</em> (tree): widget besar membungkus widget-widget kecil di dalamnya. Empat widget tata letak ini dipakai di hampir setiap layar <code>umkm-app</code>:</p>
+    <table>
+      <tr><th>Widget</th><th>Fungsi</th><th>Dipakai di mana di umkm-app</th></tr>
+      <tr><td><code>Column</code></td><td>Menyusun widget anak <strong>vertikal</strong> (dari atas ke bawah), satu di bawah yang lain.</td><td>Tampilan error di <code>UmkmListScreen</code> (teks error, jarak, lalu tombol "Coba Lagi" bertumpuk ke bawah).</td></tr>
+      <tr><td><code>Row</code></td><td>Menyusun widget anak <strong>horizontal</strong> (kiri ke kanan), kebalikan dari <code>Column</code>.</td><td>Baris ikon + label di form, atau dua tombol bersebelahan.</td></tr>
+      <tr><td><code>Padding</code> / <code>SizedBox</code></td><td><code>Padding</code> memberi jarak <em>di sekeliling</em> satu widget; <code>SizedBox</code> membuat kotak kosong berukuran tetap, sering dipakai sebagai "jarak antar widget".</td><td><code>SizedBox(height: 12)</code> di antara teks error dan tombol "Coba Lagi".</td></tr>
+      <tr><td><code>Expanded</code> / <code>Flexible</code></td><td>Memaksa satu widget anak di dalam <code>Row</code>/<code>Column</code> mengisi <strong>sisa ruang</strong> yang tersedia, bukan cuma sebesar isinya.</td><td>Judul UMKM di <code>ListTile</code> agar tidak terpotong meski layar sempit.</td></tr>
+    </table>
+    <p>Potongan nyata dari <code>umkm_list_screen.dart</code> — ini yang tampil kalau <code>getUmkmList()</code> gagal (lihat alurnya lengkap di bagian "b" di bawah):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkm_list_screen.dart — tampilan error</span></div><pre><code>Center(
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text('Gagal memuat data: ${snapshot.error}'),
+      const SizedBox(height: 12),
+      ElevatedButton(onPressed: _muatUlang, child: const Text('Coba Lagi')),
+    ],
+  ),
+)</code></pre></div>
+    <p>Baca dari luar ke dalam, persis cara Flutter merendernya: <code>Center</code> (taruh di tengah layar) &rarr; membungkus <code>Column</code> (susun vertikal) &rarr; berisi tiga anak berurutan dari atas ke bawah: teks error, jarak kosong 12 piksel (<code>SizedBox</code>), lalu tombol. <code>mainAxisSize: MainAxisSize.min</code> artinya <code>Column</code> ini <strong>tidak</strong> memaksa dirinya setinggi layar penuh — tingginya menyesuaikan isi anak-anaknya saja, supaya <code>Center</code> di luarnya bisa benar-benar menengahkan kotak sekecil itu, bukan kotak setinggi layar.</p>
+
+    <h3>b. Menampilkan daftar data — ListView.builder</h3>
+    <p>Hampir semua "daftar" di <code>umkm-app</code> (daftar UMKM, daftar produk) memakai <code>ListView.builder</code>, bukan <code>ListView</code> biasa atau <code>Column</code> berisi banyak item manual. Bedanya krusial untuk performa: <code>ListView.builder</code> hanya benar-benar <em>membangun</em> widget untuk item yang sedang terlihat di layar — kalau datanya 1000 baris tapi yang muat di layar cuma 8, hanya 8 (plus sedikit buffer) yang dibuat, sisanya dibangun on-demand saat pengguna scroll. <code>Column</code> dengan 1000 anak akan membangun ke-1000-nya sekaligus di awal, walau 992 di antaranya tidak terlihat.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkm_list_screen.dart — ListView.builder</span></div><pre><code>ListView.builder(
+  itemCount: hasil.data.length,
+  itemBuilder: (context, i) {
+    final umkm = hasil.data[i];
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: umkm.punyaFoto
+            ? NetworkImage(ApiService.fotoUrl(umkm.foto))
+            : null,
+        child: umkm.punyaFoto ? null : Text(umkm.nama[0]),
+      ),
+      title: Text(umkm.nama),
+      subtitle: Text(umkm.alamat),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => UmkmDetailScreen(umkmId: umkm.id)),
+      ),
+    );
+  },
+)</code></pre></div>
+    <p><code>itemCount</code> memberi tahu Flutter berapa total item yang ADA (dari panjang <code>hasil.data</code>, hasil parsing JSON dari API). <code>itemBuilder</code> adalah fungsi yang dipanggil Flutter <strong>berulang-ulang</strong>, sekali per index <code>i</code> yang sedang perlu ditampilkan, mengembalikan satu widget <code>ListTile</code> per baris. <code>onTap</code> berisi <code>Navigator.push</code> — ini yang berpindah ke halaman detail saat salah satu baris disentuh, membawa <code>umkm.id</code> sebagai parameter supaya halaman tujuan tahu UMKM mana yang harus dimuat.</p>
+
+    <h3>c. Struktur dasar satu halaman — Scaffold & StatefulWidget</h3>
+    <p>Hampir semua layar di <code>umkm-app</code> berbentuk <code>StatefulWidget</code> (bukan <code>StatelessWidget</code>) karena perlu menyimpan <em>state</em> yang berubah seiring waktu — misalnya data hasil panggilan API yang awalnya kosong, lalu terisi setelah respons datang. Kerangka minimalnya:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">kerangka umum tiap layar di umkm-app</span></div><pre><code>class UmkmListScreen extends StatefulWidget {
+  const UmkmListScreen({super.key});
+
+  @override
+  State&lt;UmkmListScreen&gt; createState() =&gt; _UmkmListScreenState();
+}
+
+class _UmkmListScreenState extends State&lt;UmkmListScreen&gt; {
+  // 1. deklarasi state di sini (variabel yang bisa berubah)
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. kode yang jalan SEKALI saat layar pertama kali dibuka
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 3. kode yang membangun tampilan, dipanggil ulang tiap setState()
+    return Scaffold(
+      appBar: AppBar(title: const Text('Semua UMKM')),
+      body: /* ... isi layar ... */,
+    );
+  }
+}</code></pre></div>
+    <p><code>Scaffold</code> adalah "bingkai" dasar satu layar bergaya Material Design — otomatis menyediakan tempat untuk <code>appBar</code> (judul + tombol di atas), <code>body</code> (isi utama), dan opsional <code>floatingActionButton</code>/<code>bottomNavigationBar</code>, tanpa perlu menyusun manual dari nol. <code>initState()</code> adalah titik yang tepat untuk memulai pengambilan data dari API — dijelaskan lebih lanjut di bagian "d" di bawah — karena ia dijamin hanya berjalan <strong>satu kali</strong> saat widget pertama kali dibuat, tidak berulang setiap kali layar digambar ulang.</p>
+
+    <h3>d. Fundamental konek ke API: http, async/await, dan FutureBuilder</h3>
+    <p>Ini jantung dari "bagaimana Flutter bisa terhubung ke internet". Tiga konsep Dart yang wajib dipahami dulu sebelum membaca <code>ApiService</code> secara utuh di Bagian 19:</p>
+    <ul>
+      <li><strong><code>Future&lt;T&gt;</code></strong> — representasi "nilai bertipe <code>T</code> yang <em>akan</em> ada, tapi belum tentu sekarang" (karena menunggu jaringan). Memanggil API selalu mengembalikan <code>Future</code>, tidak pernah data langsung, karena request ke server butuh waktu (tidak instan seperti membaca variabel biasa).</li>
+      <li><strong><code>async</code> / <code>await</code></strong> — <code>async</code> menandai sebuah fungsi akan berisi operasi yang perlu "ditunggu"; <code>await</code> menjeda eksekusi baris itu sampai <code>Future</code>-nya selesai, lalu lanjut ke baris berikutnya dengan nilai yang sudah "terbuka" dari dalam <code>Future</code>-nya. Tanpa <code>await</code>, kode akan lanjut ke baris berikutnya sebelum data dari server datang.</li>
+      <li><strong><code>jsonDecode</code>/<code>jsonEncode</code></strong> — API membalas data sebagai teks JSON mentah; <code>jsonDecode</code> mengubah teks itu jadi <code>Map&lt;String, dynamic&gt;</code> yang bisa dibaca Dart (<code>body['data']</code>, dst), <code>jsonEncode</code> melakukan kebalikannya saat Flutter <em>mengirim</em> data ke server.</li>
+    </ul>
+    <p>Potongan nyata paling sederhana di <code>ApiService</code> — memuat daftar UMKM:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">api_service.dart — getUmkmList</span></div><pre><code>Future&lt;PaginatedResult&lt;Umkm&gt;&gt; getUmkmList({
+  String q = '',
+  int page = 1,
+}) async {
+  final uri = Uri.parse('$baseUrl/umkm').replace(
+    queryParameters: {
+      if (q.isNotEmpty) 'q': q,
+      'page': '$page',
+      'limit': '10',
+    },
+  );
+
+  final response = await http.get(uri);
+  final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+
+  if (response.statusCode != 200) {
+    throw ApiException(body['error']?['message'] ?? 'Gagal memuat data UMKM');
+  }
+  return PaginatedResult.fromJson(body, Umkm.fromJson);
+}</code></pre></div>
+    <p>Baca urut dari atas: (1) <code>Uri.parse(...).replace(queryParameters: ...)</code> menyusun URL lengkap dengan parameter pencarian/halaman — persis seperti parameter <code>?q=...&amp;page=...</code> yang dibaca <code>parsePagination</code> di Go (Bagian 08); (2) <code>await http.get(uri)</code> mengirim request GET sungguhan ke server dan <strong>menunggu</strong> balasannya — inilah titik kode "berhenti sejenak" sampai jaringan selesai bekerja; (3) <code>jsonDecode</code> mengubah teks JSON balasan jadi <code>Map</code> yang bisa dibaca; (4) kalau <code>statusCode</code> bukan 200, <code>throw</code> error supaya pemanggil tahu something's wrong, membaca pesan error dari struktur <code>{"error":{"message":...}}</code> yang sama persis dibahas di Bagian 09 (baik versi Go maupun Node).</p>
+
+    <h4>Memakai hasilnya di layar: FutureBuilder</h4>
+    <p>Setelah <code>ApiService</code> mengembalikan <code>Future</code>, layar butuh cara menampilkan tiga kondisi berbeda: <em>sedang memuat</em>, <em>gagal</em>, atau <em>berhasil dengan data</em>. <code>FutureBuilder</code> adalah widget yang menangani ketiganya otomatis:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkm_list_screen.dart — initState & FutureBuilder</span></div><pre><code>late Future&lt;PaginatedResult&lt;Umkm&gt;&gt; _futureUmkm;
+
+@override
+void initState() {
+  super.initState();
+  _futureUmkm = _apiService.getUmkmList();   // panggil API SEKALI saat layar dibuka
+}
+
+// ...di dalam build():
+FutureBuilder&lt;PaginatedResult&lt;Umkm&gt;&gt;(
+  future: _futureUmkm,
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());  // kondisi 1: sedang memuat
+    }
+    if (snapshot.hasError) {
+      return Center(child: Text('Gagal memuat data: ${snapshot.error}'));  // kondisi 2: gagal
+    }
+    final hasil = snapshot.data!;
+    return ListView.builder(/* ...kondisi 3: berhasil, tampilkan hasil.data... */);
+  },
+)</code></pre></div>
+    <p><code>initState()</code> memanggil <code>getUmkmList()</code> <strong>satu kali</strong> dan menyimpan <code>Future</code>-nya (belum selesai) ke variabel <code>_futureUmkm</code> — bukan menunggu hasilnya di situ juga. <code>FutureBuilder</code> lah yang kemudian "mengawasi" <code>_futureUmkm</code>: selama belum selesai, <code>snapshot.connectionState</code> bernilai <code>waiting</code> dan layar menampilkan <em>spinner</em>; begitu selesai (sukses atau gagal), <code>builder</code> dipanggil ulang otomatis dengan <code>snapshot</code> baru berisi <code>snapshot.data</code> (kalau sukses) atau <code>snapshot.error</code> (kalau <code>throw ApiException</code> di Bagian d di atas benar-benar terpicu).</p>
+    <div class="note"><span class="lbl">Kenapa panggil API di initState, bukan langsung di build()?</span><p><code>build()</code> bisa dipanggil ulang berkali-kali oleh Flutter (misalnya tiap kali ada perubahan kecil di layar), sedangkan <code>initState()</code> dijamin cuma sekali seumur hidup widget. Kalau <code>getUmkmList()</code> dipanggil langsung di dalam <code>build()</code>, setiap rebuild akan mengirim request baru ke server tanpa henti — aturan "fetch sekali di initState" ini konsisten dipakai di semua layar <code>umkm-app</code>, termasuk trik <code>ValueKey</code> di <code>MyUmkmScreen</code> (Bagian 17) yang sengaja memakai <em>remount</em> untuk tetap mematuhi aturan ini walau perlu refresh data.</p></div>
+
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p><strong>Untuk layout murni</strong> (tanpa perlu backend menyala): buka <a href="https://dartpad.dev" target="_blank" rel="noopener">dartpad.dev</a> di browser, pilih template "Flutter", lalu tempel potongan <code>Column</code> dari bagian "a" di atas ke dalam <code>build()</code> sebuah widget contoh. Ubah <code>mainAxisSize: MainAxisSize.min</code> jadi <code>MainAxisSize.max</code> dan perhatikan bedanya — kotak <code>Column</code>-nya jadi memenuhi seluruh tinggi layar meski isinya tetap cuma 3 baris pendek.</p>
+      <p><strong>Untuk konek API sungguhan</strong> (pakai server UMKM API yang sudah berjalan dari Pertemuan 4-9): buka <code>umkm_list_screen.dart</code> di proyekmu, tambahkan satu baris <code>debugPrint(response.body);</code> tepat setelah baris <code>final response = await http.get(uri);</code> di <code>api_service.dart</code>, lalu <code>flutter run</code> dan buka tab "Semua UMKM". Lihat Debug Console — di situ akan muncul teks JSON mentah persis seperti yang dibalas server, sebelum sempat diubah <code>jsonDecode</code> jadi objek Dart. Hapus baris <code>debugPrint</code> itu lagi setelah selesai mengamati.</p>
+      <p class="exp">Eksperimen DartPad membuktikan efek properti layout tanpa risiko merusak aplikasi sungguhan. Eksperimen <code>debugPrint</code> membuktikan bahwa "data di layar" bukan sihir — ia persis string JSON yang sama yang bisa kamu lihat sendiri lewat <code>curl</code> ke endpoint yang sama di Bagian 16 (materi Node.js) atau Swagger (versi Go), cuma sudah "diterjemahkan" jadi widget oleh <code>ListView.builder</code>.</p>
+    </div>
+
+    <h2 id="s14"><span class="badge">14</span>Flutter: Peta Halaman UMKM App</h2>
+    <p>Di sisi Flutter, struktur <code>lib/screens/</code> mengikuti persis alur UX yang dirancang di Tahap 2:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">lib/screens/</span></div><pre><code>screens/
+├── splash_screen.dart              → cek token, arahkan ke /home atau /login
+├── auth/
+│   ├── login_screen.dart
+│   └── register_screen.dart
+└── home/
+    ├── home_screen.dart            → shell 3 tab (IndexedStack + NavigationBar)
+    ├── umkm/
+    │   ├── umkm_list_screen.dart   → tab "Semua UMKM" (publik)
+    │   ├── umkm_detail_screen.dart → detail UMKM + daftar produknya (publik)
+    │   ├── myumkm_screen.dart      → tab "UMKM Saya" (perlu login, CRUD)
+    │   ├── umkm_form_screen.dart   → form tambah/edit UMKM
+    │   └── produk_form_screen.dart → form tambah/edit produk
+    └── profile/
+        ├── profile_screen.dart         → tab "Profil"
+        └── update_profile_screen.dart  → ubah nama/email & password
+</code></pre></div>
+    <p>Tidak ada state management library (Provider/Riverpod/Bloc) dipakai di proyek ini — semua state cukup ditangani dengan <code>StatefulWidget</code> bawaan, <code>FutureBuilder</code>, dan <code>setState</code>. Ini pilihan sengaja supaya fokus pertemuan 5-7 tetap di konsep HTTP client dan navigasi, bukan state management — library itu bisa menyusul di proyek UAS kalau dibutuhkan.</p>
+    <h3>Dependency di <code>pubspec.yaml</code></h3>
+    <p>Hanya empat package eksternal yang dipakai — sengaja diminimalkan supaya fokus belajar tetap di konsep inti, bukan menghafal API banyak library:</p>
+    <table>
+      <tr><th>Package</th><th>Fungsi di proyek ini</th></tr>
+      <tr><td><code>http</code></td><td>Semua request ke UMKM API — dibungkus seluruhnya di <code>ApiService</code> (Bagian 19), tidak dipanggil langsung dari screen.</td></tr>
+      <tr><td><code>flutter_secure_storage</code></td><td>Menyimpan token JWT terenkripsi lewat <code>TokenStorage</code> — bukan <code>SharedPreferences</code>, karena token adalah kredensial sensitif.</td></tr>
+      <tr><td><code>image_picker</code></td><td>Memilih foto dari galeri saat membuat/mengubah UMKM atau produk (<code>ImageSource.gallery</code>).</td></tr>
+      <tr><td><code>cupertino_icons</code></td><td>Bawaan dari <code>flutter create</code>, dipakai untuk beberapa ikon bergaya iOS.</td></tr>
+    </table>
+
+    <h2 id="s15"><span class="badge">15</span>Flutter: Splash, Login, Register</h2>
+    <ul>
+      <li><strong><code>splash_screen.dart</code></strong> — di <code>initState</code>, cek <code>TokenStorage.ambil()</code>: kalau ada token tersimpan, langsung <code>pushReplacementNamed('/home')</code>; kalau tidak, ke <code>'/login'</code>. Ini yang membuat pengguna yang sudah login tidak perlu login ulang setiap buka aplikasi.</li>
+      <li><strong><code>login_screen.dart</code></strong> — <code>Form</code> + <code>GlobalKey&lt;FormState&gt;</code>, validasi lokal dulu (password minimal 6 karakter) sebelum memanggil <code>ApiService.login()</code>. Ada state <code>_loading</code> yang menonaktifkan tombol &amp; menampilkan spinner selama request berlangsung — mencegah pengguna menekan tombol berkali-kali. <code>ApiException</code> dari server ditangkap dan ditampilkan lewat <code>SnackBar</code>.</li>
+      <li><strong><code>register_screen.dart</code></strong> — pola identik dengan login (3 field: nama/email/password). Setelah sukses, <strong>tidak</strong> auto-login — pengguna dikembalikan (<code>Navigator.pop</code>) ke halaman Login untuk masuk manual. Ini keputusan UX yang wajar: mengonfirmasi akun benar-benar bisa dipakai untuk login sebelum masuk ke aplikasi.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">screens/auth/login_screen.dart — _prosesLogin</span></div><pre><code>Future&lt;void&gt; _prosesLogin() async {
+  if (!_formKey.currentState!.validate()) return;
+  setState(() => _loading = true);
+  try {
+    await _apiService.login(_emailController.text, _passwordController.text);
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/home');
+  } on ApiException catch (e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+  } finally {
+    if (mounted) setState(() => _loading = false);
+  }
+}</code></pre></div>
+    <p>Lima hal yang terjadi berurutan di fungsi ini, masing-masing menjaga aplikasi dari bug yang umum terjadi pada pemula:</p>
+    <ol class="steps">
+      <li><code>_formKey.currentState!.validate()</code> dipanggil dulu — kalau ada field yang gagal validasi (misal password kurang dari 6 karakter), fungsi langsung <code>return</code> sebelum request ke API sama sekali dikirim. Validasi lokal selalu lebih murah daripada menunggu respons gagal dari server.</li>
+      <li><code>setState(() => _loading = true)</code> — baru di titik ini UI menampilkan spinner dan tombol menjadi tidak bisa ditekan (<code>onPressed: _loading ? null : _prosesLogin</code> di bagian <code>build</code>).</li>
+      <li><code>await _apiService.login(...)</code> dibungkus <code>try</code> — kalau sukses, baris <code>if (!mounted) return;</code> mengecek apakah widget ini <strong>masih ada di layar</strong> sebelum memanggil <code>Navigator</code>. Ini penting karena proses <code>await</code> butuh waktu; kalau pengguna sudah berpindah layar (atau widget sudah dibuang) sebelum respons API datang, memanggil <code>Navigator</code>/<code>setState</code> pada widget yang sudah tidak ada akan melempar error.</li>
+      <li><code>on ApiException catch (e)</code> — hanya menangkap exception bertipe <code>ApiException</code> (dilempar sendiri oleh <code>ApiService</code>), bukan <code>catch (e)</code> generik yang bisa diam-diam menelan bug lain yang sebenarnya perlu diperbaiki, bukan ditampilkan ke pengguna sebagai pesan error biasa.</li>
+      <li><code>finally { if (mounted) setState(() => _loading = false); }</code> — dijalankan baik request berhasil maupun gagal, memastikan spinner tidak "menggantung" selamanya kalau terjadi error yang tidak terduga.</li>
+    </ol>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Jalankan <code>umkm-app</code> (<code>flutter run</code>) sambil server Go aktif, lalu uji tiga skenario ini satu-satu di layar Login:</p>
+      <pre><code>1. Password diisi 3 karakter -> tekan "Masuk" tanpa pernah mengirim request
+   (perhatikan: TIDAK ada jeda loading sama sekali, karena validate()
+   langsung gagal sebelum _apiService.login() dipanggil)
+
+2. Email & password benar (akun hasil "Coba Sendiri" di bagian auth_service)
+   -> tombol berubah jadi spinner sebentar, lalu pindah ke /home
+
+3. Email benar, password salah -> tombol sempat jadi spinner, lalu
+   kembali normal + muncul SnackBar merah "password salah"</code></pre>
+      <p class="exp">Tambahkan <code>debugPrint('loading: $_loading');</code> di awal <code>build()</code> kalau mau benar-benar melihat state <code>_loading</code> berubah true/false di <strong>Debug Console</strong> VS Code — cara paling langsung membuktikan baris <code>setState</code> di langkah 2 dan 5 memang terpanggil, bukan cuma teori di atas kertas.</p>
+    </div>
+
+    <h2 id="s16"><span class="badge">16</span>Flutter: Home, Daftar & Detail UMKM</h2>
+    <p><strong><code>home_screen.dart</code></strong> memakai <code>IndexedStack</code> dengan <code>NavigationBar</code> 3 tab. <code>IndexedStack</code> dipilih (bukan mengganti <code>body</code> biasa) supaya setiap kali pindah tab, <code>State</code> tab sebelumnya — termasuk <code>Future</code> yang sudah ter-fetch di <code>initState</code>-nya — tidak dibuang dan di-fetch ulang setiap kali tab dibuka kembali.</p>
+    <p><strong><code>umkm_list_screen.dart</code></strong> — <code>FutureBuilder&lt;PaginatedResult&lt;Umkm&gt;&gt;</code>, data diambil sekali di <code>initState</code> (bukan di <code>build</code>, supaya tidak fetch berulang setiap rebuild). <code>RefreshIndicator</code> (tarik-untuk-refresh) memanggil <code>_muatUlang()</code> yang meng-assign ulang variabel <code>_futureUmkm</code> di dalam <code>setState</code> — pola standar "refresh" untuk <code>FutureBuilder</code>, karena <code>FutureBuilder</code> sendiri tidak pernah otomatis memanggil ulang <code>Future</code>-nya. Tap item → <code>push</code> ke <code>UmkmDetailScreen</code>.</p>
+    <p><strong><code>umkm_detail_screen.dart</code></strong> — halaman publik (tidak perlu login), mengambil dua <code>Future</code> independen secara paralel di <code>initState</code> (data UMKM dan daftar produknya), ditampilkan lewat dua <code>FutureBuilder</code> bersarang.</p>
+
+    <h2 id="s17"><span class="badge">17</span>Flutter: UMKM Saya (CRUD & Trik ValueKey)</h2>
+    <p><code>myumkm_screen.dart</code> adalah layar paling kompleks di aplikasi ini karena menggabungkan baca, buat, ubah, dan hapus dalam satu tempat.</p>
+    <ul>
+      <li><code>FutureBuilder&lt;Umkm?&gt;</code> — hasil <code>null</code> berarti pengguna belum punya UMKM sama sekali, ditampilkan tombol "Buat UMKM"; kalau ada data, ditampilkan detail + tombol Edit/Hapus + daftar produk + tombol tambah produk.</li>
+      <li>Form UMKM/produk dibuka lewat <code>Navigator.push&lt;bool&gt;</code>; hasil <code>true</code> (dikirim balik dari <code>Navigator.pop(context, true)</code> di halaman form setelah sukses simpan) dipakai memicu reload data di halaman ini.</li>
+    </ul>
+    <p><strong>Trik <code>ValueKey</code> untuk memaksa remount:</strong> daftar produk dipisah jadi widget tersendiri (<code>_DaftarProduk</code>, sebuah <code>StatefulWidget</code> yang fetch data sendiri di <code>initState</code>-nya). Supaya daftar ini bisa "di-refresh" dari luar tanpa mengubah widget itu jadi menerima <code>Future</code> dari parent, widget tersebut diberi <code>key: ValueKey(_produkKey)</code>, lalu <code>_muatUlangProduk()</code> cukup meng-increment <code>_produkKey</code>. Flutter melihat <code>key</code> berubah sebagai sinyal "ini widget yang berbeda", sehingga instance lama dibuang dan instance baru dibuat dari nol — <code>initState</code>-nya jalan lagi, fetch data lagi.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">screens/home/umkm/myumkm_screen.dart — potongan kunci</span></div><pre><code>class _MyUmkmScreenState extends State&lt;MyUmkmScreen&gt; {
+  late Future&lt;Umkm?&gt; _futureUmkm;
+  int _produkKey = 0;
+
+  void _muatUlangProduk() => setState(() => _produkKey++);
+
+  // ...di dalam build(), setelah data UMKM didapat:
+  _DaftarProduk(
+    key: ValueKey(_produkKey),   // berubah setiap _muatUlangProduk() dipanggil
+    umkmId: umkm.id,
+    apiService: _apiService,
+    onEdit: (p) => _bukaFormProduk(umkm.id, p),
+    onHapus: _hapusProduk,
+  ),
+}
+
+class _DaftarProdukState extends State&lt;_DaftarProduk&gt; {
+  late Future&lt;PaginatedResult&lt;Produk&gt;&gt; _futureProduk;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureProduk = widget.apiService.getProdukByUmkm(widget.umkmId); // fetch sekali
+  }
+}</code></pre></div>
+    <p>Alur lengkapnya saat pengguna menghapus satu produk: <code>_hapusProduk(id)</code> di <code>_MyUmkmScreenState</code> memanggil API lalu <code>_muatUlangProduk()</code> → <code>_produkKey</code> bertambah dari, katakanlah, <code>0</code> jadi <code>1</code> → <code>setState</code> men-trigger <code>build()</code> ulang di <code>_MyUmkmScreenState</code> → widget <code>_DaftarProduk</code> dibuat lagi dengan <code>key: ValueKey(1)</code>, berbeda dari key sebelumnya (<code>ValueKey(0)</code>) → Flutter membandingkan key lama vs baru, melihatnya beda, lalu <strong>membuang instance <code>_DaftarProdukState</code> yang lama</strong> dan membuat yang baru dari nol → <code>initState</code> widget baru ini jalan lagi, otomatis fetch ulang <code>getProdukByUmkm</code>. Tanpa <code>key</code> yang berubah, Flutter akan menganggap ini widget yang "sama" (tipe dan posisinya identik) dan tidak pernah membuat instance baru — <code>initState</code> tidak akan terpanggil lagi, daftar produk tidak pernah ter-refresh walau datanya di server sudah berubah.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Buktikan triknya dengan mata kepala sendiri, bukan cuma percaya penjelasan di atas:</p>
+      <pre><code>1. Tambahkan 1 baris di _DaftarProdukState.initState():
+     debugPrint('Fetch produk dijalankan! key=${widget.key}');
+
+2. flutter run, buka tab "UMKM Saya", lihat Debug Console -> baris
+   itu muncul SATU KALI saat layar pertama dibuka.
+
+3. Tambah satu produk baru lewat tombol "Tambah" -> simpan.
+   Lihat Debug Console lagi -> baris itu HARUS muncul LAGI dengan
+   key yang berbeda angkanya -> bukti _DaftarProdukState lama dibuang,
+   dibuat ulang, initState jalan lagi.
+
+4. Sekarang coba hapus baris "key: ValueKey(_produkKey)" di kode
+   _DaftarProduk (ganti jadi tanpa key sama sekali), hot restart,
+   ulangi langkah 3 -> baris debugPrint TIDAK muncul lagi setelah
+   tambah produk, padahal datanya sudah berubah di server. Daftar
+   produk di layar jadi "basi" sampai layar dibuka ulang dari awal.</code></pre>
+      <p class="exp">Langkah 4 sengaja merusak kode untuk membuktikan triknya <em>perlu</em> — setelah selesai bereksperimen, kembalikan baris <code>key: ValueKey(_produkKey)</code> seperti semula sebelum lanjut mengerjakan bagian lain.</p>
+    </div>
+    <div class="note"><span class="lbl">Kenapa tidak lebih sederhana angkat state produk ke parent saja?</span><p>Bisa saja, tapi trik <code>ValueKey</code> dipakai di sini karena <code>_DaftarProduk</code> memang sengaja dibuat independen (punya siklus fetch sendiri) — pola ini berguna dikenal karena sering ditemui di kode nyata saat me-refactor widget besar jadi beberapa widget kecil yang masing-masing tetap mengatur fetch datanya sendiri.</p></div>
+    <p><code>umkm_form_screen.dart</code> dan <code>produk_form_screen.dart</code> sama-sama dual-mode create/edit lewat parameter nullable di constructor (<code>umkm</code>/<code>produk</code> bernilai <code>null</code> → mode tambah). Validasi ekstensi foto (JPG/JPEG/PNG) dicek ulang di sisi Flutter sebelum submit — identik dengan whitelist di <code>saveUploadedFile</code> Go (Bagian 12) — supaya pengguna dapat feedback instan tanpa harus menunggu response gagal dari server.</p>
+
+    <h2 id="s18"><span class="badge">18</span>Flutter: Profil & Ubah Password</h2>
+    <p><code>profile_screen.dart</code> — <code>FutureBuilder&lt;User&gt;</code> fetch sekali, menampilkan avatar inisial, nama, email, dan tombol Logout. Logout memanggil <code>ApiService.logout()</code> (hanya menghapus token lokal, tidak memanggil API) lalu <code>pushNamedAndRemoveUntil</code> ke <code>/login</code> — menghapus <strong>seluruh</strong> riwayat navigasi, supaya tombol back tidak bisa membawa pengguna kembali ke halaman yang butuh login.</p>
+    <p><code>update_profile_screen.dart</code> menggabungkan dua <code>Form</code> independen dalam satu layar: ubah profil (nama/email) dan ubah password (lama/baru), masing-masing dengan state loading terpisah (<code>_savingProfil</code>, <code>_savingPassword</code>) — supaya mengirim salah satu form tidak ikut mengunci tombol submit form lainnya.</p>
+
+    <h2 id="s19"><span class="badge">19</span>Flutter: ApiService & TokenStorage — Jembatan Tunggal ke API</h2>
+    <p>Semua layar di atas tidak pernah memanggil <code>http.get</code>/<code>http.post</code> secara langsung — semuanya lewat satu class <code>ApiService</code> yang membungkus 13 endpoint:</p>
+    <table>
+      <tr><th>Method</th><th>Endpoint</th><th>Perlu login?</th></tr>
+      <tr><td><code>getUmkmList</code></td><td><code>GET /umkm</code> (q, page, limit)</td><td>Tidak</td></tr>
+      <tr><td><code>getUmkmDetail</code></td><td><code>GET /umkm/{id}</code></td><td>Tidak</td></tr>
+      <tr><td><code>getProdukByUmkm</code></td><td><code>GET /umkm/{id}/produk</code></td><td>Tidak</td></tr>
+      <tr><td><code>register</code> / <code>login</code></td><td><code>POST /auth/register</code> / <code>/auth/login</code></td><td>Tidak</td></tr>
+      <tr><td><code>getProfile</code> / <code>updateProfile</code> / <code>updatePassword</code></td><td><code>/profile</code>, <code>/profile/password</code></td><td>Ya</td></tr>
+      <tr><td><code>getUmkmSaya</code></td><td><code>GET /umkm/saya</code> (404 → <code>null</code>, bukan exception)</td><td>Ya</td></tr>
+      <tr><td><code>simpanUmkm</code> / <code>simpanProduk</code></td><td><code>POST</code> atau <code>PUT</code> tergantung ada/tidaknya <code>id</code></td><td>Ya</td></tr>
+      <tr><td><code>hapusUmkm</code> / <code>hapusProduk</code></td><td><code>DELETE /umkm/{id}</code> / <code>/produk/{id}</code></td><td>Ya</td></tr>
+    </table>
+    <ul>
+      <li><strong><code>simpanUmkm</code>/<code>simpanProduk</code> menyatukan create dan update</strong> lewat satu parameter <code>id</code> opsional (<code>null</code> → <code>POST</code>, terisi → <code>PUT</code>) — menghindari dua method multipart yang nyaris identik.</li>
+      <li><strong><code>_authHeaders()</code> privat</strong> membaca token dari <code>TokenStorage</code> dan dipanggil di semua method yang butuh login — satu tempat untuk logika "tempel header Authorization", bukan diulang di tiap method.</li>
+      <li><strong><code>ApiService.fotoUrl()</code></strong> mengonversi path relatif yang dikembalikan API (mis. <code>"umkm/xxx.jpg"</code>, hasil keputusan desain di Bagian 12) menjadi URL penuh <code>http://&lt;host&gt;:8080/uploads/umkm/xxx.jpg</code> yang bisa langsung dipakai <code>Image.network</code>.</li>
+      <li><strong><code>baseUrl</code> memakai IP LAN</strong>, bukan <code>localhost</code> — karena perangkat fisik/emulator berjalan sebagai "komputer" terpisah dari mesin development, dan perlu mengakses server lewat alamat jaringan lokal yang sama-sama terjangkau.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">services/api_service.dart — simpanUmkm & _authHeaders</span></div><pre><code>/// id == null -> membuat UMKM baru (POST /umkm).
+/// id terisi -> mengubah UMKM yang sudah ada (PUT /umkm/{id}).
+Future&lt;Umkm&gt; simpanUmkm({
+  int? id,
+  required String nama,
+  String deskripsi = '',
+  String alamat = '',
+  String? fotoPath,
+}) async {
+  final uri = id == null
+      ? Uri.parse('$baseUrl/umkm')
+      : Uri.parse('$baseUrl/umkm/$id');
+  final request = http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)
+    ..headers.addAll(await _authHeaders())
+    ..fields['nama'] = nama
+    ..fields['deskripsi'] = deskripsi
+    ..fields['alamat'] = alamat;
+  if (fotoPath != null) {
+    request.files.add(await http.MultipartFile.fromPath('foto', fotoPath));
+  }
+
+  final streamed = await request.send();
+  final response = await http.Response.fromStream(streamed);
+  final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw ApiException(body['error']?['message'] ?? 'Gagal menyimpan UMKM');
+  }
+  return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+}
+
+Future&lt;Map&lt;String, String&gt;&gt; _authHeaders() async {
+  final token = await TokenStorage.ambil();
+  return {'Authorization': 'Bearer $token'};
+}</code></pre></div>
+    <p>Baris <code>id == null ? Uri.parse('$baseUrl/umkm') : Uri.parse('$baseUrl/umkm/$id')</code> dan <code>http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)</code> adalah implementasi langsung dari pola "satu fungsi untuk create dan update" — nilai <code>id</code> menentukan URL dan HTTP method mana yang dipakai, tapi semua logika setelahnya (membangun multipart request, menyisipkan field, mengirim foto, mem-parsing response) ditulis sekali saja. <code>foto</code> hanya ditambahkan ke <code>request.files</code> kalau <code>fotoPath != null</code> — karena saat <em>update</em>, pengguna boleh tidak mengganti foto sama sekali (server akan mempertahankan foto lama, lihat <code>UpdateOwn</code> di Bagian 10).</p>
+    <p><code>status 200 dan 201 dua-duanya dianggap sukses</code> karena Go API mengembalikan <code>201 Created</code> untuk <code>POST</code> (baru dibuat) dan <code>200 OK</code> untuk <code>PUT</code> (berhasil diubah) — Flutter sengaja menerima keduanya di satu pengecekan yang sama, konsisten dengan satu fungsi yang menangani dua operasi.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <p>Lihat <code>simpanUmkm</code> benar-benar memilih <code>POST</code> vs <code>PUT</code> secara otomatis, tanpa membaca kode dua kali:</p>
+      <pre><code>1. Tambahkan log sementara di awal simpanUmkm():
+     debugPrint('simpanUmkm dipanggil, id=$id, method akan jadi '
+       '${id == null ? "POST" : "PUT"}');
+
+2. Di MyUmkmScreen, tombol "Buat UMKM" (mode tambah, id null) ->
+   Debug Console harus menampilkan "method akan jadi POST".
+
+3. Tombol "Edit UMKM" pada UMKM yang sudah ada (id terisi) ->
+   Debug Console harus menampilkan "method akan jadi PUT".
+
+4. Opsional, kalau punya Proxyman/Charles Proxy/Flutter DevTools
+   Network tab: amati request yang benar-benar dikirim, cek header
+   "Authorization: Bearer ..." sungguhan ada, dan Content-Type
+   request adalah "multipart/form-data; boundary=..." bukan
+   "application/json" -- bukti nyata kenapa MultipartRequest dipakai.</code></pre>
+      <p class="exp">Langkah 4 tidak wajib, tapi kalau sempat dicoba, ini cara paling meyakinkan untuk melihat <em>persis</em> apa yang dikirim Flutter ke server — bukan menduga-duga dari baca kode saja.</p>
+    </div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">services/token_storage.dart — seluruh isi file</span></div><pre><code>import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class TokenStorage {
+  static const _storage = FlutterSecureStorage();
+  static const _key = 'auth_token';
+
+  static Future&lt;void&gt; simpan(String token) => _storage.write(key: _key, value: token);
+  static Future&lt;String?&gt; ambil() => _storage.read(key: _key);
+  static Future&lt;void&gt; hapus() => _storage.delete(key: _key);
+}</code></pre></div>
+    <p>Class ini sengaja dibuat setipis mungkin — tiga method statis yang langsung meneruskan ke <code>FlutterSecureStorage</code>, tanpa logika tambahan. Dipakai sebagai satu-satunya pintu masuk/keluar token di seluruh aplikasi: <code>ApiService.login()</code> memanggil <code>simpan()</code>, <code>_authHeaders()</code> memanggil <code>ambil()</code>, dan <code>ApiService.logout()</code> memanggil <code>hapus()</code>. Kalau suatu saat mekanisme penyimpanan token perlu diganti (misal pindah ke library lain), hanya file ini yang perlu disentuh — seluruh layar yang memanggil <code>ApiService</code> tidak perlu tahu apa-apa soal perubahan itu.</p>
+    <div class="try"><span class="lbl">Coba Sendiri</span>
+      <pre><code>1. Login di aplikasi sampai masuk ke /home.
+2. Tutup aplikasi SEPENUHNYA (bukan cuma minimize -- swipe dari
+   recent apps), buka lagi dari ikon. Harusnya langsung masuk ke
+   /home tanpa diminta login ulang (token masih tersimpan).
+3. Tekan tombol Logout di ProfileScreen, lalu tutup & buka lagi
+   aplikasi. Kali ini harus kembali ke layar Login (token sudah
+   dihapus TokenStorage.hapus()).
+4. (Opsional, butuh akses ke device/emulator secara langsung)
+   Cari lokasi penyimpanan secure storage di Android -- isinya
+   tidak bisa dibaca sebagai teks biasa seperti SharedPreferences,
+   karena memang dienkripsi oleh Android Keystore.</code></pre>
+      <p class="exp">Langkah 2 dan 3 membuktikan <code>splash_screen.dart</code> (Bagian 15) dan <code>TokenStorage</code> benar-benar bekerja sama: splash <em>selalu</em> mengecek token lebih dulu sebelum memutuskan ke layar mana pengguna diarahkan.</p>
+    </div>
+    <p><code>token_storage.dart</code> membungkus <code>flutter_secure_storage</code> (bukan <code>SharedPreferences</code>) karena token JWT adalah kredensial sensitif — <code>flutter_secure_storage</code> menyimpannya terenkripsi di keystore (Android) / keychain (iOS), sedangkan <code>SharedPreferences</code> menyimpan data sebagai teks biasa yang jauh lebih mudah diakses.</p>
+
+    <h2 id="s20"><span class="badge">20</span>Trace Request: Membuat UMKM Baru Lengkap dengan Foto</h2>
+    <p>Semua bagian sebelumnya membahas file satu-satu. Sekarang diikuti <strong>satu permintaan pengguna</strong> secara utuh — dari tombol ditekan di Flutter sampai baris baru masuk ke Postgres dan responsnya kembali ke layar — supaya terlihat jelas bagaimana potongan-potongan kode yang sudah dibahas itu benar-benar saling memanggil, bukan cuma berdiri sendiri-sendiri.</p>
+    <p><strong>Skenario:</strong> pengguna yang sudah login membuka <code>MyUmkmScreen</code>, menekan "Buat UMKM", mengisi nama "Warung Bu Siti", memilih foto dari galeri, lalu menekan tombol simpan di <code>UmkmFormScreen</code>.</p>
+    <ol class="steps">
+      <li><strong>Flutter — <code>UmkmFormScreen</code> submit.</strong> Form tervalidasi lokal dulu (nama tidak boleh kosong), lalu memanggil:
+        <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkm_form_screen.dart — potongan submit</span></div><pre><code>final umkmBaru = await _apiService.simpanUmkm(
+  id: widget.umkm?.id,         // null karena ini mode "tambah"
+  nama: _namaController.text,
+  deskripsi: _deskripsiController.text,
+  alamat: _alamatController.text,
+  fotoPath: _fotoBaru?.path,   // path file lokal hasil image_picker
+);
+if (!mounted) return;
+Navigator.pop(context, true); // beri tahu MyUmkmScreen untuk reload</code></pre></div>
+        Karena <code>widget.umkm</code> adalah <code>null</code> (mode tambah), <code>id</code> yang dikirim ke <code>simpanUmkm</code> juga <code>null</code>.
+      </li>
+      <li><strong>Flutter — <code>ApiService.simpanUmkm</code> membangun request.</strong> Karena <code>id == null</code>, method HTTP yang dipakai adalah <code>POST</code> ke <code>$baseUrl/umkm</code> (lihat kode lengkapnya di Bagian 19). Token diselipkan via <code>_authHeaders()</code>, field teks (nama/deskripsi/alamat) ditempel ke <code>request.fields</code>, dan file foto ditempel ke <code>request.files</code> sebagai <code>MultipartFile</code> — inilah kenapa request ini memakai <code>http.MultipartRequest</code>, bukan <code>http.post</code> biasa: body-nya bukan JSON murni, tapi campuran teks + berkas biner dalam satu request (format <code>multipart/form-data</code>).</li>
+      <li><strong>Go — <code>main.go</code> routing & middleware.</strong> Request <code>POST /api/umkm</code> cocok dengan pattern yang didaftarkan sebagai <code>auth(http.HandlerFunc(umkmHandler.Create))</code>. <code>auth</code> (hasil <code>RequireAuth</code>, Bagian 09) jalan lebih dulu: membaca header <code>Authorization: Bearer &lt;token&gt;</code> yang tadi ditempel di langkah 2, memverifikasinya, lalu menempelkan <code>userID</code> ke <code>context</code> sebelum meneruskan ke <code>umkmHandler.Create</code> yang sesungguhnya.</li>
+      <li><strong>Go — <code>UmkmHandler.Create</code>.</strong> Mem-parsing multipart form, memanggil <code>saveUploadedFile(r, "foto", cfg.UploadDir, "umkm")</code> (Bagian 12) untuk menyimpan file foto ke disk dan mendapat path relatif seperti <code>"umkm/1730700000000000000.jpg"</code>, lalu memanggil:
+        <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">umkm_handler.go — Create (kode asli, komentar Swagger dipangkas)</span></div><pre><code>func (h *UmkmHandler) Create(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r)
+
+	r.Body = http.MaxBytesReader(w, r.Body, 5&lt;&lt;20)
+	if err := r.ParseMultipartForm(5 &lt;&lt; 20); err != nil {
+		writeError(w, http.StatusBadRequest, "form tidak valid atau file terlalu besar", "BAD_REQUEST")
+		return
+	}
+
+	nama := r.FormValue("nama")
+	deskripsi := r.FormValue("deskripsi")
+	alamat := r.FormValue("alamat")
+
+	fotoPath, err := saveUploadedFile(r, "foto", h.uploadDir, "umkm")
+	if errors.Is(err, errInvalidFileType) {
+		writeError(w, http.StatusBadRequest, "foto harus berformat jpg/jpeg/png", "BAD_REQUEST")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "gagal menyimpan foto", "BAD_REQUEST")
+		return
+	}
+
+	umkm, err := h.svc.CreateOwn(r.Context(), userID, nama, deskripsi, alamat, fotoPath)
+	switch {
+	case errors.Is(err, domain.ErrInvalidInput):
+		writeError(w, http.StatusBadRequest, "nama UMKM wajib diisi", "BAD_REQUEST")
+	case errors.Is(err, domain.ErrConflict):
+		writeError(w, http.StatusConflict, "Anda sudah memiliki UMKM", "CONFLICT")
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, "kesalahan server", "INTERNAL")
+	default:
+		writeJSON(w, http.StatusCreated, umkm)
+	}
+}</code></pre></div>
+        <p>Perhatikan <code>r.Body = http.MaxBytesReader(w, r.Body, 5&lt;&lt;20)</code> di baris paling atas — ini batas ukuran upload 5MB yang belum sempat dibahas di Bagian 12: kalau body request (termasuk file foto) lebih besar dari itu, <code>ParseMultipartForm</code> akan gagal lebih dulu sebelum sempat menulis apa pun ke disk, mencegah seseorang sengaja mengunggah file raksasa untuk membebani server.</p>
+      </li>
+      <li><strong>Go — <code>UmkmService.CreateOwn</code>.</strong> Mengecek dulu lewat <code>umkmRepo.FindByUserID(ctx, userID)</code> apakah user ini sudah punya UMKM (aturan "1 user = 1 UMKM" dari Tahap 1 &amp; Bagian 10) — kalau sudah ada, langsung <code>return domain.ErrConflict</code> <strong>sebelum</strong> apa pun ditulis ke database. Baru kalau belum ada, <code>umkmRepo.Create</code> dipanggil.</li>
+      <li><strong>Go — <code>umkmRepository.Create</code>.</strong> Menjalankan <code>INSERT INTO umkm (...) VALUES ($1,$2,$3,$4,$5) RETURNING id</code> — nilai <code>$1..$5</code> diisi dari parameter Go (bukan disambung manual ke string SQL, lihat Bagian 11), dan <code>id</code> yang baru dibuat Postgres langsung di-<code>Scan</code> balik ke struct <code>u.ID</code> di memori Go.</li>
+      <li><strong>Balik ke Flutter.</strong> Response <code>201 Created</code> berisi JSON data UMKM yang baru dibuat (termasuk <code>id</code> dan path foto) diterima <code>simpanUmkm</code>, di-parse jadi objek <code>Umkm</code> lewat <code>Umkm.fromJson</code>, dikembalikan ke <code>UmkmFormScreen</code>, lalu <code>Navigator.pop(context, true)</code> mengirim sinyal "berhasil" ke <code>MyUmkmScreen</code> yang langsung memanggil <code>_muatUmkm()</code> untuk menampilkan data yang baru saja dibuat.</li>
+    </ol>
+    <div class="warn"><span class="lbl">Satu baris gagal, seluruh rantai gagal</span><p>Kalau di langkah 4 validasi foto gagal (misal file berekstensi <code>.gif</code>), rantai berhenti di situ juga — <code>CreateOwn</code> tidak pernah dipanggil, tidak ada baris baru di database, dan Flutter menerima <code>400 Bad Request</code> yang ditangkap sebagai <code>ApiException</code> lalu ditampilkan lewat <code>SnackBar</code>. Tidak ada status "setengah tersimpan" — baik semuanya berhasil, atau semuanya gagal di titik pertama yang bermasalah.</p></div>
+
+    <h2 id="s21"><span class="badge">21</span>Trace Request: Login</h2>
+    <p>Satu lagi alur lengkap, kali ini yang paling sering dijalankan — login — karena melibatkan tiga konsep keamanan sekaligus: bcrypt, JWT, dan penyimpanan token aman.</p>
+    <ol class="steps">
+      <li><strong>Flutter — <code>LoginScreen._prosesLogin</code></strong> (kode lengkap di Bagian 15) memanggil <code>_apiService.login(email, password)</code> dengan <code>email</code>/<code>password</code> polos (belum di-hash di sisi klien — hashing adalah tanggung jawab server, bukan klien).</li>
+      <li><strong>Flutter — <code>ApiService.login</code></strong> mengirim <code>POST /api/auth/login</code> dengan body JSON <code>{"email": ..., "password": ...}</code>. Tidak ada token yang dikirim di langkah ini (memang belum punya).</li>
+      <li><strong>Go — rate limiter dulu.</strong> Sebelum sampai ke <code>AuthHandler.Login</code>, request melewati <code>loginLimiter</code> (Bagian 09) — kalau IP yang sama sudah mencoba login lebih dari 5 kali dalam satu menit, request ditolak di titik ini juga, <code>AuthService.Login</code> tidak pernah dipanggil.</li>
+      <li><strong>Go — <code>AuthService.Login</code></strong> (kode lengkap di Bagian 09): <code>userRepo.FindByEmail</code> mengambil baris user dari database (termasuk <code>password</code> yang tersimpan sebagai <em>hash</em> bcrypt, bukan teks asli), lalu <code>bcrypt.CompareHashAndPassword(hash, passwordInput)</code> membandingkan tanpa pernah men-decode hash itu kembali jadi password asli — bcrypt memang didesain satu arah (tidak bisa dibalik).</li>
+      <li><strong>Go — <code>generateToken</code></strong> dipanggil hanya jika password cocok, menghasilkan JWT yang ditandatangani dengan <code>JWT_SECRET</code> dari <code>.env</code> server, berisi klaim <code>sub</code> (ID user) dan <code>exp</code> (kedaluwarsa 24 jam dari sekarang).</li>
+      <li><strong>Balik ke Flutter — simpan token.</strong> <code>ApiService.login</code> menerima <code>{"data":{"token": "...", "user": {...}}}</code>, mengambil <code>body['data']['token']</code>, lalu memanggil <code>TokenStorage.simpan(token)</code> — token masuk ke <code>flutter_secure_storage</code>, terenkripsi di keystore/keychain perangkat, <strong>sebelum</strong> <code>LoginScreen</code> berpindah ke <code>/home</code>.</li>
+      <li><strong>Request berikutnya otomatis terautentikasi.</strong> Begitu pengguna membuka tab "UMKM Saya", <code>getUmkmSaya()</code> memanggil <code>_authHeaders()</code> yang membaca kembali token dari <code>TokenStorage.ambil()</code> dan menempelkannya sebagai header <code>Authorization</code> — pengguna tidak perlu login ulang untuk setiap request selama token masih berlaku 24 jam.</li>
+    </ol>
+    <div class="note"><span class="lbl">Kenapa dua trace ini penting dipahami, bukan dihafal</span><p>Hampir semua fitur lain di proyek UAS kalian nanti akan mengikuti salah satu dari dua pola alur ini: "kirim data + file lalu simpan ke database" (seperti trace pertama) atau "verifikasi kredensial lalu keluarkan token" (seperti trace kedua). Memahami urutan pemanggilan di sini — bukan menghafal nama fungsinya — adalah yang membuat kalian bisa menulis fitur serupa dari nol untuk ide aplikasi yang berbeda.</p></div>
+
+    <h2 id="s22"><span class="badge">22</span>Pola yang Berulang di Kedua Sisi</h2>
+    <p>Enam pola berikut muncul berulang kali di kedua proyek — mengenalinya memudahkan kalian membaca (dan menulis) kode serupa di proyek UAS nanti:</p>
+    <ol class="steps">
+      <li><strong>Error mengalir ke atas lewat tipe, bukan lewat angka status</strong> — <code>domain</code> dan <code>service</code> Go tidak tahu soal HTTP; hanya <code>handler</code> yang menerjemahkan <code>errors.Is(...)</code> jadi status code.</li>
+      <li><strong>Create dan Update digabung satu fungsi</strong> lewat parameter <code>id</code>/entity opsional — konsisten di Flutter (<code>simpanUmkm</code>/<code>simpanProduk</code>) maupun di struktur form (<code>umkm_form_screen</code>, <code>produk_form_screen</code> dual-mode lewat constructor nullable).</li>
+      <li><strong>Validasi ganda client + server</strong> untuk tipe file foto — Flutter mengecek dulu demi UX instan, Go tetap mengecek ulang karena <strong>server tidak pernah boleh percaya input dari klien</strong>.</li>
+      <li><strong>Fetch sekali di <code>initState</code>, refresh lewat re-assign <code>Future</code> di <code>setState</code></strong> — pola standar di semua layar list/detail Flutter, dipilih di atas state management library demi kesederhanaan.</li>
+      <li><strong>Otorisasi kepemilikan dicek di service layer</strong>, bukan middleware generik — karena aturannya spesifik per jenis data (UMKM dicek langsung, produk dicek tidak langsung lewat UMKM induknya).</li>
+      <li><strong>Satu titik tunggal untuk aturan lintas-fitur</strong> — <code>normalizePagination</code> di Go dan <code>_authHeaders()</code>/<code>fotoUrl()</code> di Flutter: daripada aturan yang sama ditulis ulang di banyak tempat, ditaruh satu fungsi yang dipanggil dari mana-mana.</li>
+    </ol>
+
+    <h2 id="s23"><span class="badge">23</span>Rangkuman</h2>
+    <p>Lima tahap — identifikasi masalah, desain, development, testing, deployment — bukan birokrasi yang bisa dilewati, tapi urutan yang membuat keputusan besar (skema database, pembagian endpoint publik/privat, arsitektur layer) diambil <strong>sebelum</strong> menulis kode, bukan ditambal sambil jalan. Proyek UMKM API dan umkm-app yang kalian pakai sejak Pertemuan 4 adalah bukti bahwa tahapan ini bisa menghasilkan kode yang konsisten: pola yang sama (otorisasi di service, validasi ganda, create/update digabung) muncul berulang kali karena memang direncanakan sejak awal, bukan kebetulan.</p>
+    <p>Pakai kerangka lima tahap ini untuk proyek UAS kalian masing-masing — mulai dari menuliskan masalah yang diselesaikan dengan jelas, sebelum membuka <code>flutter create</code>.</p>
+
+    <footer>Materi ini merangkum dan membedah kode yang sudah dibangun di Pertemuan 4 (UMKM API) dan Pertemuan 5-7 (umkm-app) — bukan materi baru, melainkan fondasi untuk memahami kenapa keputusan arsitektur itu diambil. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>

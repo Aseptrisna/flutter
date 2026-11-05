@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 10 — Identifikasi Masalah & Desain Proyek Sendiri</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82;
+    --red:#C9483B; --red-dim:#FBE6E0; --green:#1F7A4D; --green-dim:#DCEFDD; --purple:#8A5FBF; --purple-dim:#F1E8FA;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px; text-decoration:none;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .try{background:#EAF4EF; border:1px solid #BFE0D8; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .try .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:8px;}
+  .try .lbl::before{content:"▶"; font-size:11px;}
+  .try pre{margin:0 0 10px; padding:10px 12px; background:var(--code-bg); border-radius:6px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .try pre:last-child{margin-bottom:0;}
+  .try p{margin:0 0 8px; font-size:14.5px;}
+  .try p:last-child{margin-bottom:0;}
+  .try .exp{color:var(--muted); font-size:13px;}
+  .try .exp strong{color:var(--green);}
+  .task{background:var(--purple-dim); border:1px solid #D9C3EE; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .task .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--purple); font-size:13px; margin-bottom:8px;}
+  .task .lbl::before{content:"★"; font-size:12px;}
+  .task p{margin:0 0 8px; font-size:14.5px;}
+  .task p:last-child{margin-bottom:0;}
+  .task ul,.task ol{margin:0 0 8px;}
+  .task ul:last-child,.task ol:last-child{margin-bottom:0;}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  .seriesnav{display:flex; justify-content:space-between; gap:16px; margin:0 0 28px; font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+  .seriesnav span{color:var(--muted);}
+  .seriesnav a{padding:8px 16px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none; color:var(--text);}
+  .seriesnav a:hover{background:var(--accent-dim); border-color:var(--accent);}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang Pertemuan Ini</a></li>
+      <li><a href="#s2">Tahapan Membangun Aplikasi</a></li>
+      <li><a href="#s3">Tahap 1: Identifikasi Masalah</a></li>
+      <li><a href="#s4">Tahap 2: Desain UX & Arsitektur</a></li>
+      <li><a href="#s5">Desain Database: ERD & Relasi</a></li>
+      <li><a href="#s6">Fundamental SQL: 7 Aksi Nyata</a></li>
+      <li><a href="#s7">Desain Kontrak API</a></li>
+      <li><a href="#s8">Rangkuman & Checklist</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 10 &middot; Praktikum 1/5 &middot; Proyek Sendiri</span>
+      <h1>Identifikasi Masalah & Desain Proyek Sendiri</h1>
+      <p class="sub">Ini pertemuan praktikum pertama dari rangkaian 5 pertemuan (10-14) yang menerjemahkan studi kasus <strong>UMKM API + umkm-app</strong> (Pertemuan 9) jadi langkah kerja nyata. Bedanya: setiap konsep di sini langsung kamu terapkan ke <strong>proyek UAS kamu sendiri</strong> yang sudah dimulai sejak Pertemuan 8 — bukan UMKM lagi, tapi ide aplikasi kamu sendiri. Tiap bagian ditutup kotak ungu <strong>"Tugas Kamu"</strong> — kerjakan itu sebelum lanjut ke bagian berikutnya.</p>
+    </header>
+
+    <div class="seriesnav">
+      <span>&larr; <a href="pertemuan-09.html">Pertemuan 9: Studi Kasus Lengkap</a></span>
+      <span><a href="pertemuan-11.html">Pertemuan 11: Backend Sendiri</a> &rarr;</span>
+    </div>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang Pertemuan Ini</h2>
+    <p>Pertemuan 9 membedah <strong>UMKM API</strong> (Golang/Node.js) dan <strong>umkm-app</strong> (Flutter) sebagai studi kasus lengkap, dibungkus dalam kerangka 5 tahap pengembangan software. Lima pertemuan berikutnya (10-14) memakai kerangka yang sama, tapi setiap langkahnya kamu kerjakan untuk <strong>aplikasi UAS kamu sendiri</strong> — ide, nama entitas, dan kebutuhannya boleh beda total dari UMKM, tapi <em>caranya</em> dipandu persis sama, supaya hasil akhirnya tetap terarah walau proyeknya beragam.</p>
+    <table>
+      <tr><th>Pertemuan</th><th>Fokus</th><th>Hasil yang kamu bawa pulang</th></tr>
+      <tr><td><strong>10 (ini)</strong></td><td>Identifikasi masalah + desain (UX, arsitektur, database, kontrak API)</td><td>Dokumen desain lengkap untuk app sendiri</td></tr>
+      <tr><td>11</td><td>Membangun backend sendiri (arsitektur, auth, repository/SQL, upload)</td><td>Backend API sendiri yang jalan</td></tr>
+      <tr><td>12</td><td>Fundamental layout Flutter + konek API + halaman awal (splash/login/register)</td><td>Alur auth jalan nyata di app sendiri</td></tr>
+      <tr><td>13</td><td>Halaman CRUD lengkap & ApiService</td><td>CRUD penuh untuk entitas utama app sendiri</td></tr>
+      <tr><td>14</td><td>Trace request, testing, deployment & rangkuman</td><td>Dokumen trace + checklist kesiapan UAS</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Kenapa dipecah, bukan satu pertemuan besar seperti Pertemuan 9?</span><p>Karena Pertemuan 9 sifatnya <em>membaca &amp; memahami</em> proyek yang sudah jadi (UMKM), sedangkan rangkaian ini sifatnya <em>mengerjakan dari nol</em> proyek yang belum jadi (punyamu). Mengerjakan butuh waktu dan tahapan yang tidak bisa dipadatkan jadi satu sesi — makanya dipecah, satu pertemuan satu fase kerja yang jelas selesainya.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Tahapan Membangun Aplikasi Android dari Nol</h2>
+    <p>Tidak ada aplikasi yang baik lahir langsung dari <code>flutter create</code>. Ada lima tahap yang selalu dilalui, baik disadari maupun tidak — mengabaikan salah satunya biasanya terasa belakangan dalam bentuk bug, fitur yang salah sasaran, atau kode yang sulit diubah.</p>
+    <ol class="steps">
+      <li><strong>Identifikasi masalah &amp; kebutuhan</strong> — apa masalah nyata yang ingin diselesaikan, siapa penggunanya. <em>(Bagian 03 di bawah)</em></li>
+      <li><strong>Desain</strong> — UX/alur layar, arsitektur sistem, skema database, kontrak API. <em>(Bagian 04-07)</em></li>
+      <li><strong>Development</strong> — menulis backend dan frontend berdasarkan desain. <em>(Pertemuan 11-13)</em></li>
+      <li><strong>Testing</strong> — memverifikasi bahwa yang dibangun benar-benar bekerja. <em>(Pertemuan 14)</em></li>
+      <li><strong>Deployment &amp; maintenance</strong> — merilis dan menjaga aplikasi tetap hidup. <em>(Pertemuan 14)</em></li>
+    </ol>
+    <p>Pertemuan 10 ini mencakup tahap 1 dan 2 secara penuh — tahap 3-5 dikerjakan di pertemuan-pertemuan berikutnya setelah desainmu benar-benar matang.</p>
+
+    <h2 id="s3"><span class="badge">03</span>Tahap 1: Identifikasi Masalah & Kebutuhan</h2>
+    <p>Sebelum baris kode pertama ditulis, pertanyaan yang harus dijawab: <strong>masalah apa</strong> yang diselesaikan, dan <strong>untuk siapa</strong>. Untuk proyek UMKM (Pertemuan 9), masalahnya sederhana: pelaku UMKM kecil tidak punya etalase digital yang mudah dibuat sendiri. Dari masalah itu, diturunkan kebutuhan fungsional minimal — inilah yang nantinya menentukan tabel database dan endpoint API:</p>
+    <ul>
+      <li>Pengguna bisa mendaftar &amp; login (butuh identitas, jadi butuh tabel <code>users</code>).</li>
+      <li>Satu pengguna bisa mendaftarkan <strong>satu</strong> UMKM miliknya (keputusan bisnis: 1 user = 1 UMKM).</li>
+      <li>Satu UMKM punya banyak produk (relasi satu-ke-banyak: <code>umkm</code> &rarr; <code>produk</code>).</li>
+      <li>Orang lain (tanpa login) harus bisa menjelajah daftar UMKM &amp; produk — sebagian endpoint publik, sebagian butuh autentikasi.</li>
+    </ul>
+    <h3>Cara mengumpulkan & merumuskan kebutuhan</h3>
+    <table>
+      <tr><th>Teknik</th><th>Tools</th><th>Kapan dipakai</th></tr>
+      <tr><td>Wawancara/observasi singkat</td><td>Catatan manual, atau Google Forms kalau respondennya banyak</td><td>Saat masalahnya menyangkut orang lain — bukan cuma asumsi sendiri.</td></tr>
+      <tr><td>Analisis kompetitor</td><td>Cari 2-3 aplikasi sejenis di Play Store, catat fitur yang ada/tidak ada</td><td>Untuk tahu fitur standar di kategori aplikasimu, dan celah yang bisa jadi pembeda.</td></tr>
+      <tr><td>User persona</td><td>Template 1 halaman: nama fiktif, peran, tujuan, frustrasi</td><td>Supaya "siapa penggunanya" tidak abstrak.</td></tr>
+      <tr><td>Daftar kebutuhan fungsional &amp; non-fungsional</td><td>Daftar centang sederhana (Notion, Google Docs, atau <code>.md</code>)</td><td>Hasil akhir tahap ini — acuan desain &amp; scope, mencegah <em>scope creep</em>.</td></tr>
+    </table>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Tulis untuk aplikasi UAS kamu sendiri (format bebas, 1 dokumen — Google Docs/Notion/markdown):</p>
+      <ol>
+        <li><strong>Masalah</strong>: satu-dua kalimat, masalah nyata apa yang diselesaikan aplikasimu, untuk siapa.</li>
+        <li><strong>Minimal 5 kebutuhan fungsional</strong>, ditulis dalam format "Pengguna bisa ___" (contoh gaya di atas) — termasuk tentukan entitas utama aplikasimu (padanan "UMKM" dan "produk" di app kamu) dan relasinya (1-ke-1? 1-ke-banyak?).</li>
+        <li><strong>Minimal 2 kebutuhan non-fungsional</strong> (contoh: "foto harus bisa diakses publik tanpa login", "percobaan login dibatasi").</li>
+        <li>Tandai mana endpoint yang nanti <strong>publik</strong> dan mana yang <strong>butuh login</strong> — ini menentukan middleware apa yang dipakai di tahap development nanti.</li>
+      </ol>
+    </div>
+
+    <h2 id="s4"><span class="badge">04</span>Tahap 2: Desain — UX & Arsitektur Sistem</h2>
+    <p>Desain punya beberapa lapis yang saling bergantung — mengerjakannya berurutan membuat tahap development jauh lebih cepat karena tidak ada keputusan besar yang harus diubah di tengah jalan.</p>
+    <h3>a. Desain alur & UX</h3>
+    <p>Gambarkan dulu layar apa saja yang dibutuhkan dan bagaimana pengguna berpindah di antaranya, sebelum memikirkan widget Flutter apa yang dipakai. Ada tiga level kedalaman, dipilih sesuai waktu yang tersedia — untuk tugas kuliah, level 1-2 biasanya sudah cukup:</p>
+    <table>
+      <tr><th>Level</th><th>Tools</th><th>Output</th></tr>
+      <tr><td><strong>1. User flow</strong></td><td>Pensil &amp; kertas, atau <a href="https://excalidraw.com" target="_blank" rel="noopener">Excalidraw</a> / <a href="https://draw.io" target="_blank" rel="noopener">draw.io</a></td><td>Diagram kotak-panah: Splash &rarr; Login/Register &rarr; Home &rarr; Detail &rarr; Form, dst.</td></tr>
+      <tr><td><strong>2. Wireframe</strong></td><td><a href="https://www.figma.com" target="_blank" rel="noopener">Figma</a> (gratis untuk pelajar) atau <a href="https://balsamiq.com" target="_blank" rel="noopener">Balsamiq</a></td><td>Kotak abu-abu berlabel per layar — posisi tombol, form, list.</td></tr>
+      <tr><td><strong>3. Mockup/prototype</strong></td><td>Figma (frame + prototyping mode)</td><td>Tampilan mendekati final, bisa diklik untuk simulasi alur.</td></tr>
+    </table>
+    <h3>b. Desain arsitektur sistem</h3>
+    <p>Memutuskan: aplikasi mobile-only atau butuh backend terpisah? Kalau butuh backend, dipecah jadi layer apa saja? UMKM API memilih arsitektur <strong>handler &rarr; service &rarr; repository &rarr; domain</strong> (lihat Pertemuan 9 Bagian 08) — keputusan ini diambil di tahap desain, bukan ditemukan sambil menulis kode. Kamu akan memakai pola arsitektur yang <strong>sama persis</strong> di Pertemuan 11, jadi tidak perlu dipikirkan ulang dari nol — tinggal diterapkan ke entitas aplikasimu.</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Untuk aplikasi UAS kamu:</p>
+      <ol>
+        <li>Buat <strong>user flow</strong> (minimal level 1) — Splash &rarr; Login/Register &rarr; Home &rarr; … sesuai alur aplikasimu sendiri. Simpan sebagai gambar/screenshot.</li>
+        <li>Tentukan: aplikasimu butuh backend terpisah atau cukup mobile-only? Kalau butuh backend, tuliskan kamu akan pakai <strong>Go</strong> (seperti Pertemuan 9) atau <strong>Node.js</strong> (seperti Pertemuan 9a) — ini menentukan materi mana yang kamu ikuti di Pertemuan 11.</li>
+      </ol>
+    </div>
+
+    <h2 id="s5"><span class="badge">05</span>Desain Database: ERD & Tool Relasi</h2>
+    <p>Dari kebutuhan fungsional di Bagian 03, diturunkan skema tabel memakai diagram <strong>ERD (Entity Relationship Diagram)</strong>.</p>
+    <h4>Tool untuk menggambar relasi antar tabel</h4>
+    <table>
+      <tr><th>Tool</th><th>Cara kerja</th><th>Kenapa cocok untuk pemula</th></tr>
+      <tr><td><a href="https://dbdiagram.io" target="_blank" rel="noopener"><strong>dbdiagram.io</strong></a> (rekomendasi)</td><td>Ketik definisi tabel pakai bahasa <strong>DBML</strong>, diagram ERD lengkap dengan garis relasi muncul otomatis.</td><td>Gratis tanpa akun, cukup tulis <code>ref:</code> sekali dan garis "satu-ke-banyak" langsung tergambar.</td></tr>
+      <tr><td><a href="https://drawsql.app" target="_blank" rel="noopener">DrawSQL</a></td><td>Mirip dbdiagram.io tapi lewat UI drag-and-drop.</td><td>Cocok yang lebih nyaman visual murni dibanding menulis sintaks DBML.</td></tr>
+      <tr><td><a href="https://draw.io" target="_blank" rel="noopener">draw.io</a> / Excalidraw</td><td>Kanvas bebas, digambar manual sepenuhnya.</td><td>Paling fleksibel, tapi garis relasi harus ditarik &amp; dilabeli sendiri.</td></tr>
+    </table>
+    <p>Contoh skema UMKM App dalam sintaks DBML (dari Pertemuan 9) — tempel ke <a href="https://dbdiagram.io" target="_blank" rel="noopener">dbdiagram.io</a> untuk melihat polanya:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">dbdiagram.io — skema UMKM App (DBML), contoh acuan</span></div><pre><code>Table users {
+  id integer [primary key]
+  nama varchar
+  email varchar [unique]
+  password varchar
+}
+
+Table umkm {
+  id integer [primary key]
+  user_id integer [unique]
+  nama varchar
+  deskripsi text
+  alamat varchar
+  foto varchar
+}
+
+Table produk {
+  id integer [primary key]
+  umkm_id integer
+  nama varchar
+  harga decimal
+  deskripsi text
+  foto varchar
+}
+
+Ref: umkm.user_id > users.id // satu user, satu umkm (unique di sisi umkm)
+Ref: produk.umkm_id > umkm.id // satu umkm, banyak produk</code></pre></div>
+    <p>Skema asli ini diterjemahkan jadi SQL sungguhan begini (lihat juga Pertemuan 9 Bagian 04):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">schema.sql — contoh acuan dari UMKM API</span></div><pre><code>CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE umkm (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    deskripsi TEXT,
+    alamat VARCHAR(255),
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE produk (
+    id SERIAL PRIMARY KEY,
+    umkm_id INTEGER NOT NULL REFERENCES umkm(id) ON DELETE CASCADE,
+    nama VARCHAR(150) NOT NULL,
+    harga NUMERIC(12,2) NOT NULL DEFAULT 0,
+    deskripsi TEXT,
+    foto VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);</code></pre></div>
+    <ul>
+      <li><strong><code>SERIAL PRIMARY KEY</code></strong> — kunci utama tiap baris, unik &amp; otomatis naik sendiri.</li>
+      <li><strong><code>REFERENCES ... ON DELETE CASCADE</code></strong> — foreign key; Postgres menolak nilai yang tidak pernah terdaftar di tabel induk, dan menghapus baris induk otomatis menghapus semua baris anak yang menunjuk ke situ.</li>
+      <li><strong><code>UNIQUE</code></strong> — menegakkan aturan "1-ke-1" di level database, bukan cuma di kode aplikasi.</li>
+    </ul>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Untuk aplikasi UAS kamu:</p>
+      <ol>
+        <li>Tentukan minimal <strong>2-3 tabel</strong> berdasarkan kebutuhan fungsional dari Bagian 03 (selalu ada tabel <code>users</code> untuk login, plus minimal 1-2 tabel untuk entitas utama aplikasimu).</li>
+        <li>Gambar ERD-nya di <a href="https://dbdiagram.io" target="_blank" rel="noopener">dbdiagram.io</a> memakai DBML seperti contoh — pastikan ada minimal satu relasi (<code>Ref:</code>) antar tabel.</li>
+        <li>Tulis ulang jadi <code>CREATE TABLE</code> SQL asli, mengikuti pola <code>SERIAL PRIMARY KEY</code>/<code>REFERENCES</code>/<code>UNIQUE</code> seperti contoh — simpan sebagai <code>schema.sql</code>, ini akan langsung dipakai di Pertemuan 11.</li>
+      </ol>
+    </div>
+
+    <h2 id="s6"><span class="badge">06</span>Fundamental SQL: 7 Aksi Nyata</h2>
+    <p>Supaya tidak abstrak, berikut ditelusuri urutan aksi yang sebenarnya dilakukan pengguna — <strong>Register &rarr; Login &rarr; Buat Data &rarr; Lihat Daftar &rarr; Lihat Detail (relasi/JOIN) &rarr; Edit &rarr; Hapus</strong> — satu per satu, satu query sederhana per aksi. Ini ringkasan dari Pertemuan 9 Bagian 04 (bagian "Lima perintah dasar") — kalau kamu sudah pernah mengerjakan try-box di sana, bagian ini tinggal jadi pengingat cepat.</p>
+    <table>
+      <tr><th>Aksi</th><th>Perintah SQL</th><th>Inti yang perlu diingat</th></tr>
+      <tr><td>Register</td><td><code>INSERT INTO users (...) VALUES (...) RETURNING id;</code></td><td>Postgres langsung membalas <code>id</code> baris baru lewat <code>RETURNING</code>.</td></tr>
+      <tr><td>Login</td><td><code>SELECT ... FROM users WHERE email = ...;</code></td><td>SQL cuma mengambil barisnya — mencocokkan password terjadi di kode backend (bcrypt), bukan di <code>WHERE</code>.</td></tr>
+      <tr><td>Buat data</td><td><code>INSERT INTO umkm (user_id, ...) VALUES (...);</code></td><td><code>user_id</code> diambil dari akun yang sedang login, bukan diketik manual pengguna.</td></tr>
+      <tr><td>Lihat daftar</td><td><code>SELECT ... WHERE nama ILIKE '%...%' ORDER BY id DESC LIMIT ... OFFSET ...;</code></td><td><code>ILIKE</code> = pencarian tanpa peduli huruf besar/kecil; <code>LIMIT/OFFSET</code> = pagination.</td></tr>
+      <tr><td>Lihat detail (relasi)</td><td><code>SELECT ... FROM a JOIN b ON b.a_id = a.id WHERE ...;</code></td><td><code>JOIN</code> menyatukan data dari tabel berbeda jadi satu baris hasil, berdasarkan foreign key.</td></tr>
+      <tr><td>Edit</td><td><code>UPDATE umkm SET ... WHERE id = ...;</code></td><td>Semua kolom ditulis ulang sekaligus, bukan per-kolom.</td></tr>
+      <tr><td>Hapus</td><td><code>DELETE FROM umkm WHERE id = ...;</code></td><td>Berkat <code>ON DELETE CASCADE</code>, baris anak ikut terhapus otomatis.</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Mau yang lebih detail?</span><p>Penjelasan lengkap tiap query (dengan contoh literal, penjelasan baris-per-baris, dan kotak "Coba Sendiri" yang bisa langsung ditempel di Neon SQL Editor) ada di <a href="pertemuan-09.html#s4">Pertemuan 9 Bagian 04</a>. Tabel di atas cukup sebagai pengingat urutannya.</p></div>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Buka Neon Console (boleh bikin project baru khusus aplikasi UAS-mu, terpisah dari project UMKM). Jalankan <code>schema.sql</code> hasil Bagian 05 di SQL Editor-nya. Lalu, memakai pola 7 aksi di atas tapi dengan <strong>nama tabel &amp; data milikmu sendiri</strong>:</p>
+      <ol>
+        <li>Jalankan <code>INSERT</code> manual untuk membuat 1 baris data latihan (akun + 1 baris entitas utama), catat <code>id</code>-nya.</li>
+        <li>Jalankan <code>SELECT ... WHERE</code>, <code>SELECT ... ILIKE ... LIMIT/OFFSET</code>, dan (kalau tabelmu lebih dari 1 dan berelasi) <code>JOIN</code> memakai data latihan itu.</li>
+        <li>Jalankan <code>UPDATE</code> lalu <code>SELECT</code> ulang untuk membuktikan perubahannya.</li>
+        <li>Kalau ada relasi dengan <code>ON DELETE CASCADE</code>, buktikan dengan <code>DELETE</code> baris induk dan cek baris anak ikut hilang.</li>
+      </ol>
+      <p>Skema &amp; data latihan yang sudah tervalidasi di sini langsung dipakai lagi di Pertemuan 11 saat menulis kode <em>repository</em>.</p>
+    </div>
+
+    <h2 id="s7"><span class="badge">07</span>Desain Kontrak API</h2>
+    <p>Khusus proyek yang punya backend terpisah, ada satu desain tambahan yang sering terlewat: <strong>bentuk request/response tiap endpoint</strong> disepakati di atas kertas dulu sebelum Flutter dan backend ditulis bersamaan. UMKM API memakai Swagger/OpenAPI untuk ini. Untuk tugas kuliah, cukup tabel sederhana berisi: method, path, siapa yang boleh akses, dan bentuk data yang dikirim/dibalas.</p>
+    <table>
+      <tr><th>Method & Path</th><th>Akses</th><th>Keterangan</th></tr>
+      <tr><td><code>POST /api/auth/register</code></td><td>Publik</td><td>Body: <code>nama</code>, <code>email</code>, <code>password</code></td></tr>
+      <tr><td><code>POST /api/auth/login</code></td><td>Publik</td><td>Balas: <code>token</code> + data user</td></tr>
+      <tr><td><code>GET /api/&lt;entitas&gt;</code></td><td>Publik</td><td>Daftar, mendukung <code>?q=</code> &amp; pagination</td></tr>
+      <tr><td><code>POST /api/&lt;entitas&gt;</code></td><td>Butuh login</td><td>Multipart kalau ada upload foto</td></tr>
+      <tr><td><code>PUT</code> / <code>DELETE /api/&lt;entitas&gt;/:id</code></td><td>Butuh login + pemilik</td><td>Tolak kalau bukan pemilik data (403)</td></tr>
+    </table>
+    <div class="warn"><span class="lbl">Kesalahan paling umum pemula</span><p>Langsung menulis kode Flutter sebelum tahu endpoint API apa saja yang dibutuhkan, lalu membangun backend belakangan sambil menebak-nebak bentuk responsnya. Hasilnya: bolak-balik mengubah kedua sisi. Desain dulu bentuk API di atas kertas sebelum menulis Flutter yang memanggilnya.</p></div>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Buat tabel kontrak API seperti contoh di atas, untuk <strong>semua endpoint</strong> yang dibutuhkan aplikasi UAS-mu (minimal: register, login, dan CRUD lengkap untuk entitas utamamu). Tandai jelas mana yang publik, mana yang butuh login, dan mana yang butuh validasi kepemilikan (403 kalau bukan pemilik). Dokumen ini jadi acuan langsung saat menulis route di Pertemuan 11.</p>
+    </div>
+
+    <h2 id="s8"><span class="badge">08</span>Rangkuman & Checklist</h2>
+    <p>Sebelum lanjut ke Pertemuan 11, pastikan kamu sudah punya 4 dokumen/berkas ini untuk aplikasi UAS-mu sendiri:</p>
+    <ul class="checklist">
+      <li>Dokumen kebutuhan: masalah, minimal 5 kebutuhan fungsional, minimal 2 non-fungsional, daftar endpoint publik vs butuh login.</li>
+      <li>User flow (gambar/screenshot) minimal level 1, dan keputusan stack backend (Go atau Node.js).</li>
+      <li>ERD (dbdiagram.io) + berkas <code>schema.sql</code> yang sudah divalidasi langsung di Neon (berhasil di-<code>INSERT</code>/<code>SELECT</code>/<code>UPDATE</code>/<code>DELETE</code> dengan data latihan).</li>
+      <li>Tabel kontrak API lengkap untuk semua endpoint yang dibutuhkan.</li>
+    </ul>
+    <div class="verify"><span class="lbl">Checkpoint sebelum Pertemuan 11</span><p>Kalau keempat dokumen di atas sudah ada, kamu sudah siap masuk tahap development. Pertemuan 11 akan langsung memakai <code>schema.sql</code> dan tabel kontrak API ini sebagai bahan baku — tidak ada desain ulang dari nol di situ, murni implementasi dari apa yang sudah kamu rancang di pertemuan ini.</p></div>
+
+    <div class="seriesnav">
+      <span>&larr; <a href="pertemuan-09.html">Pertemuan 9: Studi Kasus Lengkap</a></span>
+      <span><a href="pertemuan-11.html">Pertemuan 11: Backend Sendiri</a> &rarr;</span>
+    </div>
+
+    <footer>Bagian 1 dari 5 rangkaian praktikum proyek UAS — lanjut ke <a href="pertemuan-11.html">Pertemuan 11: Membangun Backend Sendiri</a>. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>

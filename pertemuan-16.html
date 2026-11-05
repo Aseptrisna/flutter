@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 16 — UAS: Proyek Akhir</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82;
+    --red:#C9483B; --red-dim:#FBE6E0; --green:#1F7A4D; --green-dim:#DCEFDD; --purple:#8A5FBF; --purple-dim:#F1E8FA;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px; text-decoration:none;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .try{background:#EAF4EF; border:1px solid #BFE0D8; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .try .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:8px;}
+  .try .lbl::before{content:"▶"; font-size:11px;}
+  .try pre{margin:0 0 10px; padding:10px 12px; background:var(--code-bg); border-radius:6px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .try pre:last-child{margin-bottom:0;}
+  .try p{margin:0 0 8px; font-size:14.5px;}
+  .try p:last-child{margin-bottom:0;}
+  .try .exp{color:var(--muted); font-size:13px;}
+  .try .exp strong{color:var(--green);}
+  .task{background:var(--purple-dim); border:1px solid #D9C3EE; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .task .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--purple); font-size:13px; margin-bottom:8px;}
+  .task .lbl::before{content:"★"; font-size:12px;}
+  .task p{margin:0 0 8px; font-size:14.5px;}
+  .task p:last-child{margin-bottom:0;}
+  .task ul,.task ol{margin:0 0 8px;}
+  .task ul:last-child,.task ol:last-child{margin-bottom:0;}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang UAS Ini</a></li>
+      <li><a href="#s2">Ruang Lingkup Proyek</a></li>
+      <li><a href="#s3">Kriteria Penilaian</a></li>
+      <li><a href="#s4">Yang Dikumpulkan</a></li>
+      <li><a href="#s5">Format Presentasi & Demo</a></li>
+      <li><a href="#s6">Kesalahan yang Sering Menurunkan Nilai</a></li>
+      <li><a href="#s7">Checklist Akhir</a></li>
+      <li><a href="#s8">Penutup Mata Kuliah</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 16 &middot; UAS</span>
+      <h1>UAS: Proyek Akhir</h1>
+      <p class="sub">Ini bukan materi baru — ini <strong>muara</strong> dari seluruh perjalanan sejak Pertemuan 8: ide aplikasi pribadi yang didesain (Pertemuan 10), dibangun backend &amp; Flutter-nya sendiri (Pertemuan 11-13), diuji &amp; ditelusuri alurnya (Pertemuan 14), lalu dirilis (Pertemuan 15). Pertemuan ini merangkum apa yang dinilai, apa yang dikumpulkan, dan bagaimana presentasinya.</p>
+    </header>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang UAS Ini</h2>
+    <p>Proyek UAS <strong>bukan proyek baru</strong> — ia adalah kelanjutan langsung dari proyek individu yang dimulai sejak Pertemuan 8 (UTS), lalu dikembangkan penuh lewat rangkaian praktikum Pertemuan 10-14. Tidak ada kejutan topik baru di sini; UAS menilai seberapa lengkap dan konsisten kamu menerapkan kerangka lima tahap (identifikasi masalah &rarr; desain &rarr; development &rarr; testing &rarr; deployment) yang sudah dilatih di pertemuan-pertemuan itu.</p>
+    <div class="note"><span class="lbl">Kalau belum mengikuti rangkaian Pertemuan 10-14</span><p>Mulai dari <a href="pertemuan-10.html">Pertemuan 10</a> sekarang. Setiap pertemuan di rangkaian itu punya kotak "Tugas Kamu" yang hasilnya langsung menjadi bagian dari proyek UAS ini — bukan latihan terpisah yang harus diulang.</p></div>
+
+    <h2 id="s2"><span class="badge">02</span>Ruang Lingkup Proyek</h2>
+    <p>Proyek UAS minimal mencakup, sesuai yang sudah dibangun sepanjang Pertemuan 10-14:</p>
+    <ul class="checklist">
+      <li>Satu ide aplikasi Android (Flutter) dengan masalah &amp; pengguna yang jelas (dokumen dari Pertemuan 10 Bagian 03).</li>
+      <li>Backend sendiri (Go <strong>atau</strong> Node.js — bebas pilih, lihat Pertemuan 9/9a) dengan minimal: register/login (JWT+bcrypt), 1 entitas utama dengan CRUD lengkap, otorisasi kepemilikan, dan database PostgreSQL (Neon).</li>
+      <li>Aplikasi Flutter yang mengonsumsi backend sendiri itu: Splash/Login/Register, daftar+detail (publik), CRUD milik sendiri (butuh login), profil+ubah password.</li>
+      <li>Minimal 5 halaman fungsional (sesuai minimum dari Pertemuan 8), boleh lebih banyak sesuai kompleksitas ide aplikasimu.</li>
+      <li>Upload foto minimal untuk satu jenis data, kalau relevan dengan ide aplikasimu.</li>
+    </ul>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Bandingkan daftar di atas dengan aplikasimu sekarang. Kalau ada yang belum terpenuhi, kerjakan dulu sebelum lanjut ke bagian penilaian &amp; pengumpulan — jangan menunggu sampai hari pengumpulan untuk menyadari ada bagian yang terlewat.</p>
+    </div>
+
+    <h2 id="s3"><span class="badge">03</span>Kriteria Penilaian</h2>
+    <p>Penilaian mengikuti bobot kira-kira berikut (detail persis dikonfirmasi dosen pengampu, tabel ini acuan umum):</p>
+    <table>
+      <tr><th>Aspek</th><th>Yang dinilai</th><th>Bobot indikatif</th></tr>
+      <tr><td>Desain</td><td>Kejelasan masalah &amp; kebutuhan, ERD masuk akal, kontrak API konsisten dengan implementasi (Pertemuan 10).</td><td>15%</td></tr>
+      <tr><td>Implementasi backend</td><td>Arsitektur berlapis, auth aman (bcrypt+JWT), otorisasi kepemilikan benar, query aman dari SQL injection (Pertemuan 11).</td><td>25%</td></tr>
+      <tr><td>Implementasi Flutter</td><td>Alur auth jalan, CRUD lengkap, state/refresh ditangani benar, kode rapi mengikuti pola yang diajarkan (Pertemuan 12-13).</td><td>25%</td></tr>
+      <tr><td>Testing & pemahaman alur</td><td>QA checklist dijalankan, dua dokumen trace request lengkap &amp; akurat (Pertemuan 14).</td><td>15%</td></tr>
+      <tr><td>Rilis</td><td>Aplikasi berhasil diunggah minimal ke Internal testing Play Console (Pertemuan 15).</td><td>10%</td></tr>
+      <tr><td>Presentasi/demo</td><td>Bisa menjelaskan alur kode sendiri secara langsung, menjawab pertanyaan "kenapa" (bukan cuma "apa"), lihat Bagian 05.</td><td>10%</td></tr>
+    </table>
+    <div class="warn"><span class="lbl">Yang paling sering jadi pembeda nilai bukan "fitur sebanyak apa"</span><p>Aplikasi dengan fitur sedikit tapi dipahami &amp; dijelaskan dengan baik (bisa jawab "kenapa ditulis begini" untuk kode sendiri) biasanya dinilai lebih baik daripada aplikasi dengan banyak fitur tapi mahasiswanya tidak bisa menjelaskan alurnya sendiri saat ditanya. Dokumen trace request di Pertemuan 14 Bagian 04 bukan formalitas — itu bukti pemahaman yang akan sangat membantu saat presentasi.</p></div>
+
+    <h2 id="s4"><span class="badge">04</span>Yang Dikumpulkan</h2>
+    <ul class="checklist">
+      <li>Link repository kode (backend + Flutter), riwayat commit mencerminkan proses bertahap (bukan satu commit raksasa di akhir).</li>
+      <li>Berkas <code>schema.sql</code> dan dokumen desain lengkap dari Pertemuan 10.</li>
+      <li>Dua dokumen trace request dari Pertemuan 14 Bagian 04 (kirim-data+file, dan login) memakai kode asli proyekmu sendiri.</li>
+      <li>Link aplikasi di Internal testing Google Play Console (atau APK rilis kalau karena suatu hal belum sempat diunggah — konfirmasi ke dosen kalau ini terjadi).</li>
+      <li>Laporan singkat (boleh gabung dengan dokumen desain): ringkasan masalah, fitur yang diimplementasikan, kendala &amp; solusi selama pengerjaan.</li>
+    </ul>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Kumpulkan kelima item di atas dalam satu dokumen indeks (boleh Google Docs/Notion) berisi link ke masing-masing — ini yang memudahkan dosen/asisten menilai tanpa harus mencari-cari di banyak tempat terpisah.</p>
+    </div>
+
+    <h2 id="s5"><span class="badge">05</span>Format Presentasi & Demo</h2>
+    <p>Demo dilakukan langsung dari aplikasi yang berjalan (device/emulator atau hasil install dari Play Store), bukan dari slide semata. Urutan yang disarankan:</p>
+    <ol class="steps">
+      <li><strong>Masalah &amp; solusi</strong> (1-2 menit) — jelaskan masalah nyata yang diselesaikan dan untuk siapa, merujuk dokumen Pertemuan 10 Bagian 03.</li>
+      <li><strong>Demo alur utama</strong> (3-5 menit) — register/login, lihat daftar publik, CRUD data milik sendiri termasuk upload foto, logout. Jalankan langsung, jangan direkam sebelumnya kalau memungkinkan (lebih meyakinkan).</li>
+      <li><strong>Jelaskan satu alur kode</strong> (3-5 menit) — pilih satu trace request dari Pertemuan 14 Bagian 04, tunjukkan kodenya langsung sambil menjelaskan urutan Flutter &rarr; backend &rarr; database &rarr; balik lagi.</li>
+      <li><strong>Tanya-jawab</strong> — siap ditanya "kenapa" untuk keputusan desain tertentu (kenapa pakai arsitektur ini, kenapa otorisasi di layer ini, dst) — bukan cuma "bagaimana cara pakai aplikasinya".</li>
+    </ol>
+    <div class="note"><span class="lbl">Latihan dulu sebelum hari-H</span><p>Coba jalankan seluruh demo dari awal sampai akhir minimal sekali sehari sebelumnya, di jaringan dan perangkat yang sama persis dengan yang akan dipakai saat presentasi — banyak demo gagal bukan karena kodenya salah, tapi karena backend lupa dinyalakan, Neon project "tertidur" karena idle lama, atau <code>baseUrl</code> masih menunjuk ke IP lama.</p></div>
+
+    <h2 id="s6"><span class="badge">06</span>Kesalahan yang Sering Menurunkan Nilai</h2>
+    <table>
+      <tr><th>Kesalahan</th><th>Kenapa bermasalah</th></tr>
+      <tr><td>Password disimpan/dibandingkan sebagai teks biasa</td><td>Melanggar prinsip keamanan paling dasar yang sudah diajarkan sejak Pertemuan 11 — biasanya langsung jadi catatan besar saat penilaian.</td></tr>
+      <tr><td>Semua orang bisa edit/hapus data orang lain</td><td>Berarti otorisasi kepemilikan (Pertemuan 11 Bagian 04) tidak diimplementasikan — fitur CRUD dianggap tidak lengkap meski secara teknis "berfungsi".</td></tr>
+      <tr><td>Tidak bisa menjelaskan kode sendiri saat demo</td><td>Indikasi kuat kode disalin tanpa dipahami — lihat peringatan di Bagian 03.</td></tr>
+      <tr><td><code>baseUrl</code> masih <code>localhost</code> saat demo di device lain</td><td>Menunjukkan belum paham konsep jaringan dasar yang sudah dibahas sejak Pertemuan 9 Bagian 19 — demo gagal total karena ini sering terjadi.</td></tr>
+      <tr><td>Commit history cuma 1-2 commit raksasa</td><td>Tidak menunjukkan proses bertahap sesuai kerangka lima tahap yang diajarkan — sulit dinilai prosesnya, hanya hasil akhirnya.</td></tr>
+    </table>
+
+    <h2 id="s7"><span class="badge">07</span>Checklist Akhir</h2>
+    <ul class="checklist">
+      <li>Semua item di Bagian 02 (ruang lingkup) terpenuhi.</li>
+      <li>Semua item di Bagian 04 (yang dikumpulkan) sudah disiapkan dan di-link dalam satu dokumen indeks.</li>
+      <li>Demo sudah dilatih minimal sekali penuh dari awal sampai akhir, di perangkat &amp; jaringan yang sama dengan hari-H.</li>
+      <li>Backend ter-deploy atau setidaknya bisa diakses dari device demo (bukan cuma <code>localhost</code> laptop sendiri).</li>
+      <li>Siap menjelaskan minimal satu trace request secara langsung dari kode sungguhan, tanpa membaca catatan.</li>
+    </ul>
+
+    <h2 id="s8"><span class="badge">08</span>Penutup Mata Kuliah</h2>
+    <p>Dari instalasi Flutter pertama kali (Pertemuan 1) sampai aplikasi yang punya backend sendiri, database sendiri, dan rilis sungguhan di Google Play (Pertemuan 15) — satu mata kuliah ini menempuh siklus penuh pengembangan aplikasi, bukan cuma kumpulan topik lepas. Kerangka lima tahap (identifikasi masalah, desain, development, testing, deployment) yang dipakai berulang-ulang sejak Pertemuan 9 bukan sekadar materi untuk mata kuliah ini — itu kerangka yang sama yang dipakai di proyek perangkat lunak sungguhan, skala apa pun.</p>
+    <p>Apa pun hasil proyek UAS-mu, kemampuan paling berharga yang dibawa pulang bukan aplikasi UMKM atau aplikasi UAS itu sendiri — melainkan kemampuan mengulang seluruh proses ini dari nol, untuk ide aplikasi apa pun yang muncul di masa depan.</p>
+
+    <footer>Selamat menyelesaikan proyek UAS. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 11 — Membangun Backend Sendiri</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82;
+    --red:#C9483B; --red-dim:#FBE6E0; --green:#1F7A4D; --green-dim:#DCEFDD; --purple:#8A5FBF; --purple-dim:#F1E8FA;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px; text-decoration:none;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .try{background:#EAF4EF; border:1px solid #BFE0D8; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .try .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:8px;}
+  .try .lbl::before{content:"▶"; font-size:11px;}
+  .try pre{margin:0 0 10px; padding:10px 12px; background:var(--code-bg); border-radius:6px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .try pre:last-child{margin-bottom:0;}
+  .try p{margin:0 0 8px; font-size:14.5px;}
+  .try p:last-child{margin-bottom:0;}
+  .try .exp{color:var(--muted); font-size:13px;}
+  .try .exp strong{color:var(--green);}
+  .task{background:var(--purple-dim); border:1px solid #D9C3EE; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .task .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--purple); font-size:13px; margin-bottom:8px;}
+  .task .lbl::before{content:"★"; font-size:12px;}
+  .task p{margin:0 0 8px; font-size:14.5px;}
+  .task p:last-child{margin-bottom:0;}
+  .task ul,.task ol{margin:0 0 8px;}
+  .task ul:last-child,.task ol:last-child{margin-bottom:0;}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  .seriesnav{display:flex; justify-content:space-between; gap:16px; margin:0 0 28px; font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+  .seriesnav span{color:var(--muted);}
+  .seriesnav a{padding:8px 16px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none; color:var(--text);}
+  .seriesnav a:hover{background:var(--accent-dim); border-color:var(--accent);}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang Pertemuan Ini</a></li>
+      <li><a href="#s2">Peta Arsitektur Backend</a></li>
+      <li><a href="#s3">Autentikasi & Keamanan</a></li>
+      <li><a href="#s4">Service Layer: Bisnis & Otorisasi</a></li>
+      <li><a href="#s5">Repository & Anti SQL Injection</a></li>
+      <li><a href="#s6">Upload Foto & Migration</a></li>
+      <li><a href="#s7">Menjalankan & Menguji Backend</a></li>
+      <li><a href="#s8">Rangkuman & Checklist</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 11 &middot; Praktikum 2/5 &middot; Proyek Sendiri</span>
+      <h1>Membangun Backend Sendiri</h1>
+      <p class="sub">Bagian 2 dari rangkaian praktikum. Dokumen desain dari Pertemuan 10 (ERD, <code>schema.sql</code>, kontrak API) sekarang diimplementasikan jadi backend sungguhan untuk aplikasi UAS-mu — pola arsitektur, autentikasi, dan keamanannya mengikuti persis <strong>UMKM API</strong> (Pertemuan 9), tapi entitasnya milikmu sendiri. Pilih stack yang kamu kuasai: <a href="pertemuan-09.html">Golang</a> atau <a href="pertemuan-09a.html">Node.js + Express</a> — keduanya dipakai sebagai rujukan kode di pertemuan ini.</p>
+    </header>
+
+    <div class="seriesnav">
+      <span>&larr; <a href="pertemuan-10.html">Pertemuan 10: Desain Proyek Sendiri</a></span>
+      <span><a href="pertemuan-12.html">Pertemuan 12: Fundamental Flutter</a> &rarr;</span>
+    </div>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang Pertemuan Ini</h2>
+    <p>Semua keputusan desain sudah diambil di Pertemuan 10 — pertemuan ini murni <strong>implementasi</strong>, tidak ada desain ulang. Bawa dokumenmu: <code>schema.sql</code>, tabel kontrak API, dan keputusan stack (Go/Node.js).</p>
+    <div class="task"><span class="lbl">Tugas Kamu — sebelum mulai</span>
+      <p>Siapkan folder proyek backend baru untuk aplikasi UAS-mu, ikuti langkah setup dari rujukan stack pilihanmu:</p>
+      <ul>
+        <li><strong>Go</strong>: struktur folder <code>cmd/api</code>, <code>internal/{handler,service,repository,domain,middleware}</code> — lihat <a href="pertemuan-09.html#s8">Pertemuan 9 Bagian 08</a> untuk peta lengkapnya.</li>
+        <li><strong>Node.js</strong>: struktur folder <code>src/{handlers,services,repositories,middleware,utils}</code> — lihat <a href="pertemuan-09a.html#s3">Pertemuan 9a Bagian 03</a> untuk struktur folder lengkap + cara <code>npm init</code>.</li>
+      </ul>
+      <p>Jalankan <code>schema.sql</code> dari Pertemuan 10 ke database Neon proyek ini (boleh project Neon baru, terpisah dari UMKM).</p>
+    </div>
+
+    <h2 id="s2"><span class="badge">02</span>Peta Arsitektur Backend</h2>
+    <p>Backend UMKM API (apa pun stack-nya) disusun dalam satu alur yang sama — ini pola yang akan kamu terapkan juga:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">alur satu request masuk</span></div><pre><code>HTTP Request
+   ↓
+handler/controller   → baca input (JSON/multipart), panggil service, map error → status HTTP
+   ↓
+service              → aturan bisnis: validasi, cek kepemilikan, hash password, dsb
+   ↓
+repository           → SQL parameterized ke Postgres, "tidak ketemu" → error khusus
+   ↓
+domain/model         → struct/kelas data murni + error bisnis (NotFound, Conflict, Forbidden, InvalidInput)</code></pre></div>
+    <p><strong>Error mengalir ke atas, bukan status HTTP.</strong> <code>service</code> dan <code>repository</code> tidak pernah tahu apa itu "404" atau "409" — mereka cuma mengembalikan/melempar error domain. Hanya <code>handler</code> yang menerjemahkan error itu jadi status HTTP. Penjelasan detail pola ini ada di <a href="pertemuan-09.html#s8">Pertemuan 9 Bagian 08</a> (Go) dan <a href="pertemuan-09a.html#s7">Pertemuan 9a Bagian 07</a> (Node.js, pakai kelas <code>AppError</code>).</p>
+    <table>
+      <tr><th>Sentinel/kelas error</th><th>Status HTTP</th><th>Kode</th><th>Contoh pemicu</th></tr>
+      <tr><td>InvalidInput</td><td><code>400</code></td><td><code>BAD_REQUEST</code></td><td>Field wajib kosong, format salah.</td></tr>
+      <tr><td>(auth gagal di middleware)</td><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>Token tidak ada/tidak valid.</td></tr>
+      <tr><td>Forbidden</td><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>Mengubah/menghapus data milik orang lain.</td></tr>
+      <tr><td>NotFound</td><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>ID tidak ada di database.</td></tr>
+      <tr><td>Conflict</td><td><code>409</code></td><td><code>CONFLICT</code></td><td>Data unik yang sudah ada (mis. email terdaftar).</td></tr>
+    </table>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Buat berkas error/domain untuk proyekmu (padanan <code>domain</code> di Go atau <code>errors.js</code> di Node) berisi minimal 4 jenis error: InvalidInput, NotFound, Conflict, Forbidden — dengan status &amp; kode seperti tabel di atas. Ini dipakai di semua bagian berikutnya.</p>
+    </div>
+
+    <h2 id="s3"><span class="badge">03</span>Autentikasi & Keamanan</h2>
+    <p>Setiap backend butuh register &amp; login, apa pun entitas utamanya. Tiga aturan keamanan yang <strong>wajib</strong> ditiru persis dari UMKM API:</p>
+    <ul>
+      <li><strong>Password di-hash dengan bcrypt</strong>, tidak pernah disimpan sebagai teks asli. <code>Register</code> meng-hash, <code>Login</code> membandingkan lewat fungsi compare bcrypt (bukan dengan <code>WHERE password = '...'</code> di SQL — password yang tersimpan sudah ter-hash, tidak bisa dicocokkan langsung lewat query).</li>
+      <li><strong>JWT hanya menerima algoritma HS256</strong>, dan klaim <code>sub</code> (user ID) ditempel saat login, dibaca lagi di setiap request yang butuh login.</li>
+      <li><strong>Rate limit di endpoint login</strong> (mis. 5 percobaan/menit/IP) untuk membatasi brute-force password.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola Register & Login (bahasa-agnostik, intinya sama di Go maupun Node)</span></div><pre><code>function register(nama, email, password):
+    if nama kosong OR email kosong OR panjang(password) &lt; 6:
+        throw InvalidInput
+
+    if cariUserByEmail(email) ditemukan:
+        throw Conflict   // email sudah dipakai
+
+    hashed = bcryptHash(password)
+    simpanUser(nama, email, hashed)
+
+function login(email, password):
+    user = cariUserByEmail(email)
+    if user tidak ditemukan:
+        throw NotFound   // dibalas sebagai pesan generik "email atau password salah"
+
+    if bukan bcryptCompare(password, user.password):
+        throw InvalidInput   // juga dibalas generik, jangan bedakan dgn di atas
+
+    token = jwtSign({ sub: user.id }, exp: 24 jam)
+    return token</code></pre></div>
+    <p>Kode asli lengkapnya (langsung bisa disalin-sesuaikan): <a href="pertemuan-09.html#s9">Pertemuan 9 Bagian 09</a> untuk Go (<code>AuthService.Register/Login</code>, <code>RequireAuth</code> middleware), atau <a href="pertemuan-09a.html#s11">Pertemuan 9a Bagian 11</a> untuk Node.js (<code>authService.js</code> lengkap dengan <code>bcrypt</code>/<code>jsonwebtoken</code>).</p>
+    <div class="warn"><span class="lbl">Kenapa pesan error login digeneralisasi?</span><p>Baik email tidak ditemukan maupun password salah, keduanya dibalas pesan <strong>yang sama</strong> ("email atau password salah") dengan status 401 — supaya penyerang tidak bisa menebak email mana saja yang terdaftar di sistemmu cuma dari beda-tidaknya pesan error.</p></div>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <ol>
+        <li>Implementasikan <code>register</code> &amp; <code>login</code> untuk proyekmu, memakai tabel <code>users</code> dari <code>schema.sql</code> Pertemuan 10.</li>
+        <li>Pasang middleware auth (JWT) dan rate limiter di endpoint login — sama polanya seperti rujukan.</li>
+        <li><strong>Uji dengan curl</strong>: register akun baru, register email sama (harus 409), login benar (harus dapat token), login salah password (harus 401 pesan generik).</li>
+      </ol>
+    </div>
+
+    <h2 id="s4"><span class="badge">04</span>Service Layer: Aturan Bisnis & Otorisasi</h2>
+    <p>Di sinilah aturan dari dokumen kebutuhan Pertemuan 10 ditegakkan jadi kode — bukan di handler, bukan di database, tapi di <strong>service</strong>:</p>
+    <ul>
+      <li>Aturan kuantitas (contoh UMKM: "1 user = 1 UMKM") dicek dengan query <code>FindByUserID</code> dulu sebelum <code>Create</code> — kalau sudah ada, lempar <code>Conflict</code>.</li>
+      <li>Kepemilikan dicek manual: <code>data.userId !== userId yang login</code> &rarr; <code>Forbidden</code>, sebelum izinkan update/hapus.</li>
+      <li><strong>Kepemilikan tidak langsung</strong> (seperti produk milik UMKM) ditelusuri berantai: ambil data anak &rarr; ambil data induknya &rarr; baru bandingkan pemiliknya. Pola ini disebut <code>authorizeOwner</code> di UMKM API.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola authorizeOwner (ownership tidak langsung, 2 level)</span></div><pre><code>function authorizeOwner(userId, childId):
+    child = cariChildById(childId)            // misal: produk
+    if child tidak ditemukan: throw NotFound
+
+    parent = cariParentById(child.parentId)    // misal: umkm induknya
+    if parent tidak ditemukan: throw NotFound
+
+    if parent.userId != userId:
+        throw Forbidden
+
+    return child</code></pre></div>
+    <p>Kode asli lengkap (<code>authorizeOwner</code>, <code>CreateOwn</code>, <code>UpdateOwn</code> dengan pola "jangan hapus foto kalau tidak diganti"): <a href="pertemuan-09.html#s10">Pertemuan 9 Bagian 10</a> (Go) atau <a href="pertemuan-09a.html#s12">Pertemuan 9a Bagian 12</a> (Node.js, <code>umkmService.js</code>/<code>produkService.js</code>).</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <ol>
+        <li>Tulis service untuk entitas utama aplikasimu: <code>create</code>, <code>update</code>, <code>delete</code>, masing-masing memverifikasi kepemilikan sebelum mengizinkan aksi.</li>
+        <li>Kalau aplikasimu punya relasi berjenjang (entitas anak di bawah entitas induk, seperti produk-di-bawah-UMKM), implementasikan <code>authorizeOwner</code> 2 level seperti contoh.</li>
+        <li><strong>Uji dengan curl pakai 2 akun berbeda</strong>: akun A buat data, akun B coba edit/hapus data akun A &rarr; harus <code>403 Forbidden</code>. Lalu akun A edit datanya sendiri &rarr; harus berhasil.</li>
+      </ol>
+    </div>
+
+    <h2 id="s5"><span class="badge">05</span>Repository & Anti SQL Injection</h2>
+    <p>Repository adalah satu-satunya layer yang boleh menyentuh SQL langsung. Tiga aturan wajib:</p>
+    <ul>
+      <li><strong>Selalu parameterized query</strong> (<code>$1, $2, ...</code> di Postgres) — <strong>tidak pernah</strong> menyambung string SQL dengan input pengguna lewat <code>+</code> atau <code>sprintf</code>/template string. Ini (bukan validasi input) yang benar-benar mencegah SQL injection.</li>
+      <li>"Baris tidak ketemu" dikonversi jadi error domain (<code>NotFound</code>) <strong>di repository</strong> — layer di atasnya tidak perlu tahu detail driver database yang dipakai.</li>
+      <li>List kosong selalu dikembalikan sebagai <code>[]</code>, bukan <code>null</code>/<code>nil</code> — supaya Flutter yang menerimanya tidak perlu menangani kasus <code>null</code> di setiap tempat.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">pola query aman (sintaks Postgres, berlaku untuk pgx maupun node-postgres)</span></div><pre><code>-- AMAN: nilai pengguna lewat sebagai parameter terpisah
+SELECT id, nama FROM umkm
+WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')
+ORDER BY id DESC LIMIT $2 OFFSET $3;
+
+-- BERBAHAYA, JANGAN PERNAH DITULIS (menyambung string manual):
+-- "SELECT * FROM umkm WHERE nama ILIKE '%" + q + "%'"</code></pre></div>
+    <p>Query lengkap tiap fungsi repository (<code>FindAll</code>, <code>FindByID</code>, <code>Create</code>, <code>Update</code>, <code>Delete</code>) dengan penjelasan baris-per-baris sudah dibahas tuntas di <a href="pertemuan-09.html#s11">Pertemuan 9 Bagian 11</a> (Go, pakai <code>pgx</code>) dan <a href="pertemuan-09a.html#s10">Pertemuan 9a Bagian 10</a> (Node.js, pakai <code>pg</code> — perhatikan juga catatan penting soal <code>COUNT(*)</code> yang balik sebagai string di node-postgres, wajib <code>Number()</code>). Kalau butuh mengingat kembali fundamental <code>SELECT</code>/<code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code>/<code>JOIN</code> satu per satu, itu ada di <a href="pertemuan-09.html#s4">Pertemuan 9 Bagian 04</a> dan sudah kamu praktikkan sendiri di Pertemuan 10 Bagian 06.</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <ol>
+        <li>Tulis repository untuk tiap tabel di <code>schema.sql</code>-mu: minimal <code>create</code>, <code>findAll</code> (dengan pencarian+pagination), <code>findById</code>, <code>update</code>, <code>delete</code>.</li>
+        <li>Pastikan <strong>semua</strong> query memakai parameter (<code>$1, $2, ...</code>), tidak ada satu pun string SQL yang disambung manual dari input pengguna.</li>
+        <li><strong>Uji keamanannya</strong>: coba kirim <code>q=';DROP TABLE &lt;nama_tabelmu&gt;;--</code> ke endpoint pencarianmu — harus tetap <code>200 OK</code> dengan hasil kosong/wajar, dan tabelmu harus tetap utuh setelahnya.</li>
+      </ol>
+    </div>
+
+    <h2 id="s6"><span class="badge">06</span>Upload Foto & Migration</h2>
+    <p>Kalau aplikasimu punya fitur unggah foto (produk, profil, dsb), tiga aturan yang sama dipakai di UMKM API:</p>
+    <ul>
+      <li><strong>Whitelist ekstensi</strong> (hanya <code>.jpg</code>/<code>.jpeg</code>/<code>.png</code>), dicek <strong>sebelum</strong> file ditulis ke disk — bukan sesudah.</li>
+      <li>Nama file disimpan dibuat ulang dari timestamp/angka acak, <strong>tidak</strong> memakai nama asli dari pengguna (mencegah karakter aneh/path traversal).</li>
+      <li>Path yang disimpan ke database adalah path <strong>relatif</strong> (mis. <code>"produk/169....jpg"</code>), supaya mudah digabung jadi URL publik <code>/uploads/&lt;path&gt;</code>.</li>
+      <li>File lama dihapus dari disk setelah update/delete sukses di database — mencegah file "yatim" menumpuk.</li>
+    </ul>
+    <p>Kode lengkap <code>saveUploadedFile</code>/<code>deleteFile</code>: <a href="pertemuan-09.html#s12">Pertemuan 9 Bagian 12</a> (Go, manual lewat <code>io.Copy</code>) atau <a href="pertemuan-09a.html#s9">Pertemuan 9a Bagian 09</a> (Node.js, pakai <code>multer</code> — jauh lebih ringkas karena sebagian besar proses ditangani otomatis oleh library).</p>
+    <h3>Migration database</h3>
+    <p>Skema yang kamu jalankan manual di Neon SQL Editor (Pertemuan 10) di proyek sungguhan sebaiknya dicatat sebagai <em>migration file</em> bernomor urut, bukan diubah diam-diam lewat SQL Editor setiap kali ada perubahan — supaya skema bisa dijalankan ulang identik di server mana pun. Untuk tugas kuliah skala kecil, cukup simpan <code>schema.sql</code>-mu di root proyek sebagai dokumentasi; kalau mau meniru persis pola migration bernomor seperti UMKM API, lihat <a href="pertemuan-09.html#s12">Pertemuan 9 Bagian 12</a> ("Migration — <code>cmd/migrate/main.go</code>").</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Kalau aplikasimu butuh upload foto: implementasikan validasi ekstensi + penyimpanan file dengan nama unik, lalu <strong>uji</strong> upload file <code>.jpg</code> asli (harus berhasil) dan file yang diubah ekstensinya jadi <code>.jpg</code> padahal isinya teks biasa (harus tetap tervalidasi sesuai yang dicek backend-mu — kalau validasi hanya dari ekstensi nama file, catat ini sebagai keterbatasan untuk didiskusikan, bukan dianggap bug).</p>
+    </div>
+
+    <h2 id="s7"><span class="badge">07</span>Menjalankan & Menguji Backend Sendiri</h2>
+    <p>Sebelum lanjut ke Flutter (Pertemuan 12), backend-mu harus benar-benar jalan dan teruji dari luar (lewat curl/Postman), bukan cuma "kelihatannya benar" dari membaca kode.</p>
+    <ol class="steps">
+      <li>Jalankan server lokal (<code>go run ./cmd/api</code> atau <code>npm run dev</code>), pastikan tersambung ke database tanpa error.</li>
+      <li>Tes <code>register</code> &rarr; <code>login</code> &rarr; simpan token.</li>
+      <li>Tes <code>create</code> entitas utama pakai token tadi &rarr; catat <code>id</code>-nya.</li>
+      <li>Tes <code>list</code> (publik, tanpa token) &rarr; data yang baru dibuat harus muncul.</li>
+      <li>Tes <code>update</code>/<code>delete</code> dengan akun yang BUKAN pemilik &rarr; harus <code>403</code>.</li>
+      <li>Tes endpoint pencarian dengan payload SQL injection &rarr; harus tetap aman.</li>
+    </ol>
+    <div class="verify"><span class="lbl">Checkpoint</span><p>Kalau keenam langkah di atas semua berhasil sesuai yang diharapkan, backend-mu siap dipakai Flutter. Simpan urutan perintah curl yang kamu pakai — ini akan dipakai ulang sebagai bahan trace request di Pertemuan 14.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Rangkuman & Checklist</h2>
+    <ul class="checklist">
+      <li>Berkas error/domain (InvalidInput/NotFound/Conflict/Forbidden) sudah ada dan dipakai konsisten.</li>
+      <li>Register &amp; login jalan, password ter-hash (cek langsung di database, bukan percaya dari luar), JWT+rate limit terpasang.</li>
+      <li>Service layer menegakkan aturan bisnis &amp; ownership (termasuk ownership berjenjang kalau ada).</li>
+      <li>Semua query di repository memakai parameter, teruji aman dari SQL injection.</li>
+      <li>Upload foto (kalau ada) tervalidasi &amp; tersimpan dengan nama unik.</li>
+      <li>Seluruh alur di atas sudah diuji lewat curl/Postman dari luar, bukan cuma dibaca kodenya.</li>
+    </ul>
+
+    <div class="seriesnav">
+      <span>&larr; <a href="pertemuan-10.html">Pertemuan 10: Desain Proyek Sendiri</a></span>
+      <span><a href="pertemuan-12.html">Pertemuan 12: Fundamental Flutter</a> &rarr;</span>
+    </div>
+
+    <footer>Bagian 2 dari 5 rangkaian praktikum proyek UAS — lanjut ke <a href="pertemuan-12.html">Pertemuan 12: Fundamental Flutter, Konek API & Halaman Awal</a>. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>

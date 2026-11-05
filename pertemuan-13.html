@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pertemuan 13 — Halaman CRUD Lengkap & ApiService</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82;
+    --red:#C9483B; --red-dim:#FBE6E0; --green:#1F7A4D; --green-dim:#DCEFDD; --purple:#8A5FBF; --purple-dim:#F1E8FA;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:240px; flex:0 0 240px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:8px 0 8px 16px; font-size:14px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px; text-decoration:none;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:780px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:66ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:64ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .warn{background:var(--red-dim); border-left:3px solid var(--red); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--red); font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .try{background:#EAF4EF; border:1px solid #BFE0D8; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .try .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--blue); font-size:13px; margin-bottom:8px;}
+  .try .lbl::before{content:"▶"; font-size:11px;}
+  .try pre{margin:0 0 10px; padding:10px 12px; background:var(--code-bg); border-radius:6px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.6; color:var(--code-text);}
+  .try pre:last-child{margin-bottom:0;}
+  .try p{margin:0 0 8px; font-size:14.5px;}
+  .try p:last-child{margin-bottom:0;}
+  .try .exp{color:var(--muted); font-size:13px;}
+  .try .exp strong{color:var(--green);}
+  .task{background:var(--purple-dim); border:1px solid #D9C3EE; border-radius:10px; padding:14px 18px 16px; margin:0 0 20px;}
+  .task .lbl{display:flex; align-items:center; gap:8px; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--purple); font-size:13px; margin-bottom:8px;}
+  .task .lbl::before{content:"★"; font-size:12px;}
+  .task p{margin:0 0 8px; font-size:14.5px;}
+  .task p:last-child{margin-bottom:0;}
+  .task ul,.task ol{margin:0 0 8px;}
+  .task ul:last-child,.task ol:last-child{margin-bottom:0;}
+  .steps{counter-reset:step; list-style:none; padding-left:0; margin:0 0 20px;}
+  .steps li{position:relative; padding:4px 0 4px 44px; margin-bottom:16px;}
+  .steps li::before{counter-increment:step; content:counter(step); position:absolute; left:0; top:2px; width:28px; height:28px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .steps li::marker{content:none;}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .checklist{list-style:none; padding-left:0; margin:0 0 20px;}
+  .checklist li{padding:10px 14px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--panel); display:flex; gap:10px; align-items:flex-start;}
+  .checklist li::before{content:"☐"; color:var(--accent); font-size:16px; line-height:1.3;}
+  .seriesnav{display:flex; justify-content:space-between; gap:16px; margin:0 0 28px; font-family:'JetBrains Mono',monospace; font-size:12.5px;}
+  .seriesnav span{color:var(--muted);}
+  .seriesnav a{padding:8px 16px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none; color:var(--text);}
+  .seriesnav a:hover{background:var(--accent-dim); border-color:var(--accent);}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tentang Pertemuan Ini</a></li>
+      <li><a href="#s2">ApiService & TokenStorage</a></li>
+      <li><a href="#s3">Halaman Daftar & Detail</a></li>
+      <li><a href="#s4">CRUD Lengkap & Trik ValueKey</a></li>
+      <li><a href="#s5">Form Tambah/Edit</a></li>
+      <li><a href="#s6">Profil & Ubah Password</a></li>
+      <li><a href="#s7">Menjalankan & Menguji CRUD</a></li>
+      <li><a href="#s8">Rangkuman & Checklist</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 13 &middot; Praktikum 4/5 &middot; Proyek Sendiri</span>
+      <h1>Halaman CRUD Lengkap & ApiService</h1>
+      <p class="sub">Alur auth sudah jalan dari Pertemuan 12. Sekarang dibangun bagian terbesar aplikasimu: <code>ApiService</code> lengkap sebagai satu-satunya jembatan ke API, lalu halaman daftar, detail, dan CRUD penuh (tambah/ubah/hapus, termasuk foto) untuk entitas utama aplikasimu — mengikuti pola <code>umkm-app</code> persis, termasuk trik <code>ValueKey</code> yang sering jadi titik bingung pemula.</p>
+    </header>
+
+    <div class="seriesnav">
+      <span>&larr; <a href="pertemuan-12.html">Pertemuan 12: Fundamental Flutter</a></span>
+      <span><a href="pertemuan-14.html">Pertemuan 14: Trace & Rangkuman</a> &rarr;</span>
+    </div>
+
+    <h2 id="s1"><span class="badge">01</span>Tentang Pertemuan Ini</h2>
+    <p>Ini pertemuan praktikum paling padat di rangkaian ini — tujuannya satu: entitas utama aplikasimu bisa <strong>dibaca, dibuat, diubah, dan dihapus</strong> sepenuhnya dari Flutter, tersambung ke backend sendiri (Pertemuan 11). Semua kode acuan di sini diambil dari <code>umkm-app</code> (<a href="pertemuan-09.html#s16">Pertemuan 9 Bagian 16-19</a>) — dibaca dulu polanya, baru diterapkan ke entitasmu.</p>
+
+    <h2 id="s2"><span class="badge">02</span>ApiService & TokenStorage — Jembatan Tunggal ke API</h2>
+    <p>Aturan paling penting: <strong>tidak ada layar yang memanggil <code>http.get</code>/<code>http.post</code> langsung</strong> — semua request lewat satu class <code>ApiService</code>. Tiga pola kunci dari <code>umkm-app</code>:</p>
+    <ul>
+      <li><strong>Satu fungsi untuk create dan update</strong> lewat parameter <code>id</code> opsional (<code>null</code> &rarr; <code>POST</code>, terisi &rarr; <code>PUT</code>) — menghindari dua fungsi multipart yang nyaris identik.</li>
+      <li><strong><code>_authHeaders()</code> privat</strong> membaca token dari <code>TokenStorage</code>, dipanggil di semua fungsi yang butuh login — satu tempat untuk logika "tempel header Authorization".</li>
+      <li><strong><code>baseUrl</code> memakai IP LAN</strong>, bukan <code>localhost</code> — perangkat fisik/emulator adalah "komputer" terpisah dari mesin development.</li>
+    </ul>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">api_service.dart — simpanUmkm & _authHeaders, contoh acuan</span></div><pre><code>/// id == null -> membuat baru (POST). id terisi -> ubah yang ada (PUT).
+Future&lt;Umkm&gt; simpanUmkm({
+  int? id,
+  required String nama,
+  String deskripsi = '',
+  String alamat = '',
+  String? fotoPath,
+}) async {
+  final uri = id == null
+      ? Uri.parse('$baseUrl/umkm')
+      : Uri.parse('$baseUrl/umkm/$id');
+  final request = http.MultipartRequest(id == null ? 'POST' : 'PUT', uri)
+    ..headers.addAll(await _authHeaders())
+    ..fields['nama'] = nama
+    ..fields['deskripsi'] = deskripsi
+    ..fields['alamat'] = alamat;
+  if (fotoPath != null) {
+    request.files.add(await http.MultipartFile.fromPath('foto', fotoPath));
+  }
+
+  final streamed = await request.send();
+  final response = await http.Response.fromStream(streamed);
+  final body = jsonDecode(response.body) as Map&lt;String, dynamic&gt;;
+  if (response.statusCode != 200 && response.statusCode != 201) {
+    throw ApiException(body['error']?['message'] ?? 'Gagal menyimpan UMKM');
+  }
+  return Umkm.fromJson(body['data'] as Map&lt;String, dynamic&gt;);
+}
+
+Future&lt;Map&lt;String, String&gt;&gt; _authHeaders() async {
+  final token = await TokenStorage.ambil();
+  return {'Authorization': 'Bearer $token'};
+}</code></pre></div>
+    <p><code>foto</code> hanya ditambahkan ke <code>request.files</code> kalau <code>fotoPath != null</code> — saat <em>update</em>, pengguna boleh tidak mengganti foto sama sekali (backend mempertahankan foto lama, lihat Pertemuan 11 Bagian 04). Status <code>200</code> dan <code>201</code> dua-duanya dianggap sukses, karena backend membalas <code>201</code> untuk <code>POST</code> dan <code>200</code> untuk <code>PUT</code> — satu fungsi menangani dua kemungkinan status.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">token_storage.dart — seluruh isi file, contoh acuan</span></div><pre><code>import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class TokenStorage {
+  static const _storage = FlutterSecureStorage();
+  static const _key = 'auth_token';
+
+  static Future&lt;void&gt; simpan(String token) => _storage.write(key: _key, value: token);
+  static Future&lt;String?&gt; ambil() => _storage.read(key: _key);
+  static Future&lt;void&gt; hapus() => _storage.delete(key: _key);
+}</code></pre></div>
+    <p>Dipakai di terlalu banyak tempat: <code>login()</code> memanggil <code>simpan()</code>, <code>_authHeaders()</code> memanggil <code>ambil()</code>, <code>logout()</code> memanggil <code>hapus()</code>. Kalau mekanisme penyimpanan token perlu diganti di kemudian hari, hanya file ini yang perlu disentuh.</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Lengkapi <code>api_service.dart</code>-mu (yang sudah mulai dibuat di Pertemuan 12) dengan fungsi-fungsi berikut, untuk entitas utama aplikasimu:</p>
+      <ol>
+        <li><code>getDaftar(...)</code> — publik, dengan pencarian + pagination (sudah ada dari Pertemuan 12, pastikan lengkap).</li>
+        <li><code>getDetail(id)</code> — publik, satu data.</li>
+        <li><code>simpan({id, ...field, fotoPath})</code> — satu fungsi untuk create &amp; update, pola persis seperti <code>simpanUmkm</code> di atas.</li>
+        <li><code>hapus(id)</code> — butuh login.</li>
+        <li>Buat <code>token_storage.dart</code> milikmu sendiri — boleh disalin persis dari contoh di atas, isinya memang sengaja setipis itu.</li>
+      </ol>
+    </div>
+
+    <h2 id="s3"><span class="badge">03</span>Halaman Daftar & Detail</h2>
+    <p>Pola layar publik (tidak perlu login) di <code>umkm-app</code>:</p>
+    <ul>
+      <li><strong>Layar Home</strong> — kalau punya beberapa tab, pakai <code>IndexedStack</code> dengan <code>NavigationBar</code>, bukan mengganti <code>body</code> biasa. <code>IndexedStack</code> membuat <code>State</code> tiap tab (termasuk <code>Future</code> yang sudah ter-fetch) tidak dibuang &amp; di-fetch ulang setiap kali pindah tab.</li>
+      <li><strong>Layar Daftar</strong> — <code>FutureBuilder</code>, data diambil sekali di <code>initState</code>. <code>RefreshIndicator</code> (tarik-untuk-refresh) memanggil fungsi yang meng-assign ulang variabel <code>Future</code> di dalam <code>setState</code> — ini pola standar "refresh" untuk <code>FutureBuilder</code>, karena <code>FutureBuilder</code> sendiri tidak pernah otomatis memanggil ulang <code>Future</code>-nya.</li>
+      <li><strong>Layar Detail</strong> — publik, mengambil beberapa <code>Future</code> independen secara paralel di <code>initState</code> kalau perlu menampilkan data relasi (misal data utama + daftar anaknya), ditampilkan lewat <code>FutureBuilder</code> bersarang.</li>
+    </ul>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Bangun <code>&lt;entitas&gt;_list_screen.dart</code> (daftar, dengan <code>RefreshIndicator</code>) dan <code>&lt;entitas&gt;_detail_screen.dart</code> (detail) untuk entitas utamamu, tersambung ke <code>getDaftar</code>/<code>getDetail</code> dari Bagian 02. Keduanya harus bisa diakses <strong>tanpa login</strong> (uji dengan logout dulu, lalu buka layar ini).</p>
+    </div>
+
+    <h2 id="s4"><span class="badge">04</span>CRUD Lengkap & Trik ValueKey</h2>
+    <p>Layar "milik saya" (butuh login) biasanya paling kompleks karena menggabungkan baca, buat, ubah, dan hapus dalam satu tempat.</p>
+    <p><strong>Trik <code>ValueKey</code> untuk memaksa remount</strong> — kalau halaman utamamu punya daftar anak (misal daftar produk di bawah satu UMKM) yang dipisah jadi widget tersendiri dengan <code>initState</code>-nya sendiri, widget anak itu <strong>tidak akan pernah fetch ulang otomatis</strong> hanya karena parent-nya <code>setState</code> — kecuali diberi <code>key</code> yang sengaja diubah:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">myumkm_screen.dart — potongan kunci, contoh acuan</span></div><pre><code>class _MyUmkmScreenState extends State&lt;MyUmkmScreen&gt; {
+  int _produkKey = 0;
+
+  void _muatUlangProduk() => setState(() => _produkKey++);
+
+  // ...di dalam build(), setelah data utama didapat:
+  _DaftarProduk(
+    key: ValueKey(_produkKey),   // berubah setiap _muatUlangProduk() dipanggil
+    umkmId: umkm.id,
+    apiService: _apiService,
+  ),
+}
+
+class _DaftarProdukState extends State&lt;_DaftarProduk&gt; {
+  @override
+  void initState() {
+    super.initState();
+    _futureProduk = widget.apiService.getProdukByUmkm(widget.umkmId); // fetch sekali
+  }
+}</code></pre></div>
+    <p>Alurnya: hapus satu produk &rarr; <code>_muatUlangProduk()</code> &rarr; <code>_produkKey</code> bertambah &rarr; <code>setState</code> men-trigger <code>build()</code> ulang &rarr; widget <code>_DaftarProduk</code> dibuat lagi dengan <code>key</code> yang berbeda dari sebelumnya &rarr; Flutter melihat <code>key</code> berubah sebagai sinyal "ini widget yang berbeda" &rarr; instance lama <strong>dibuang</strong>, instance baru dibuat dari nol &rarr; <code>initState</code>-nya jalan lagi, fetch ulang. Tanpa <code>key</code> yang berubah, Flutter menganggap ini widget yang "sama" dan tidak pernah membuat instance baru — daftar tidak pernah ter-refresh walau datanya di server sudah berubah.</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <ol>
+        <li>Bangun layar "<code>&lt;Entitas&gt;</code> Saya" — tampilkan data milik pengguna yang sedang login (<code>null</code> berarti belum punya, tampilkan tombol "Buat"), lengkap tombol Edit &amp; Hapus.</li>
+        <li>Kalau entitasmu punya relasi anak (seperti produk di bawah UMKM), pisahkan daftar anak itu jadi widget tersendiri dan terapkan trik <code>ValueKey</code> seperti contoh di atas.</li>
+        <li><strong>Buktikan triknya</strong>: tambahkan <code>debugPrint</code> di <code>initState</code> widget anak, lalu coba tambah satu data anak baru — <code>debugPrint</code> harus muncul lagi dengan key berbeda. Coba lepas <code>key: ValueKey(...)</code>-nya sebentar untuk melihat daftar jadi "basi" (tidak ter-refresh), lalu kembalikan lagi.</li>
+      </ol>
+    </div>
+
+    <h2 id="s5"><span class="badge">05</span>Form Tambah/Edit</h2>
+    <p>Satu layar form dipakai untuk <strong>dua mode</strong> (tambah dan edit) lewat parameter nullable di constructor — kalau data yang dikirim <code>null</code>, berarti mode tambah; kalau terisi, mode edit dengan field sudah terisi data lama. Validasi ekstensi foto (JPG/JPEG/PNG) dicek ulang di sisi Flutter sebelum submit — identik dengan whitelist di backend (Pertemuan 11 Bagian 06) — supaya pengguna dapat feedback instan tanpa menunggu respons gagal dari server.</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <ol>
+        <li>Bangun <code>&lt;entitas&gt;_form_screen.dart</code> dual-mode (constructor menerima parameter data nullable).</li>
+        <li>Pakai <code>image_picker</code> untuk memilih foto (kalau entitasmu punya foto), validasi ekstensi di sisi Flutter sebelum submit.</li>
+        <li>Setelah sukses simpan, <code>Navigator.pop(context, true)</code> — lalu di layar pemanggil, hasil <code>true</code> dipakai memicu reload data (lihat Bagian 04).</li>
+      </ol>
+    </div>
+
+    <h2 id="s6"><span class="badge">06</span>Profil & Ubah Password</h2>
+    <p>Pola layar profil di <code>umkm-app</code>: <code>FutureBuilder&lt;User&gt;</code> fetch sekali, menampilkan data akun + tombol Logout. <strong>Logout</strong> memanggil <code>ApiService.logout()</code> (hanya menghapus token lokal, <strong>tidak</strong> memanggil API) lalu <code>Navigator.pushNamedAndRemoveUntil</code> ke <code>/login</code> — menghapus <strong>seluruh</strong> riwayat navigasi, supaya tombol back tidak bisa membawa pengguna kembali ke halaman yang butuh login.</p>
+    <p>Layar ubah profil biasanya menggabungkan dua <code>Form</code> independen (ubah profil, ubah password) dengan state loading <strong>terpisah</strong> untuk masing-masing — supaya mengirim salah satu form tidak ikut mengunci tombol submit form lainnya.</p>
+    <div class="task"><span class="lbl">Tugas Kamu</span>
+      <p>Bangun layar Profil (tampilkan data akun + tombol Logout yang membersihkan navigation stack) dan layar Ubah Profil/Password (dua form independen, state loading terpisah).</p>
+    </div>
+
+    <h2 id="s7"><span class="badge">07</span>Menjalankan & Menguji CRUD Lengkap</h2>
+    <p>Jalankan <code>flutter run</code> sambil backend-mu aktif, lalu uji urutan lengkap ini:</p>
+    <ol class="steps">
+      <li>Logout (atau install ulang) &rarr; buka layar Daftar &amp; Detail tanpa login &rarr; harus bisa diakses (publik).</li>
+      <li>Login &rarr; buka layar "Milik Saya" &rarr; kalau belum punya data, harus tampil tombol "Buat".</li>
+      <li>Buat data baru lewat form (dengan foto kalau ada) &rarr; harus langsung muncul di layar "Milik Saya" setelah <code>Navigator.pop(context, true)</code>.</li>
+      <li>Edit data yang baru dibuat (ubah 1 field, tidak upload foto baru) &rarr; foto lama harus tetap ada, bukan hilang.</li>
+      <li>Kalau ada relasi anak: tambah 1 data anak &rarr; buktikan daftar anak ter-refresh otomatis (trik <code>ValueKey</code>).</li>
+      <li>Hapus data &rarr; harus hilang dari semua layar yang menampilkannya setelah refresh.</li>
+      <li>Ubah profil &amp; password &rarr; logout &amp; login lagi dengan password baru.</li>
+    </ol>
+    <div class="verify"><span class="lbl">Checkpoint sebelum Pertemuan 14</span><p>Kalau ketujuh langkah di atas berhasil, aplikasimu sudah punya alur CRUD penuh yang setara <code>umkm-app</code>. Pertemuan 14 akan menelusuri salah satu alur ini (trace request) dari tombol sampai database, memakai urutan yang sama seperti yang baru saja kamu uji.</p></div>
+
+    <h2 id="s8"><span class="badge">08</span>Rangkuman & Checklist</h2>
+    <ul class="checklist">
+      <li><code>ApiService</code> lengkap: daftar, detail, simpan (create+update), hapus — semua lewat satu class, tidak ada <code>http.get</code>/<code>http.post</code> langsung di screen.</li>
+      <li><code>TokenStorage</code> terpasang, dipakai konsisten di login/logout/<code>_authHeaders</code>.</li>
+      <li>Layar Daftar &amp; Detail bisa diakses tanpa login.</li>
+      <li>Layar "Milik Saya" CRUD penuh, termasuk trik <code>ValueKey</code> kalau ada relasi anak.</li>
+      <li>Form dual-mode (tambah/edit) dengan validasi foto di sisi Flutter.</li>
+      <li>Profil, ubah password, dan logout (menghapus seluruh riwayat navigasi) jalan dengan benar.</li>
+      <li>Ketujuh skenario uji di Bagian 07 semua berhasil.</li>
+    </ul>
+
+    <div class="seriesnav">
+      <span>&larr; <a href="pertemuan-12.html">Pertemuan 12: Fundamental Flutter</a></span>
+      <span><a href="pertemuan-14.html">Pertemuan 14: Trace & Rangkuman</a> &rarr;</span>
+    </div>
+
+    <footer>Bagian 4 dari 5 rangkaian praktikum proyek UAS — lanjut ke <a href="pertemuan-14.html">Pertemuan 14: Trace Request, Testing, Deployment & Rangkuman</a>. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>
