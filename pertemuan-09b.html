@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panduan Backend Golang Generik — Bisa Dikustomisasi untuk Proyek Sendiri</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82; --green:#1F7A4D; --green-dim:#DCEFDD;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:250px; flex:0 0 250px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:7px 0 7px 16px; font-size:13.5px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:68ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:66ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .warn{background:#331A1A; border-left:3px solid #F26B6B; border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:#F26B6B; font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .oscard{border:1px solid var(--line); border-radius:10px; padding:4px 18px 6px; margin:0 0 24px; background:var(--panel);}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .toc{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 22px; margin:0 0 28px;}
+  .toc .lbl{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--text); font-size:14px; margin-bottom:10px; display:block;}
+  .toc ol{columns:2; column-gap:24px; margin:0; padding-left:18px;}
+  .toc li{font-size:13.5px; margin-bottom:6px; break-inside:avoid;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} .toc ol{columns:1;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Materi &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Tahap 0 — Kontrak Sebelum Coding</a></li>
+      <li><a href="#s2">Tahap 1 — Setup Project</a></li>
+      <li><a href="#s3">Tahap 2 — Database & Migration</a></li>
+      <li><a href="#s4">Tahap 3 — Domain & Config</a></li>
+      <li><a href="#s5">Tahap 4 — Repository</a></li>
+      <li><a href="#s6">Tahap 5 — Service (Aturan Bisnis)</a></li>
+      <li><a href="#s7">Tahap 6 — Middleware</a></li>
+      <li><a href="#s8">Tahap 7 — Handler & Routing</a></li>
+      <li><a href="#s9">Tahap 8 — File Upload</a></li>
+      <li><a href="#s10">Tahap 9 — Dokumentasi Swagger</a></li>
+      <li><a href="#s11">Tahap 10 — Testing</a></li>
+      <li><a href="#s12">Tahap 11 — Checklist Deployment</a></li>
+      <li><a href="#s13">Ringkasan: Generik vs Kustomisasi</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Kembali ke daftar pertemuan</a>
+    <header>
+      <span class="kicker">Pertemuan 9b &middot; Panduan Generik</span>
+      <h1>Panduan Tahapan Membangun Backend Golang — Generik &amp; Bisa Dikustomisasi</h1>
+      <p class="sub">Versi umum dari tutorial Go + PostgreSQL di Pertemuan 4 (studi kasus UMKM). Struktur tahapannya persis sama, tapi ditulis dengan <strong>placeholder</strong> sehingga bisa dipakai untuk <strong>topik proyek apa pun</strong> yang dipilih di Pertemuan 10 — perpustakaan, parkir, laundry, inventaris, booking lapangan, dan sejenisnya.</p>
+    </header>
+
+    <div class="note"><span class="lbl">Cara pakai panduan ini</span><p>Setiap kali muncul tanda <code>[ENTITAS_UTAMA]</code>, <code>[ENTITAS_ANAK]</code>, atau <code>[FIELD]</code>, ganti dengan nama sesuai domain proyekmu sendiri. Lihat tabel pemetaan contoh di bawah sebelum mulai.</p></div>
+
+    <table>
+      <tr><th>Placeholder</th><th>Contoh di UMKM (Pertemuan 4)</th><th>Contoh di proyek lain</th></tr>
+      <tr><td><code>[ENTITAS_UTAMA]</code></td><td><code>umkm</code></td><td><code>buku</code>, <code>kendaraan</code>, <code>kamar_kos</code>, <code>pelanggan_laundry</code></td></tr>
+      <tr><td><code>[ENTITAS_ANAK]</code></td><td><code>produk</code></td><td><code>peminjaman</code>, <code>transaksi_parkir</code>, <code>pesanan</code></td></tr>
+      <tr><td><code>[ENTITAS_PEMILIK]</code></td><td><code>user</code> (pemilik UMKM)</td><td><code>user</code> (anggota, admin, member)</td></tr>
+    </table>
+
+    <div class="toc">
+      <span class="lbl">Daftar isi cepat</span>
+      <ol>
+        <li><a href="#s1">00. Kontrak Sebelum Coding</a></li>
+        <li><a href="#s2">01. Setup Project</a></li>
+        <li><a href="#s3">02. Database &amp; Migration</a></li>
+        <li><a href="#s4">03. Domain &amp; Config</a></li>
+        <li><a href="#s5">04. Repository</a></li>
+        <li><a href="#s6">05. Service (Aturan Bisnis)</a></li>
+        <li><a href="#s7">06. Middleware</a></li>
+        <li><a href="#s8">07. Handler &amp; Routing</a></li>
+        <li><a href="#s9">08. File Upload</a></li>
+        <li><a href="#s10">09. Dokumentasi Swagger</a></li>
+        <li><a href="#s11">10. Testing</a></li>
+        <li><a href="#s12">11. Checklist Deployment</a></li>
+        <li><a href="#s13">12. Ringkasan</a></li>
+      </ol>
+    </div>
+
+    <h2 id="s1"><span class="badge">00</span>Kontrak Sebelum Coding</h2>
+    <p>Sebelum membuka VS Code, jawab dulu pertanyaan ini di atas kertas (atau dokumen):</p>
+    <ol>
+      <li><strong>Entitas apa saja</strong> yang ada di proyekmu, dan relasinya (one-to-one, one-to-many, many-to-many)? Gambarkan seperti diagram ERD di Pertemuan 9.</li>
+      <li><strong>Siapa saja role pengguna</strong>? (misal: admin, member, tamu) — ini menentukan middleware otorisasi yang dibutuhkan.</li>
+      <li><strong>Endpoint apa saja</strong> yang dibutuhkan untuk setiap entitas (daftar method + path)?</li>
+      <li><strong>Data apa yang sensitif</strong> (password, foto KTP, dsb) sehingga butuh hashing/enkripsi/akses terbatas?</li>
+      <li><strong>Ada file upload?</strong> (foto produk, foto profil, dokumen) — tentukan format yang diizinkan dan batas ukurannya.</li>
+    </ol>
+    <p>Tuliskan dalam tabel kontrak endpoint seperti di Pertemuan 4 bagian 9.1, misalnya:</p>
+    <table>
+      <tr><th>Method</th><th>Path</th><th>Auth</th><th>Deskripsi</th></tr>
+      <tr><td>POST</td><td><code>/auth/register</code></td><td>Tidak</td><td>Registrasi pengguna</td></tr>
+      <tr><td>POST</td><td><code>/auth/login</code></td><td>Tidak</td><td>Login, hasilkan JWT</td></tr>
+      <tr><td>GET</td><td><code>/[entitas-utama]</code></td><td>Ya</td><td>Daftar milik pengguna yang login</td></tr>
+      <tr><td>POST</td><td><code>/[entitas-utama]</code></td><td>Ya</td><td>Buat baru</td></tr>
+      <tr><td>GET</td><td><code>/[entitas-utama]/:id</code></td><td>Ya</td><td>Detail satu</td></tr>
+      <tr><td>PUT</td><td><code>/[entitas-utama]/:id</code></td><td>Ya (pemilik)</td><td>Update</td></tr>
+      <tr><td>DELETE</td><td><code>/[entitas-utama]/:id</code></td><td>Ya (pemilik)</td><td>Hapus</td></tr>
+      <tr><td>POST</td><td><code>/[entitas-utama]/:id/[entitas-anak]</code></td><td>Ya (pemilik)</td><td>Tambah entitas anak</td></tr>
+    </table>
+    <div class="warn"><span class="lbl">Wajib selesai dulu</span><p>Tahap ini wajib selesai sebelum menulis kode apa pun. Mengubah struktur database di tengah jalan jauh lebih mahal daripada mengubah rancangan di atas kertas.</p></div>
+
+    <h2 id="s2"><span class="badge">01</span>Setup Project</h2>
+    <p>Langkah ini identik untuk proyek apa pun (sama seperti Pertemuan 4 bagian 08), hanya nama modul yang berubah:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>mkdir [nama-project]-api && cd [nama-project]-api
+go mod init github.com/[username-github]/[nama-project]-api</code></pre></div>
+    <p>Buat struktur folder standar (menengah — cocok untuk proyek 1 semester):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">struktur folder</span></div><pre><code>[nama-project]-api/
+├── cmd/
+│   ├── api/
+│   │   └── main.go          entry point server
+│   └── migrate/
+│       └── main.go          tool migration sendiri
+├── internal/
+│   ├── config/               load .env
+│   ├── domain/                struct entity + error domain
+│   ├── repository/            akses database (interface + implementasi)
+│   ├── service/                logika bisnis / aturan domain
+│   ├── handler/                HTTP handler + DTO request/response
+│   └── middleware/             auth JWT, logging, recovery, CORS
+├── migrations/                 file .sql migration
+├── docs/                        hasil generate Swagger
+├── uploads/                     folder penyimpanan file upload (lokal, dev only)
+├── .env.example
+├── .gitignore
+├── go.mod
+├── Makefile
+└── README.md</code></pre></div>
+    <p>Kenapa strukturnya tetap seperti ini walau entitasnya beda-beda? Karena ini <strong>memisahkan tanggung jawab</strong>, bukan memisahkan "fitur per mahasiswa". Alurnya selalu:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>request HTTP &rarr; handler &rarr; service &rarr; repository &rarr; database</code></pre></div>
+    <div class="note"><span class="lbl">Hindari folder generik</span><p>Jangan membuat folder <code>utils/</code> atau <code>helpers/</code> generik berisi campuran fungsi tidak berhubungan — itu kebiasaan buruk yang bikin kode susah ditelusuri. Beri nama paket sesuai fungsinya (<code>validator/</code>, <code>hashing/</code>, dsb) jika memang perlu dipisah.</p></div>
+    <p>Install dependency inti (sesuaikan dengan pilihan tim, ini default yang dipakai Pertemuan 4):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>go get github.com/jackc/pgx/v5
+go get github.com/jackc/pgx/v5/pgxpool
+go get github.com/golang-jwt/jwt/v5
+go get golang.org/x/crypto/bcrypt
+go get github.com/joho/godotenv
+go get -tool github.com/golang-migrate/migrate/v4</code></pre></div>
+
+    <h2 id="s3"><span class="badge">02</span>Database &amp; Migration</h2>
+    <ol>
+      <li>Gambar ERD final (lihat materi "Desain Database" di Pertemuan 9).</li>
+      <li>Tulis relasi <code>Ref:</code> antar tabel (lihat penjelasan notasi DBML) supaya foreign key-nya jelas sejak awal.</li>
+      <li>Buat file migration dengan nama berurutan di <code>migrations/</code>:</li>
+    </ol>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000001_create_[entitas_pemilik].up.sql</span></div><pre><code>CREATE TABLE [entitas_pemilik] (
+    id          BIGSERIAL PRIMARY KEY,
+    nama        VARCHAR(100) NOT NULL,
+    email       VARCHAR(150) UNIQUE NOT NULL,
+    password    VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000002_create_[entitas_utama].up.sql</span></div><pre><code>CREATE TABLE [entitas_utama] (
+    id                   BIGSERIAL PRIMARY KEY,
+    [entitas_pemilik]_id BIGINT NOT NULL UNIQUE
+        REFERENCES [entitas_pemilik](id) ON DELETE CASCADE,
+    nama                 VARCHAR(150) NOT NULL,
+    -- [FIELD] tambahkan kolom sesuai domain, misal: alamat, kategori, dsb.
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000003_create_[entitas_anak].up.sql</span></div><pre><code>CREATE TABLE [entitas_anak] (
+    id                 BIGSERIAL PRIMARY KEY,
+    [entitas_utama]_id BIGINT NOT NULL
+        REFERENCES [entitas_utama](id) ON DELETE CASCADE,
+    -- [FIELD] field spesifik entitas anak
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre></div>
+    <p>Jangan lupa pasangan <code>.down.sql</code> untuk tiap migration (untuk rollback):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">migrations/000003_create_[entitas_anak].down.sql</span></div><pre><code>DROP TABLE IF EXISTS [entitas_anak];</code></pre></div>
+    <p>Jalankan migration dengan tool <code>cmd/migrate/main.go</code> yang sama persis seperti di Pertemuan 4 bagian 10.1 — tool-nya generik, tidak tergantung nama tabel.</p>
+    <div class="verify"><span class="lbl">Checklist sebelum lanjut</span><p>Tabel sudah terbentuk? Foreign key benar arahnya? <code>UNIQUE</code> sudah dipasang di kolom yang memang harus unik (contoh: satu pemilik hanya satu <code>[entitas_utama]</code>)?</p></div>
+
+    <h2 id="s4"><span class="badge">03</span>Domain &amp; Config</h2>
+    <p><code>internal/domain/[entitas_utama].go</code> — struct murni, tanpa logika:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/domain/[entitas_utama].go</span></div><pre><code>package domain
+
+import (
+    "errors"
+    "time"
+)
+
+type [EntitasUtama] struct {
+    ID                 int64     `json:"id"`
+    [EntitasPemilik]ID int64     `json:"-"`
+    Nama               string    `json:"nama"`
+    // [FIELD] tambahkan field sesuai domain
+    CreatedAt          time.Time `json:"created_at"`
+}
+
+var (
+    Err[EntitasUtama]NotFound = errors.New("[entitas_utama] tidak ditemukan")
+    ErrForbidden              = errors.New("tidak berhak mengakses data ini")
+    ErrInvalidInput           = errors.New("input tidak valid")
+    ErrConflict               = errors.New("data sudah ada / bentrok")
+)</code></pre></div>
+    <p><code>internal/config/config.go</code> — load <code>.env</code> sekali di awal, generik untuk proyek apa pun:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/config/config.go</span></div><pre><code>package config
+
+import (
+    "fmt"
+    "os"
+
+    "github.com/joho/godotenv"
+)
+
+type Config struct {
+    Port        string
+    DatabaseURL string
+    JWTSecret   string
+    UploadDir   string
+}
+
+func Load() (*Config, error) {
+    _ = godotenv.Load()
+    cfg := &Config{
+        Port:        getEnv("PORT", "8080"),
+        DatabaseURL: os.Getenv("DATABASE_URL"),
+        JWTSecret:   os.Getenv("JWT_SECRET"),
+        UploadDir:   getEnv("UPLOAD_DIR", "./uploads"),
+    }
+    if cfg.DatabaseURL == "" || cfg.JWTSecret == "" {
+        return nil, fmt.Errorf("DATABASE_URL dan JWT_SECRET wajib diisi di .env")
+    }
+    return cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+    if v := os.Getenv(key); v != "" {
+        return v
+    }
+    return fallback
+}</code></pre></div>
+
+    <h2 id="s5"><span class="badge">04</span>Repository</h2>
+    <p>Interface didefinisikan di sisi pemakai (service), tapi untuk proyek kuliah cukup satu file per entitas di <code>repository/</code>. Pola query-nya <strong>selalu sama</strong>, hanya nama tabel dan kolom yang berubah:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/repository/[entitas_utama]_repository.go</span></div><pre><code>package repository
+
+type [EntitasUtama]Repository interface {
+    Create(ctx context.Context, e *domain.[EntitasUtama]) error
+    GetByID(ctx context.Context, id int64) (*domain.[EntitasUtama], error)
+    GetByOwnerID(ctx context.Context, ownerID int64) (*domain.[EntitasUtama], error)
+    Update(ctx context.Context, e *domain.[EntitasUtama]) error
+    Delete(ctx context.Context, id int64) error
+}
+
+type [entitasUtama]PgRepo struct {
+    db *pgxpool.Pool
+}
+
+func New[EntitasUtama]Repository(db *pgxpool.Pool) [EntitasUtama]Repository {
+    return &[entitasUtama]PgRepo{db: db}
+}
+
+func (r *[entitasUtama]PgRepo) Create(ctx context.Context, e *domain.[EntitasUtama]) error {
+    query := `INSERT INTO [entitas_utama] ([entitas_pemilik]_id, nama)
+              VALUES ($1, $2) RETURNING id, created_at`
+    return r.db.QueryRow(ctx, query, e.[EntitasPemilik]ID, e.Nama).
+        Scan(&e.ID, &e.CreatedAt)
+}
+
+func (r *[entitasUtama]PgRepo) GetByID(ctx context.Context, id int64) (*domain.[EntitasUtama], error) {
+    var e domain.[EntitasUtama]
+    query := `SELECT id, [entitas_pemilik]_id, nama, created_at
+              FROM [entitas_utama] WHERE id = $1`
+    err := r.db.QueryRow(ctx, query, id).
+        Scan(&e.ID, &e.[EntitasPemilik]ID, &e.Nama, &e.CreatedAt)
+    if errors.Is(err, pgx.ErrNoRows) {
+        return nil, domain.Err[EntitasUtama]NotFound
+    }
+    if err != nil {
+        return nil, fmt.Errorf("get [entitas_utama] %d: %w", id, err)
+    }
+    return &e, nil
+}</code></pre></div>
+    <div class="note"><span class="lbl">Ini yang dimaksud "generik"</span><p>Pola ini berlaku untuk entitas apa pun — kalau butuh CRUD baru (misal <code>[ENTITAS_ANAK]</code>), tinggal duplikasi pola yang sama dengan nama tabel/kolom berbeda. Bukan satu kode ajaib yang dipakai untuk semua tabel (itu over-engineering untuk level tugas kuliah), melainkan <strong>pola yang konsisten</strong> yang gampang ditiru ulang.</p></div>
+
+    <h2 id="s6"><span class="badge">05</span>Service (Aturan Bisnis)</h2>
+    <p>Di sinilah letak logika yang <strong>spesifik untuk tiap proyek</strong> — ini bagian yang paling banyak kustomisasinya:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/service/[entitas_utama]_service.go</span></div><pre><code>package service
+
+type [EntitasUtama]Service struct {
+    repo repository.[EntitasUtama]Repository
+}
+
+func New[EntitasUtama]Service(repo repository.[EntitasUtama]Repository) *[EntitasUtama]Service {
+    return &[EntitasUtama]Service{repo: repo}
+}
+
+func (s *[EntitasUtama]Service) Create(ctx context.Context, ownerID int64, nama string) (*domain.[EntitasUtama], error) {
+    if strings.TrimSpace(nama) == "" {
+        return nil, fmt.Errorf("%w: nama wajib diisi", domain.ErrInvalidInput)
+    }
+
+    // [ATURAN BISNIS] contoh: cek apakah pemilik sudah punya [entitas_utama]
+    existing, err := s.repo.GetByOwnerID(ctx, ownerID)
+    if err != nil && !errors.Is(err, domain.Err[EntitasUtama]NotFound) {
+        return nil, err
+    }
+    if existing != nil {
+        return nil, fmt.Errorf("%w: pengguna sudah memiliki [entitas_utama]", domain.ErrConflict)
+    }
+
+    e := &domain.[EntitasUtama]{[EntitasPemilik]ID: ownerID, Nama: nama}
+    if err := s.repo.Create(ctx, e); err != nil {
+        return nil, fmt.Errorf("create [entitas_utama]: %w", err)
+    }
+    return e, nil
+}</code></pre></div>
+    <p>Contoh <strong>aturan bisnis khas</strong> yang biasa muncul di proyek mahasiswa (ganti sesuai domain):</p>
+    <ul>
+      <li><strong>Peminjaman buku</strong> — tidak boleh pinjam jika masih ada buku yang belum dikembalikan.</li>
+      <li><strong>Parkir</strong> — hitung tarif berdasarkan selisih waktu masuk-keluar.</li>
+      <li><strong>Booking lapangan</strong> — cegah bentrok jadwal (overlap time slot).</li>
+      <li><strong>Laundry</strong> — status pesanan hanya boleh berubah sesuai urutan (diterima &rarr; diproses &rarr; selesai).</li>
+    </ul>
+    <p>Pola penanganannya sama: <strong>validasi di awal method service</strong>, lempar error domain (<code>ErrInvalidInput</code>, <code>ErrConflict</code>, <code>ErrForbidden</code>), baru dipetakan ke kode HTTP di handler.</p>
+
+    <h2 id="s7"><span class="badge">06</span>Middleware</h2>
+    <p>Middleware auth ini <strong>100% dapat dipakai ulang tanpa perubahan</strong> di proyek apa pun, karena tidak bergantung pada entitas:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/auth.go</span></div><pre><code>package middleware
+
+func Auth(jwtSecret string) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            header := r.Header.Get("Authorization")
+            if !strings.HasPrefix(header, "Bearer ") {
+                writeError(w, http.StatusUnauthorized, "token tidak ditemukan")
+                return
+            }
+            tokenStr := strings.TrimPrefix(header, "Bearer ")
+            claims := &Claims{}
+            token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+                return []byte(jwtSecret), nil
+            })
+            if err != nil || !token.Valid {
+                writeError(w, http.StatusUnauthorized, "token tidak valid")
+                return
+            }
+            ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
+            next.ServeHTTP(w, r.WithContext(ctx))
+        })
+    }
+}</code></pre></div>
+    <p>Middleware tambahan yang perlu disesuaikan <strong>hanya jika proyekmu punya role berbeda</strong>:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/middleware/role.go</span></div><pre><code>func RequireRole(allowed ...string) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            role := RoleFromContext(r.Context())
+            if !slices.Contains(allowed, role) {
+                writeError(w, http.StatusForbidden, "tidak punya akses")
+                return
+            }
+            next.ServeHTTP(w, r)
+        })
+    }
+}</code></pre></div>
+    <p>Pakai di router: <code>router.With(middleware.RequireRole("admin")).Delete(...)</code>.</p>
+    <p>Middleware lain yang sebaiknya selalu ada (generik, lihat checklist produksi di bagian 11): <code>Logging</code>, <code>Recovery</code> (menangkap panic agar server tidak mati), <code>CORS</code>.</p>
+
+    <h2 id="s8"><span class="badge">07</span>Handler &amp; Routing</h2>
+    <p>Pola handler <strong>identik</strong> dengan Pertemuan 4 bagian 10.8&ndash;10.9, hanya nama struct dan field yang berubah:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/[entitas_utama]_handler.go</span></div><pre><code>func (h *[EntitasUtama]Handler) Create(w http.ResponseWriter, r *http.Request) {
+    ownerID := middleware.UserIDFromContext(r.Context())
+
+    var req struct {
+        Nama string `json:"nama" validate:"required"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        writeError(w, http.StatusBadRequest, "body tidak valid")
+        return
+    }
+
+    e, err := h.svc.Create(r.Context(), ownerID, req.Nama)
+    switch {
+    case errors.Is(err, domain.ErrConflict):
+        writeError(w, http.StatusConflict, err.Error())
+        return
+    case errors.Is(err, domain.ErrInvalidInput):
+        writeError(w, http.StatusBadRequest, err.Error())
+        return
+    case err != nil:
+        h.log.Error("create [entitas_utama]", "err", err)
+        writeError(w, http.StatusInternalServerError, "kesalahan server")
+        return
+    }
+    writeJSON(w, http.StatusCreated, e)
+}</code></pre></div>
+    <p>Routing dengan <code>net/http</code> (Go 1.22+, bawaan, tanpa framework tambahan):</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">cmd/api/main.go</span></div><pre><code>mux := http.NewServeMux()
+
+mux.HandleFunc("POST /auth/register", authHandler.Register)
+mux.HandleFunc("POST /auth/login", authHandler.Login)
+
+mux.Handle("GET /[entitas-utama]", authMW(http.HandlerFunc(entitasHandler.Get)))
+mux.Handle("POST /[entitas-utama]", authMW(http.HandlerFunc(entitasHandler.Create)))
+mux.Handle("PUT /[entitas-utama]/{id}", authMW(http.HandlerFunc(entitasHandler.Update)))
+mux.Handle("DELETE /[entitas-utama]/{id}", authMW(http.HandlerFunc(entitasHandler.Delete)))
+
+mux.Handle("POST /[entitas-utama]/{id}/[entitas-anak]", authMW(http.HandlerFunc(anakHandler.Create)))</code></pre></div>
+    <div class="note"><span class="lbl">Kalau ingin pakai framework router</span><p>Kalau tim lebih nyaman pakai <code>chi</code> (routing lebih ringkas untuk path param &amp; grouping), silakan — tapi untuk tugas kuliah skala kecil, <code>net/http</code> bawaan Go 1.22+ sudah cukup dan mengurangi dependency.</p></div>
+
+    <h2 id="s9"><span class="badge">08</span>File Upload</h2>
+    <p>Tidak semua proyek butuh upload file — lewati tahap ini kalau tidak relevan. Kalau butuh (foto produk, foto profil, dokumen bukti), polanya generik:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">internal/handler/upload_handler.go</span></div><pre><code>func (h *UploadHandler) UploadFoto(w http.ResponseWriter, r *http.Request) {
+    r.Body = http.MaxBytesReader(w, r.Body, 2&lt;&lt;20) // batas 2MB
+    file, header, err := r.FormFile("foto")
+    if err != nil {
+        writeError(w, http.StatusBadRequest, "file tidak ditemukan")
+        return
+    }
+    defer file.Close()
+
+    ext := strings.ToLower(filepath.Ext(header.Filename))
+    if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
+        writeError(w, http.StatusBadRequest, "format harus JPG/JPEG/PNG")
+        return
+    }
+
+    filename := fmt.Sprintf("%d_%d%s", ownerID, time.Now().UnixNano(), ext)
+    dst, err := os.Create(filepath.Join(h.uploadDir, filename))
+    if err != nil {
+        writeError(w, http.StatusInternalServerError, "gagal menyimpan file")
+        return
+    }
+    defer dst.Close()
+    io.Copy(dst, file)
+
+    writeJSON(w, http.StatusOK, map[string]string{"url": "/uploads/" + filename})
+}</code></pre></div>
+    <div class="warn"><span class="lbl">Checklist upload</span><p>Batasi ukuran (<code>MaxBytesReader</code>), validasi ekstensi <strong>dan</strong> isi file (jangan percaya nama file saja), nama file unik (hindari tabrakan/overwrite), simpan path relatif di database bukan path absolut. Untuk deployment, pertimbangkan simpan di storage eksternal (Cloudinary/S3) karena disk server biasanya tidak persisten di platform gratis.</p></div>
+
+    <h2 id="s10"><span class="badge">09</span>Dokumentasi Swagger</h2>
+    <p>Sama persis seperti Pertemuan 4 bagian 11 — tool <code>swaggo/swag</code> membaca anotasi komentar di atas tiap handler, tidak peduli nama entitasnya apa:</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">anotasi di atas handler</span></div><pre><code>// Create godoc
+// @Summary      Buat [entitas_utama] baru
+// @Tags         [entitas-utama]
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        body body CreateRequest true "Data [entitas_utama]"
+// @Success      201 {object} Response
+// @Failure      400 {object} ErrorResponse
+// @Router       /[entitas-utama] [post]
+func (h *[EntitasUtama]Handler) Create(w http.ResponseWriter, r *http.Request) { ... }</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>go install github.com/swaggo/swag/cmd/swag@latest
+swag init -g cmd/api/main.go -o docs</code></pre></div>
+    <p>Buka <code>http://localhost:8080/swagger/index.html</code> untuk memverifikasi kontrak endpoint sudah sesuai rancangan di bagian 00.</p>
+
+    <h2 id="s11"><span class="badge">10</span>Testing</h2>
+    <p>Minimal yang wajib ada per proyek:</p>
+    <ol>
+      <li><strong>Unit test service</strong> dengan fake repository (tidak perlu database asli):
+        <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><pre><code>type fake[EntitasUtama]Repo struct{ data map[int64]*domain.[EntitasUtama] }
+// implementasikan semua method interface, baca/tulis ke map in-memory</code></pre></div>
+      </li>
+      <li><strong>Test aturan bisnis spesifik proyek</strong> — ini yang paling penting untuk dinilai, karena membuktikan logika domainmu benar (contoh: test "tidak boleh pinjam buku yang stoknya 0").</li>
+      <li><strong>Handler test</strong> dengan <code>httptest.NewRecorder()</code> untuk memastikan status code dan format JSON respons benar.</li>
+    </ol>
+    <p>Jalankan dengan <code>go test ./... -v</code>, dan <code>go test ./... -race</code> kalau ada bagian yang menyentuh goroutine/concurrency.</p>
+
+    <h2 id="s12"><span class="badge">11</span>Checklist Deployment</h2>
+    <p>Checklist ini <strong>sama untuk semua proyek</strong>, tidak peduli domainnya:</p>
+    <ul>
+      <li><code>.env</code> tidak ikut ter-commit (<code>.gitignore</code> sudah benar), <code>.env.example</code> tersedia sebagai referensi.</li>
+      <li>Graceful shutdown (<code>signal.NotifyContext</code> + <code>srv.Shutdown</code>).</li>
+      <li>Timeout server (<code>ReadHeaderTimeout</code>, <code>WriteTimeout</code>, dst) sudah diset.</li>
+      <li>Password di-hash dengan bcrypt, bukan disimpan plain text.</li>
+      <li>Query database terparameter (<code>$1, $2</code>), tidak ada string concat SQL.</li>
+      <li>CORS dibatasi ke origin yang memang dipakai (frontend/Flutter app), bukan <code>*</code> kalau bisa dihindari.</li>
+      <li>Endpoint <code>/healthz</code> tersedia untuk cek server hidup.</li>
+      <li>Migration sudah dijalankan di database production (Neon/Railway/dsb), bukan cuma di lokal.</li>
+      <li>Swagger docs sinkron dengan endpoint yang benar-benar diimplementasikan.</li>
+    </ul>
+    <table>
+      <tr><th>Platform</th><th>Cocok untuk</th><th>Catatan</th></tr>
+      <tr><td>Railway / Render</td><td>Backend Go + auto-deploy dari GitHub</td><td>Paling mudah untuk pemula</td></tr>
+      <tr><td>Fly.io</td><td>Backend Go dengan Dockerfile</td><td>Butuh kartu kredit untuk verifikasi, ada free tier</td></tr>
+      <tr><td>Neon</td><td>Database PostgreSQL</td><td>Sudah dipakai sejak Pertemuan 4</td></tr>
+      <tr><td>VPS (opsional)</td><td>Kontrol penuh, untuk yang ingin belajar lebih dalam</td><td>Perlu setup Nginx reverse proxy + systemd service</td></tr>
+    </table>
+
+    <h2 id="s13"><span class="badge">12</span>Ringkasan: Generik vs Kustomisasi</h2>
+    <table>
+      <tr><th>Lapisan</th><th>Generik (pola sama)</th><th>Dikustomisasi per proyek</th></tr>
+      <tr><td>Struktur folder</td><td>Selalu sama</td><td>&mdash;</td></tr>
+      <tr><td>Config, koneksi DB</td><td>Selalu sama</td><td>&mdash;</td></tr>
+      <tr><td>Middleware auth JWT</td><td>Bisa dipakai ulang persis</td><td>Role tambahan jika ada multi-role</td></tr>
+      <tr><td>Repository (pola query)</td><td>Pola sama</td><td>Nama tabel/kolom, query spesifik</td></tr>
+      <tr><td>Service (aturan bisnis)</td><td>&mdash;</td><td>Ini jantung keunikan proyekmu</td></tr>
+      <tr><td>Handler &amp; response format</td><td>Pola sama</td><td>Field request/response</td></tr>
+      <tr><td>File upload</td><td>Pola sama (jika dipakai)</td><td>Jenis file, validasi spesifik</td></tr>
+      <tr><td>Swagger</td><td>Pola sama</td><td>Isi anotasi per endpoint</td></tr>
+      <tr><td>Testing</td><td>Pola sama</td><td>Skenario aturan bisnis yang diuji</td></tr>
+      <tr><td>Deployment</td><td>Checklist sama</td><td>Pilihan platform</td></tr>
+    </table>
+    <div class="verify"><span class="lbl">Pesan utama</span><p>Jangan takut proyekmu "beda sendiri" dari contoh UMKM — justru bagian 05 (Service/aturan bisnis) adalah tempat proyekmu seharusnya terlihat beda. Kalau seluruh backend-mu cuma CRUD tanpa aturan bisnis apa pun, itu tanda rancangan di bagian 00 belum cukup dalam — kembali diskusikan dengan dosen pembimbing.</p></div>
+
+    <footer>Panduan ini melengkapi Pertemuan 4 (studi kasus UMKM dengan Golang) dan dipakai sebagai acuan umum pada Pertemuan 10&ndash;13 (praktikum proyek sendiri), supaya setiap mahasiswa bisa membangun backend dengan arsitektur yang sama rapinya walau topik proyeknya berbeda-beda. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="index.html">Semua Pertemuan</a>
+      <a href="pertemuan-04.html">Studi Kasus UMKM dengan Golang</a>
+      <a href="pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="pertemuan-11.html">11. Membangun Backend Sendiri</a>
+      <a href="pertemuan-13.html">13. CRUD Lengkap</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>
