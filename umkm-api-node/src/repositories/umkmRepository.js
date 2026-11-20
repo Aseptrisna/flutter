@@ -1,63 +1,62 @@
-const pool = require('../db');
+const prisma = require('../db');
+
+// select eksplisit: created_at sengaja tidak ikut dikirim ke klien,
+// sama seperti daftar kolom pada SELECT versi SQL mentah sebelumnya.
+const umkmSelect = { id: true, user_id: true, nama: true, deskripsi: true, alamat: true, foto: true };
+
+// where dipakai bersama oleh findAll & count supaya filter pencarian selalu
+// konsisten. q kosong -> undefined -> Prisma mengabaikan filter sama sekali.
+function buildWhere(q) {
+  return q ? { nama: { contains: q, mode: 'insensitive' } } : undefined;
+}
 
 async function create(umkm) {
-  const { rows } = await pool.query(
-    `INSERT INTO umkm (user_id, nama, deskripsi, alamat, foto)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [umkm.user_id, umkm.nama, umkm.deskripsi, umkm.alamat, umkm.foto]
-  );
-  return { ...umkm, id: rows[0].id };
+  return prisma.umkm.create({
+    data: {
+      user_id: umkm.user_id,
+      nama: umkm.nama,
+      deskripsi: umkm.deskripsi,
+      alamat: umkm.alamat,
+      foto: umkm.foto,
+    },
+    select: umkmSelect,
+  });
 }
 
 // findAll mengambil daftar UMKM dengan pagination, opsional difilter nama (q).
-// q kosong berarti tidak difilter sama sekali.
 async function findAll(q, limit, offset) {
-  const { rows } = await pool.query(
-    `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm
-     WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')
-     ORDER BY id DESC LIMIT $2 OFFSET $3`,
-    [q, limit, offset]
-  );
-  return rows;
+  return prisma.umkm.findMany({
+    where: buildWhere(q),
+    orderBy: { id: 'desc' },
+    take: limit,
+    skip: offset,
+    select: umkmSelect,
+  });
 }
 
+// prisma.count() langsung mengembalikan Number -- tidak perlu lagi
+// Number(rows[0].count) seperti saat memakai node-postgres.
 async function count(q) {
-  const { rows } = await pool.query(
-    `SELECT COUNT(*) FROM umkm WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')`,
-    [q]
-  );
-  // node-postgres selalu membalas COUNT(*) sebagai STRING (karena tipe asli
-  // Postgres-nya bigint, lebih besar dari batas aman Number JS) -- wajib
-  // di-Number()-kan manual di sini, beda dengan Go yang otomatis men-scan
-  // ke tipe int.
-  return Number(rows[0].count);
+  return prisma.umkm.count({ where: buildWhere(q) });
 }
 
 async function findById(id) {
-  const { rows } = await pool.query(
-    'SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE id = $1',
-    [id]
-  );
-  return rows[0] || null;
+  return prisma.umkm.findUnique({ where: { id }, select: umkmSelect });
 }
 
 async function findByUserId(userId) {
-  const { rows } = await pool.query(
-    'SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE user_id = $1',
-    [userId]
-  );
-  return rows[0] || null;
+  return prisma.umkm.findUnique({ where: { user_id: userId }, select: umkmSelect });
 }
 
 async function update(umkm) {
-  await pool.query(
-    'UPDATE umkm SET nama = $1, deskripsi = $2, alamat = $3, foto = $4 WHERE id = $5',
-    [umkm.nama, umkm.deskripsi, umkm.alamat, umkm.foto, umkm.id]
-  );
+  await prisma.umkm.update({
+    where: { id: umkm.id },
+    data: { nama: umkm.nama, deskripsi: umkm.deskripsi, alamat: umkm.alamat, foto: umkm.foto },
+  });
 }
 
 async function remove(id) {
-  await pool.query('DELETE FROM umkm WHERE id = $1', [id]);
+  await prisma.umkm.delete({ where: { id } });
 }
 
 module.exports = { create, findAll, count, findById, findByUserId, update, remove };

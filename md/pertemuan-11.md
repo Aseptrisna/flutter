@@ -143,7 +143,7 @@ pola query aman (sintaks Postgres, berlaku untuk pgx maupun node-postgres)
     -- BERBAHAYA, JANGAN PERNAH DITULIS (menyambung string manual):
     -- "SELECT * FROM umkm WHERE nama ILIKE '%" + q + "%'"
 
-Query lengkap tiap fungsi repository (`FindAll`, `FindByID`, `Create`, `Update`, `Delete`) dengan penjelasan baris-per-baris sudah dibahas tuntas di [Pertemuan 9 Bagian 11](pertemuan-09.html#s11) (Go, pakai `pgx`) dan [Pertemuan 9a Bagian 10](pertemuan-09a.html#s10) (Node.js, pakai `pg` — perhatikan juga catatan penting soal `COUNT(*)` yang balik sebagai string di node-postgres, wajib `Number()`). Kalau butuh mengingat kembali fundamental `SELECT`/`INSERT`/`UPDATE`/`DELETE`/`JOIN` satu per satu, itu ada di [Pertemuan 9 Bagian 04](pertemuan-09.html#s4) dan sudah kamu praktikkan sendiri di Pertemuan 10 Bagian 06.
+Query lengkap tiap fungsi repository (`FindAll`, `FindByID`, `Create`, `Update`, `Delete`) dengan penjelasan baris-per-baris sudah dibahas tuntas di [Pertemuan 9 Bagian 11](pertemuan-09.html#s11) (Go, pakai `pgx`) dan [Pertemuan 9a Bagian 10](pertemuan-09a.html#s10) (Node.js, pakai Prisma Client — perhatikan juga catatan penting soal kolom `Decimal` yang balik sebagai string/objek, wajib `Number()`). Kalau butuh mengingat kembali fundamental `SELECT`/`INSERT`/`UPDATE`/`DELETE`/`JOIN` satu per satu, itu ada di [Pertemuan 9 Bagian 04](pertemuan-09.html#s4) dan sudah kamu praktikkan sendiri di Pertemuan 10 Bagian 06.
 
 Tugas Kamu
 
@@ -164,7 +164,7 @@ Kode lengkap `saveUploadedFile`/`deleteFile`: [Pertemuan 9 Bagian 12](pertemuan-
 
 ### Migration database
 
-Skema yang kamu jalankan manual di Neon SQL Editor (Pertemuan 10) di proyek sungguhan sebaiknya dicatat sebagai *migration file* bernomor urut, bukan diubah diam-diam lewat SQL Editor setiap kali ada perubahan — supaya skema bisa dijalankan ulang identik di server mana pun. Untuk tugas kuliah skala kecil, cukup simpan `schema.sql`-mu di root proyek sebagai dokumentasi; kalau mau meniru persis pola migration bernomor seperti UMKM API, lihat [Pertemuan 9 Bagian 12](pertemuan-09.html#s12) ("Migration — `cmd/migrate/main.go`").
+Skema yang kamu jalankan manual di Neon SQL Editor (Pertemuan 10) di proyek sungguhan sebaiknya dicatat sebagai *migration file* bernomor urut, bukan diubah diam-diam lewat SQL Editor setiap kali ada perubahan — supaya skema bisa dijalankan ulang identik di server mana pun. Untuk tugas kuliah skala kecil, cukup simpan `schema.sql`-mu di root proyek sebagai dokumentasi; kalau mau meniru persis pola migration bernomor seperti UMKM API, lihat [Pertemuan 9 Bagian 12](pertemuan-09.html#s12) ("Migration — `cmd/migrate/main.go`"), atau untuk Node.js pakai Prisma Migrate (`npx prisma migrate dev`, lihat [Pertemuan 9a Bagian 05](pertemuan-09a.html#s5)) yang membuat berkas migrasi bernomor secara otomatis dari `schema.prisma`.
 
 Tugas Kamu
 

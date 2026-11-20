@@ -2,9 +2,9 @@
 
 Pertemuan 9a · Proyek Lengkap
 
-# Membangun umkm-api dengan Node.js, Express & PostgreSQL
+# Membangun umkm-api dengan Node.js, Express, Prisma & PostgreSQL
 
-Proyek `umkm-api` dari Pertemuan 4 dibangun aslinya pakai Golang. Materi ini membangun ULANG API yang **persis sama** — endpoint sama, aturan bisnis sama, bentuk respons JSON sama — tapi memakai **Node.js + Express + PostgreSQL (node-postgres)**, supaya terlihat jelas bahwa arsitektur (handler → service → repository) dan konsepnya (JWT, bcrypt, ownership, pagination, upload foto) itu universal, tidak terikat satu bahasa. Setiap baris kode di sini sudah benar-benar dijalankan & diuji end-to-end sebelum ditulis di sini — ikuti persis, dijamin menyala tanpa error.
+Proyek `umkm-api` dari Pertemuan 4 dibangun aslinya pakai Golang. Materi ini membangun ULANG API yang **persis sama** — endpoint sama, aturan bisnis sama, bentuk respons JSON sama — tapi memakai **Node.js + Express + Prisma ORM + PostgreSQL**, supaya terlihat jelas bahwa arsitektur (handler → service → repository) dan konsepnya (JWT, bcrypt, ownership, pagination, upload foto) itu universal, tidak terikat satu bahasa. Setiap baris kode di sini sudah benar-benar dijalankan & diuji end-to-end sebelum ditulis di sini — ikuti persis, dijamin menyala tanpa error.
 
 Daftar isi cepat
 
@@ -12,7 +12,7 @@ Daftar isi cepat
 2.  [02. Membuat Proyek dari Nol](#s2)
 3.  [03. Struktur Folder Final](#s3)
 4.  [04. Dependency di package.json](#s4)
-5.  [05. Skema Database (schema.sql)](#s5)
+5.  [05. Skema Database (Prisma Schema)](#s5)
 6.  [06. Environment & Koneksi DB](#s6)
 7.  [07. Error Handling Terpusat](#s7)
 8.  [08. Middleware: Auth JWT & Rate Limit](#s8)
@@ -41,7 +41,7 @@ Sebelum mulai, pastikan:
 
 Kenapa dibuat ulang, bukan sekadar dijelaskan?
 
-Membaca kode Go lalu kode Node yang melakukan hal sama, baris per baris, adalah cara tercepat membuktikan bahwa yang dipelajari di Pertemuan 4/9 bukan "cara Go", tapi "cara REST API dibangun" — `handler → service → repository`, JWT, bcrypt, dan SQL parameterized adalah konsep yang sama persis di balik bahasa apa pun.
+Membaca kode Go lalu kode Node yang melakukan hal sama, baris per baris, adalah cara tercepat membuktikan bahwa yang dipelajari di Pertemuan 4/9 bukan "cara Go", tapi "cara REST API dibangun" — `handler → service → repository`, JWT, bcrypt, dan query parameterized adalah konsep yang sama persis di balik bahasa apa pun.
 
 ## 02Membuat Proyek dari Nol
 
@@ -52,11 +52,12 @@ terminal
     mkdir umkm-api-node && cd umkm-api-node
     npm init -y
 
-    npm install express pg bcrypt jsonwebtoken multer cors dotenv express-rate-limit
-    npm install --save-dev nodemon
+    npm install express @prisma/client@6 bcrypt jsonwebtoken multer cors dotenv express-rate-limit
+    npm install --save-dev nodemon prisma@6
 
 - `express` — framework HTTP, setara `net/http` + `http.ServeMux` di Go.
-- `pg` (node-postgres) — driver PostgreSQL, setara `pgx` di Go.
+- `@prisma/client` — **Prisma Client**, pustaka query bertipe aman yang dihasilkan dari skema kita; menggantikan driver `pg` + SQL mentah. Setara peran `pgx` + `sqlc` di Go.
+- `prisma` (dev saja) — **Prisma CLI**: perintah `migrate` (membuat/mengubah tabel), `generate` (membuat Prisma Client), dan `studio` (GUI untuk melihat isi tabel). Setara `golang-migrate` di Go.
 - `bcrypt` — hashing password satu arah, setara `golang.org/x/crypto/bcrypt`.
 - `jsonwebtoken` — membuat & memverifikasi JWT, setara `golang-jwt/jwt`.
 - `multer` — middleware upload `multipart/form-data`, setara `r.ParseMultipartForm` manual di Go.
@@ -69,6 +70,11 @@ Versi Multer wajib 1.x, bukan 2.x
 
 Perintah di atas sengaja menghasilkan `multer@1.4.x` (bukan `2.x`) karena seluruh kode upload di materi ini ditulis & diuji untuk API Multer 1.x (`multer.diskStorage`, `.single()`), yang paling umum dipakai bersama Express 4. Kalau `npm install multer` ternyata menarik versi `2.x`, jalankan `npm install multer@1.4.5-lts.1` secara eksplisit.
 
+Prisma dipatok ke versi 6.x
+
+Materi ini ditulis & diuji dengan Prisma **6.x** (`provider = "prisma-client-js"`, `new PrismaClient()` polos). Prisma 7 ke atas mengubah cara konfigurasi (ada `prisma.config.ts` dan driver adapter wajib), sehingga kode di materi ini tidak bisa dipakai apa adanya. Itu sebabnya perintah di atas memakai `@6` / `prisma@6` — jangan dihapus.
+
+
 ## 03Struktur Folder Final
 
 Strukturnya sengaja dibuat semirip mungkin dengan `internal/` di proyek Go, supaya siapa pun yang sudah paham arsitektur `umkm-api` versi Go bisa langsung menebak isi tiap folder di versi Node ini:
@@ -80,13 +86,15 @@ struktur folder
     ├── .env                  (dibuat sendiri, JANGAN di-commit ke Git)
     ├── .env.example
     ├── .gitignore
-    ├── schema.sql
+    ├── prisma/
+    │   ├── schema.prisma     skema database (pengganti schema.sql)
+    │   └── migrations/       riwayat migrasi SQL, dibuat otomatis oleh Prisma
     ├── server.js             entry point
     ├── uploads/              foto UMKM & produk tersimpan di sini
     └── src/
         ├── app.js            daftar semua route Express
         ├── config.js         baca .env
-        ├── db.js             koneksi pg.Pool
+        ├── db.js             instance PrismaClient (koneksi database)
         ├── errors.js         kelas error kustom (AppError & turunannya)
         ├── middleware/
         │   ├── auth.js        requireAuth (verifikasi JWT)
@@ -96,7 +104,7 @@ struktur folder
         │   ├── response.js    ok() & paginated()
         │   ├── pagination.js  normalizePagination()
         │   └── upload.js      konfigurasi multer & helper file
-        ├── repositories/       akses database mentah (setara internal/repository Go)
+        ├── repositories/       akses database lewat Prisma Client (setara internal/repository Go)
         │   ├── userRepository.js
         │   ├── umkmRepository.js
         │   └── produkRepository.js
@@ -117,79 +125,193 @@ terminal
 
 ## 04Dependency di package.json
 
-Buka `package.json` yang dibuat `npm init -y` tadi, tambahkan bagian `scripts` (bagian `dependencies` sudah otomatis terisi dari `npm install` di Bagian 02, tidak perlu ditulis ulang manual):
+Buka `package.json` yang dibuat `npm init -y` tadi, tambahkan bagian `scripts` (bagian `dependencies` dan `devDependencies` sudah otomatis terisi dari `npm install` di Bagian 02, tidak perlu ditulis ulang manual):
 
 package.json
 
     {
       "name": "umkm-api-node",
       "version": "1.0.0",
-      "description": "REST API UMKM — Node.js + Express + PostgreSQL",
+      "description": "REST API UMKM — Node.js + Express + Prisma + PostgreSQL",
       "main": "server.js",
       "scripts": {
         "dev": "nodemon server.js",
-        "start": "node server.js"
+        "start": "node server.js",
+        "migrate": "prisma migrate deploy",
+        "migrate:dev": "prisma migrate dev",
+        "generate": "prisma generate",
+        "studio": "prisma studio",
+        "postinstall": "prisma generate"
       },
       "dependencies": {
+        "@prisma/client": "^6.19.0",
         "bcrypt": "^5.1.1",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",
         "express": "^4.19.2",
         "express-rate-limit": "^7.4.0",
         "jsonwebtoken": "^9.0.2",
-        "multer": "^1.4.5-lts.1",
-        "pg": "^8.12.0"
+        "multer": "^1.4.5-lts.1"
       },
       "devDependencies": {
-        "nodemon": "^3.1.4"
+        "nodemon": "^3.1.4",
+        "prisma": "^6.19.0"
       }
     }
 
-`npm run dev` nantinya dipakai sehari-hari selama development (auto-restart tiap simpan berkas), `npm start` dipakai saat deploy ke server sungguhan (tidak butuh auto-restart).
+- `npm run dev` — dipakai sehari-hari selama development (auto-restart tiap simpan berkas); `npm start` dipakai saat deploy ke server sungguhan (tidak butuh auto-restart).
+- `npm run migrate:dev` — membuat & menerapkan migrasi baru setiap `schema.prisma` berubah (hanya untuk development).
+- `npm run migrate` — menerapkan migrasi yang sudah ada tanpa membuat yang baru (aman untuk server produksi/deploy).
+- `npm run studio` — membuka Prisma Studio, GUI di browser untuk melihat & mengedit isi tabel.
+- `postinstall` — otomatis menjalankan `prisma generate` setiap kali `npm install`, supaya Prisma Client selalu ada setelah `git clone` baru atau deploy.
 
-## 05Skema Database (schema.sql)
 
-Skema tabelnya **persis sama** dengan versi Go (lihat Pertemuan 9 Bagian 04 "Desain Database") — ini penting supaya kedua versi API (Go & Node) bisa saling dipertukarkan tanpa mengubah data yang sudah ada:
+## 05Skema Database (Prisma Schema)
 
-schema.sql
+Skema tabelnya **persis sama** dengan versi Go (lihat Pertemuan 9 Bagian 04 "Desain Database") — ini penting supaya kedua versi API (Go & Node) bisa saling dipertukarkan tanpa mengubah data yang sudah ada. Bedanya, di sini kita **tidak menulis `CREATE TABLE` manual**: skema dideklarasikan sekali di `prisma/schema.prisma`, lalu Prisma memakainya untuk dua hal — membuat tabel di database (**migrate**) dan membuat Prisma Client yang tahu bentuk setiap tabel (**generate**).
 
-    CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        nama VARCHAR(100) NOT NULL,
-        email VARCHAR(150) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
+Buat folder `prisma/` lalu berkas `prisma/schema.prisma` (boleh juga lewat `npx prisma init --datasource-provider postgresql`, lalu ganti isinya dengan yang di bawah):
 
-    CREATE TABLE umkm (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-        nama VARCHAR(150) NOT NULL,
-        deskripsi TEXT,
-        alamat VARCHAR(255),
-        foto VARCHAR(255),
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
+prisma/schema.prisma
 
-    CREATE TABLE produk (
-        id SERIAL PRIMARY KEY,
-        umkm_id INTEGER NOT NULL REFERENCES umkm(id) ON DELETE CASCADE,
-        nama VARCHAR(150) NOT NULL,
-        harga NUMERIC(12,2) NOT NULL DEFAULT 0,
-        deskripsi TEXT,
-        foto VARCHAR(255),
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
+    // Skema database UMKM API — menggantikan schema.sql.
+    // Satu-satunya sumber kebenaran: dari file ini Prisma membuat tabel (migrate)
+    // sekaligus Prisma Client yang bertipe aman (generate).
 
-Jalankan sekali saja ke database Neon-mu (boleh database yang sama dengan versi Go kalau mau menimpa, atau buat proyek Neon baru supaya terpisah) lewat **Neon Console → SQL Editor**: tempel seluruh isi `schema.sql` di atas, klik Run. Atau lewat `psql` dari terminal kalau sudah pernah connect:
+    generator client {
+      provider = "prisma-client-js"
+    }
+
+    datasource db {
+      provider = "postgresql"
+      url      = env("DATABASE_URL")
+    }
+
+    model User {
+      id         Int      @id @default(autoincrement())
+      nama       String   @db.VarChar(100)
+      email      String   @unique @db.VarChar(150)
+      password   String   @db.VarChar(255)
+      created_at DateTime @default(now()) @db.Timestamp(6)
+
+      umkm Umkm?
+
+      @@map("users")
+    }
+
+    model Umkm {
+      id         Int      @id @default(autoincrement())
+      user_id    Int      @unique
+      nama       String   @db.VarChar(150)
+      deskripsi  String?
+      alamat     String?  @db.VarChar(255)
+      foto       String?  @db.VarChar(255)
+      created_at DateTime @default(now()) @db.Timestamp(6)
+
+      user   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+      produk Produk[]
+
+      @@map("umkm")
+    }
+
+    model Produk {
+      id         Int      @id @default(autoincrement())
+      umkm_id    Int
+      nama       String   @db.VarChar(150)
+      harga      Decimal  @default(0) @db.Decimal(12, 2)
+      deskripsi  String?
+      foto       String?  @db.VarChar(255)
+      created_at DateTime @default(now()) @db.Timestamp(6)
+
+      umkm Umkm @relation(fields: [umkm_id], references: [id], onDelete: Cascade)
+
+      @@index([umkm_id])
+      @@map("produk")
+    }
+
+Cara membacanya:
+
+- `model User` ↔ tabel `users`: nama model memakai huruf kapital tunggal (konvensi Prisma), sedangkan `@@map("users")` menjaga nama tabel aslinya tetap `users`, `umkm`, dan `produk` seperti di versi Go.
+- `@id @default(autoincrement())` ↔ `SERIAL PRIMARY KEY`. `@unique` ↔ `UNIQUE` — pada `Umkm.user_id` inilah yang membuat aturan **1 user = 1 UMKM**.
+- `String?` (tanda tanya) berarti kolom boleh `NULL` (`deskripsi`, `alamat`, `foto`); tanpa tanda tanya berarti `NOT NULL`.
+- `@relation(..., onDelete: Cascade)` ↔ `REFERENCES ... ON DELETE CASCADE`. Baris `umkm Umkm?` dan `produk Produk[]` adalah sisi sebaliknya dari relasi (hanya ada di Prisma Client, **tidak** jadi kolom di database).
+- Nama field `user_id` dan `umkm_id` sengaja ditulis snake_case (bukan `userId`) supaya bentuk JSON respons API **identik** dengan versi Go — Flutter tidak perlu diubah sama sekali.
+- `Decimal @db.Decimal(12, 2)` ↔ `NUMERIC(12,2)` untuk harga. Hati-hati: Prisma membalasnya sebagai objek `Decimal`, bukan angka biasa (dibahas di Bagian 10).
+
+Isi `.env` dulu (Bagian 06 di bawah) supaya `DATABASE_URL` tersedia, lalu jalankan migrasi pertama:
 
 terminal
 
-    psql "postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require" -f schema.sql
+    npx prisma migrate dev --name init
 
-Jangan jalankan dua kali ke database yang sama
+Perintah ini melakukan tiga hal sekaligus: (1) membuat berkas SQL di `prisma/migrations/<timestamp>_init/migration.sql`, (2) menjalankan SQL itu ke database-mu, (3) menjalankan `prisma generate` untuk membuat Prisma Client. SQL yang dihasilkan kurang lebih seperti ini — sama persis dengan `schema.sql` lama, hanya ditulis otomatis:
 
-`CREATE TABLE` tanpa `IF NOT EXISTS` akan gagal dengan error `relation "users" already exists` kalau tabelnya sudah ada. Itu wajar, bukan bug — artinya skema sudah terpasang, tidak perlu dijalankan ulang.
+prisma/migrations/<timestamp>_init/migration.sql
+
+    -- CreateTable
+    CREATE TABLE "users" (
+        "id" SERIAL NOT NULL,
+        "nama" VARCHAR(100) NOT NULL,
+        "email" VARCHAR(150) NOT NULL,
+        "password" VARCHAR(255) NOT NULL,
+        "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+        CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+    );
+
+    -- CreateTable
+    CREATE TABLE "umkm" (
+        "id" SERIAL NOT NULL,
+        "user_id" INTEGER NOT NULL,
+        "nama" VARCHAR(150) NOT NULL,
+        "deskripsi" TEXT,
+        "alamat" VARCHAR(255),
+        "foto" VARCHAR(255),
+        "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+        CONSTRAINT "umkm_pkey" PRIMARY KEY ("id")
+    );
+
+    -- CreateTable
+    CREATE TABLE "produk" (
+        "id" SERIAL NOT NULL,
+        "umkm_id" INTEGER NOT NULL,
+        "nama" VARCHAR(150) NOT NULL,
+        "harga" DECIMAL(12,2) NOT NULL DEFAULT 0,
+        "deskripsi" TEXT,
+        "foto" VARCHAR(255),
+        "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+        CONSTRAINT "produk_pkey" PRIMARY KEY ("id")
+    );
+
+    -- CreateIndex
+    CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+    -- CreateIndex
+    CREATE UNIQUE INDEX "umkm_user_id_key" ON "umkm"("user_id");
+
+    -- CreateIndex
+    CREATE INDEX "produk_umkm_id_idx" ON "produk"("umkm_id");
+
+    -- AddForeignKey
+    ALTER TABLE "umkm" ADD CONSTRAINT "umkm_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+    -- AddForeignKey
+    ALTER TABLE "produk" ADD CONSTRAINT "produk_umkm_id_fkey" FOREIGN KEY ("umkm_id") REFERENCES "umkm"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+Setiap kali kamu mengubah `schema.prisma` (tambah kolom, tambah tabel), cukup jalankan lagi `npx prisma migrate dev --name nama_perubahan` — Prisma membandingkan skema dengan database, lalu membuat berkas migrasi baru yang bernomor urut. Seluruh folder `prisma/migrations/` ikut di-commit ke Git sebagai riwayat perubahan skema. Di server produksi/deploy, jalankan `npx prisma migrate deploy` (hanya menerapkan migrasi yang belum jalan, tidak pernah membuat yang baru).
+
+Mau melihat isi tabel tanpa menulis query? Jalankan `npx prisma studio` — terbuka halaman di browser berisi tabel `users`, `umkm`, dan `produk` yang bisa dilihat dan diedit langsung.
+
+Database Neon yang sudah pernah menjalankan schema.sql
+
+Kalau `DATABASE_URL`-mu menunjuk ke database yang tabelnya sudah dibuat dari `schema.sql` versi lama, `prisma migrate dev` akan menolak dengan error `P3005` / meminta *reset* (yang menghapus data). Dua jalan keluarnya: (a) pakai project/database Neon baru yang kosong, atau (b) "baseline" — tandai migrasi `init` sebagai sudah diterapkan tanpa menjalankannya: `npx prisma migrate resolve --applied <timestamp>_init`.
+
+Neon: pakai connection string direct untuk migrate
+
+Prisma Migrate memakai *advisory lock* dan shadow database yang sering bermasalah lewat connection pooler. Kalau `migrate dev` menggantung atau gagal di Neon, salin connection string **Direct** (tanpa `-pooler` di nama host) dari Neon Console → Connection Details untuk menjalankan migrasi.
+
 
 ## 06Environment & Koneksi Database
 
@@ -223,41 +345,37 @@ src/config.js
     }
 
     module.exports = {
-      databaseUrl: process.env.DATABASE_URL,
       jwtSecret: process.env.JWT_SECRET,
       port: getOrDefault('PORT', '8080'),
       uploadDir: getOrDefault('UPLOAD_DIR', './uploads'),
     };
 
-### db.js — koneksi pg.Pool
+### db.js — instance PrismaClient
 
 src/db.js
 
-    const { Pool } = require('pg');
-    const config = require('./config');
+    const { PrismaClient } = require('@prisma/client');
 
-    // Neon mewajibkan koneksi SSL. Kita deteksi dari connection string supaya
-    // kode yang sama tetap bisa dipakai untuk Postgres lokal (tanpa SSL) saat
-    // development, dan ke Neon (dengan SSL) saat connection string-nya memuat
-    // "sslmode=require".
-    const useSsl = (config.databaseUrl || '').includes('sslmode=require');
-
-    const pool = new Pool({
-      connectionString: config.databaseUrl,
-      ssl: useSsl ? { rejectUnauthorized: false } : false,
+    // Satu instance PrismaClient dipakai bersama seluruh aplikasi. PrismaClient
+    // sudah mengelola connection pool sendiri, jadi JANGAN membuat instance baru
+    // di tiap repository/request. Koneksi SSL untuk Neon otomatis ikut dari
+    // "sslmode=require" di DATABASE_URL -- tidak perlu konfigurasi ssl manual.
+    const prisma = new PrismaClient({
+      log: ['warn', 'error'],
     });
 
-    pool.on('error', (err) => {
-      console.error('Koneksi database bermasalah:', err.message);
-    });
+    module.exports = prisma;
 
-    module.exports = pool;
+Perhatikan `config.js` tidak lagi memuat `databaseUrl`: Prisma membaca `DATABASE_URL` sendiri lewat `env("DATABASE_URL")` di `schema.prisma` (dan otomatis memuat berkas `.env` di root proyek). `PrismaClient` setara `pgxpool.Pool` di Go: ia mengelola kumpulan koneksi sendiri, dipakai bergantian oleh tiap query.
 
-`pg.Pool` setara `pgxpool.Pool` di Go: ia menyimpan sekumpulan koneksi yang dipakai bergantian oleh tiap query, bukan membuka-tutup koneksi baru setiap kali — jauh lebih cepat untuk server yang melayani banyak request sekaligus.
+Satu PrismaClient untuk seluruh aplikasi
 
-Kenapa ssl: { rejectUnauthorized: false }, bukan true?
+Selalu `require('../db')` dari repository — **jangan** menulis `new PrismaClient()` di tiap file. Setiap instance membuka connection pool sendiri; membuat banyak instance cepat menghabiskan jatah koneksi database (Neon gratis terbatas), dan gejalanya baru muncul belakangan sebagai error `Too many connections`.
 
-Secara prinsip `rejectUnauthorized: true` lebih aman (memverifikasi sertifikat SSL server secara ketat). Tapi banyak environment Node (terutama versi lama atau kontainer minimal) tidak punya daftar root certificate yang lengkap untuk memverifikasi rantai sertifikat Neon, sehingga koneksi gagal dengan error `self-signed certificate in certificate chain` walau sebenarnya aman. `false` dipakai di sini supaya tutorial ini pasti berhasil tersambung di komputer siapa pun — untuk proyek produksi sungguhan, pelajari lebih lanjut opsi `ca` di dokumentasi `node-postgres`.
+SSL ke Neon tidak perlu diatur manual
+
+Berbeda dengan `pg.Pool` yang butuh opsi `ssl: { rejectUnauthorized: false }`, Prisma otomatis mengaktifkan SSL kalau `DATABASE_URL` memuat `?sslmode=require` (bentuk standar dari Neon Console). Jadi tidak ada kode SSL di `db.js` dan tidak ada lagi error `self-signed certificate`.
+
 
 ## 07Error Handling Terpusat
 
@@ -498,133 +616,136 @@ Bedanya dengan Go: Go menyimpan file manual lewat `io.Copy` satu per satu di dal
 
 ## 10Repository Layer
 
-Setiap query di sini adalah terjemahan **baris-per-baris** dari repository Go di Pertemuan 9 Bagian 11 — bandingkan langsung kalau perlu.
+Layer ini yang paling banyak berubah dibanding versi `pg`: tidak ada lagi string SQL dan array parameter `$1, $2` — semua query ditulis sebagai pemanggilan method Prisma Client. **Antarmuka tiap fungsi repository sama persis** dengan sebelumnya (nama, parameter, nilai kembali), jadi service, handler, dan route di Bagian 11-14 tidak perlu diubah sama sekali.
+
+| Operasi | SQL mentah (pg) | Prisma Client |
+|----|----|----|
+| Ambil satu baris | `SELECT ... WHERE id = $1` lalu `rows[0] || null` | `prisma.umkm.findUnique({ where: { id } })` → langsung `null` kalau tidak ada |
+| Ambil banyak + pagination | `ORDER BY id DESC LIMIT $2 OFFSET $3` | `findMany({ orderBy, take, skip })` |
+| Pencarian nama | `nama ILIKE '%' \|\| $1 \|\| '%'` | `where: { nama: { contains: q, mode: 'insensitive' } }` |
+| Hitung baris | `SELECT COUNT(*)` lalu `Number(rows[0].count)` | `prisma.umkm.count({ where })` → sudah berupa `Number` |
+| Tambah | `INSERT ... RETURNING id` | `create({ data })` → mengembalikan baris yang baru dibuat |
+| Ubah / hapus | `UPDATE ... WHERE` / `DELETE ... WHERE` | `update({ where, data })` / `delete({ where })` |
 
 ### userRepository.js
 
 src/repositories/userRepository.js
 
-    const pool = require('../db');
+    const prisma = require('../db');
+
+    const userSelect = { id: true, nama: true, email: true, password: true };
 
     async function create(user) {
-      const { rows } = await pool.query(
-        'INSERT INTO users (nama, email, password) VALUES ($1, $2, $3) RETURNING id',
-        [user.nama, user.email, user.password]
-      );
-      return { ...user, id: rows[0].id };
+      return prisma.user.create({
+        data: { nama: user.nama, email: user.email, password: user.password },
+        select: userSelect,
+      });
     }
 
     async function findByEmail(email) {
-      const { rows } = await pool.query(
-        'SELECT id, nama, email, password FROM users WHERE email = $1',
-        [email]
-      );
-      return rows[0] || null;
+      return prisma.user.findUnique({ where: { email }, select: userSelect });
     }
 
     async function findById(id) {
-      const { rows } = await pool.query(
-        'SELECT id, nama, email, password FROM users WHERE id = $1',
-        [id]
-      );
-      return rows[0] || null;
+      return prisma.user.findUnique({ where: { id }, select: userSelect });
     }
 
     async function updateProfile(id, nama, email) {
-      await pool.query('UPDATE users SET nama = $1, email = $2 WHERE id = $3', [nama, email, id]);
+      await prisma.user.update({ where: { id }, data: { nama, email } });
     }
 
     async function updatePassword(id, hashedPassword) {
-      await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, id]);
+      await prisma.user.update({ where: { id }, data: { password: hashedPassword } });
     }
 
     module.exports = { create, findByEmail, findById, updateProfile, updatePassword };
 
-pgx.ErrNoRows jadi null, bukan exception
+Di mana "tidak ketemu" ditangani?
 
-Di Go, baris yang tidak ketemu membuat `pgx` mengembalikan error `pgx.ErrNoRows` yang lalu dikonversi jadi `domain.ErrNotFound`. `node-postgres` tidak melempar error untuk kasus "tidak ketemu" — ia cuma mengembalikan `rows` kosong (`[]`). Pola `rows[0] || null` di sinilah titik yang setara: repository Node mengembalikan `null`, dan **service**-lah (Bagian 11-12) yang memutuskan melempar `NotFoundError` kalau hasilnya `null` — persis seperti Go, cuma titik konversinya satu layer lebih ke atas.
+Di Go, baris yang tidak ketemu membuat `pgx` mengembalikan `pgx.ErrNoRows` yang lalu dikonversi jadi `domain.ErrNotFound`. Prisma `findUnique` tidak melempar error untuk kasus ini — ia mengembalikan `null`. Repository meneruskan `null` apa adanya, dan **service**-lah (Bagian 11-12) yang memutuskan melempar `NotFoundError` — persis seperti Go, cuma titik konversinya satu layer lebih ke atas. Perhatikan juga `select: userSelect`: kita memilih kolom secara eksplisit (sama seperti daftar kolom di `SELECT` lama) supaya `created_at` tidak ikut terbawa.
 
 ### umkmRepository.js
 
 src/repositories/umkmRepository.js
 
-    const pool = require('../db');
+    const prisma = require('../db');
+
+    // select eksplisit: created_at sengaja tidak ikut dikirim ke klien,
+    // sama seperti daftar kolom pada SELECT versi SQL mentah sebelumnya.
+    const umkmSelect = { id: true, user_id: true, nama: true, deskripsi: true, alamat: true, foto: true };
+
+    // where dipakai bersama oleh findAll & count supaya filter pencarian selalu
+    // konsisten. q kosong -> undefined -> Prisma mengabaikan filter sama sekali.
+    function buildWhere(q) {
+      return q ? { nama: { contains: q, mode: 'insensitive' } } : undefined;
+    }
 
     async function create(umkm) {
-      const { rows } = await pool.query(
-        `INSERT INTO umkm (user_id, nama, deskripsi, alamat, foto)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [umkm.user_id, umkm.nama, umkm.deskripsi, umkm.alamat, umkm.foto]
-      );
-      return { ...umkm, id: rows[0].id };
+      return prisma.umkm.create({
+        data: {
+          user_id: umkm.user_id,
+          nama: umkm.nama,
+          deskripsi: umkm.deskripsi,
+          alamat: umkm.alamat,
+          foto: umkm.foto,
+        },
+        select: umkmSelect,
+      });
     }
 
     // findAll mengambil daftar UMKM dengan pagination, opsional difilter nama (q).
-    // q kosong berarti tidak difilter sama sekali.
     async function findAll(q, limit, offset) {
-      const { rows } = await pool.query(
-        `SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm
-         WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')
-         ORDER BY id DESC LIMIT $2 OFFSET $3`,
-        [q, limit, offset]
-      );
-      return rows;
+      return prisma.umkm.findMany({
+        where: buildWhere(q),
+        orderBy: { id: 'desc' },
+        take: limit,
+        skip: offset,
+        select: umkmSelect,
+      });
     }
 
+    // prisma.count() langsung mengembalikan Number -- tidak perlu lagi
+    // Number(rows[0].count) seperti saat memakai node-postgres.
     async function count(q) {
-      const { rows } = await pool.query(
-        `SELECT COUNT(*) FROM umkm WHERE ($1 = '' OR nama ILIKE '%' || $1 || '%')`,
-        [q]
-      );
-      // node-postgres selalu membalas COUNT(*) sebagai STRING (karena tipe asli
-      // Postgres-nya bigint, lebih besar dari batas aman Number JS) -- wajib
-      // di-Number()-kan manual di sini, beda dengan Go yang otomatis men-scan
-      // ke tipe int.
-      return Number(rows[0].count);
+      return prisma.umkm.count({ where: buildWhere(q) });
     }
 
     async function findById(id) {
-      const { rows } = await pool.query(
-        'SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE id = $1',
-        [id]
-      );
-      return rows[0] || null;
+      return prisma.umkm.findUnique({ where: { id }, select: umkmSelect });
     }
 
     async function findByUserId(userId) {
-      const { rows } = await pool.query(
-        'SELECT id, user_id, nama, deskripsi, alamat, foto FROM umkm WHERE user_id = $1',
-        [userId]
-      );
-      return rows[0] || null;
+      return prisma.umkm.findUnique({ where: { user_id: userId }, select: umkmSelect });
     }
 
     async function update(umkm) {
-      await pool.query(
-        'UPDATE umkm SET nama = $1, deskripsi = $2, alamat = $3, foto = $4 WHERE id = $5',
-        [umkm.nama, umkm.deskripsi, umkm.alamat, umkm.foto, umkm.id]
-      );
+      await prisma.umkm.update({
+        where: { id: umkm.id },
+        data: { nama: umkm.nama, deskripsi: umkm.deskripsi, alamat: umkm.alamat, foto: umkm.foto },
+      });
     }
 
     async function remove(id) {
-      await pool.query('DELETE FROM umkm WHERE id = $1', [id]);
+      await prisma.umkm.delete({ where: { id } });
     }
 
     module.exports = { create, findAll, count, findById, findByUserId, update, remove };
 
-Jebakan klasik: COUNT(\*) bukan angka di node-postgres
+Filter pencarian opsional
 
-Ini bug yang nyaris selalu dilakukan pemula node-postgres: memakai `rows[0].count` langsung tanpa `Number()`, lalu heran kenapa `meta.total` di JSON hasilnya `"3"` (string, bertanda kutip) bukan `3`. Penyebabnya: Postgres mengembalikan `COUNT(*)` bertipe `bigint`, dan `pg` sengaja membalasnya sebagai string JavaScript (bukan `Number`) karena `bigint` bisa melebihi batas aman `Number` di JS. Fungsi `count()` di atas sudah menangani ini — jangan dihapus baris `Number(...)`-nya.
+`buildWhere(q)` mengembalikan `undefined` kalau `q` kosong, dan Prisma mengabaikan `where: undefined` — jadi tidak perlu lagi trik SQL `($1 = '' OR ...)`. Fungsi yang sama dipakai oleh `findAll` dan `count` supaya filter keduanya selalu konsisten (kalau tidak, `meta.total` bisa tidak cocok dengan isi `data`).
 
 ### produkRepository.js
 
 src/repositories/produkRepository.js
 
-    const pool = require('../db');
+    const prisma = require('../db');
 
-    // mapRow mengubah kolom "harga" (tipe NUMERIC di Postgres) dari string --
-    // begitulah node-postgres selalu membalasnya, supaya tidak diam-diam
-    // kehilangan presisi kalau dipaksa jadi float -- balik ke Number biasa,
+    const produkSelect = { id: true, umkm_id: true, nama: true, harga: true, deskripsi: true, foto: true };
+
+    // mapRow mengubah kolom "harga" (tipe Decimal di Prisma) menjadi Number biasa.
+    // Prisma membalas NUMERIC/Decimal sebagai objek Decimal (di JSON jadi STRING
+    // "15000") supaya tidak kehilangan presisi -- kita konversi balik ke Number,
     // setara float64 Harga di struct domain.Produk versi Go.
     function mapRow(row) {
       if (!row) return row;
@@ -632,50 +753,61 @@ src/repositories/produkRepository.js
     }
 
     async function create(produk) {
-      const { rows } = await pool.query(
-        `INSERT INTO produk (umkm_id, nama, harga, deskripsi, foto)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [produk.umkm_id, produk.nama, produk.harga, produk.deskripsi, produk.foto]
-      );
-      return { ...produk, id: rows[0].id };
+      const row = await prisma.produk.create({
+        data: {
+          umkm_id: produk.umkm_id,
+          nama: produk.nama,
+          harga: produk.harga,
+          deskripsi: produk.deskripsi,
+          foto: produk.foto,
+        },
+        select: produkSelect,
+      });
+      return mapRow(row);
     }
 
     async function findById(id) {
-      const { rows } = await pool.query(
-        'SELECT id, umkm_id, nama, harga, deskripsi, foto FROM produk WHERE id = $1',
-        [id]
-      );
-      return mapRow(rows[0]) || null;
+      return mapRow(await prisma.produk.findUnique({ where: { id }, select: produkSelect }));
     }
 
     async function findByUmkmId(umkmId, limit, offset) {
-      const { rows } = await pool.query(
-        `SELECT id, umkm_id, nama, harga, deskripsi, foto FROM produk
-         WHERE umkm_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3`,
-        [umkmId, limit, offset]
-      );
+      const rows = await prisma.produk.findMany({
+        where: { umkm_id: umkmId },
+        orderBy: { id: 'desc' },
+        take: limit,
+        skip: offset,
+        select: produkSelect,
+      });
       return rows.map(mapRow);
     }
 
     async function countByUmkmId(umkmId) {
-      const { rows } = await pool.query('SELECT COUNT(*) FROM produk WHERE umkm_id = $1', [umkmId]);
-      return Number(rows[0].count);
+      return prisma.produk.count({ where: { umkm_id: umkmId } });
     }
 
     async function update(produk) {
-      await pool.query(
-        'UPDATE produk SET nama = $1, harga = $2, deskripsi = $3, foto = $4 WHERE id = $5',
-        [produk.nama, produk.harga, produk.deskripsi, produk.foto, produk.id]
-      );
+      await prisma.produk.update({
+        where: { id: produk.id },
+        data: { nama: produk.nama, harga: produk.harga, deskripsi: produk.deskripsi, foto: produk.foto },
+      });
     }
 
     async function remove(id) {
-      await pool.query('DELETE FROM produk WHERE id = $1', [id]);
+      await prisma.produk.delete({ where: { id } });
     }
 
     module.exports = { create, findById, findByUmkmId, countByUmkmId, update, remove };
 
-Semua query di atas memakai parameter `$1, $2, ...`, persis seperti `pgx` di Go — nilai yang dikirim pengguna **tidak pernah** disambung manual ke string SQL, sehingga aman dari SQL injection dengan cara yang sama persis seperti dijelaskan di Pertemuan 9 Bagian 11.
+Jebakan klasik: Decimal bukan angka biasa
+
+Kolom `harga` bertipe `Decimal`, dan Prisma membalasnya sebagai objek `Decimal` (hasil `JSON.stringify`-nya berupa **string** `"15000.5"`, bukan angka `15000.5`) supaya presisi uang tidak hilang. Kalau `mapRow` dihapus, Flutter akan menerima `"harga": "15000.5"` dan gagal mem-parse-nya sebagai `double`. Fungsi `mapRow()` di atas mengubahnya kembali ke `Number` — jangan dihapus. Kabar baiknya, `count()` di Prisma sudah berupa `Number` sehingga jebakan `COUNT(*)` jadi string yang ada di node-postgres tidak ada lagi.
+
+Semua query Prisma Client otomatis **parameterized**: nilai yang dikirim pengguna (`q`, `email`, dll) dikirim ke database sebagai parameter terpisah, tidak pernah disambung ke string SQL — sehingga aman dari SQL injection dengan cara yang sama seperti `pgx` di Go. Satu-satunya pengecualian adalah `prisma.$queryRawUnsafe(...)` (nama "Unsafe"-nya sengaja): jangan dipakai dengan input pengguna.
+
+Kalau hapus/ubah target yang tidak ada
+
+`prisma.umkm.delete({ where: { id } })` melempar error `P2025` (record not found) kalau barisnya tidak ada, sedangkan `DELETE FROM umkm WHERE id = $1` diam saja. Di proyek ini aman karena service selalu memanggil `findById` dulu dan melempar `NotFoundError` sebelum `remove()`/`update()` dipanggil.
+
 
 ## 11Service Layer: Auth
 
@@ -1212,13 +1344,13 @@ server.js
 
     const app = require('./src/app');
     const config = require('./src/config');
-    const pool = require('./src/db');
+    const prisma = require('./src/db');
 
     async function main() {
       // Tes koneksi database lebih dulu, gagal cepat kalau DATABASE_URL salah
       // daripada membiarkan server menyala tapi semua endpoint error 500.
       try {
-        await pool.query('SELECT 1');
+        await prisma.$queryRaw`SELECT 1`;
         console.log('berhasil terhubung ke PostgreSQL');
       } catch (err) {
         console.error('gagal konek ke database:', err.message);
@@ -1232,7 +1364,10 @@ server.js
       // graceful shutdown
       const shutdown = () => {
         console.log('server dimatikan dengan aman');
-        server.close(() => pool.end(() => process.exit(0)));
+        server.close(async () => {
+          await prisma.$disconnect();
+          process.exit(0);
+        });
       };
       process.on('SIGINT', shutdown);
       process.on('SIGTERM', shutdown);
@@ -1240,19 +1375,21 @@ server.js
 
     main();
 
-Persis seperti `main.go`: tes koneksi database dulu sebelum membuka port (`db.Ping(ctx)` di Go, `pool.query('SELECT 1')` di sini), dan menangani sinyal `SIGINT`/`SIGTERM` untuk mematikan server dengan rapi (menyelesaikan request yang sedang berjalan dulu) alih-alih langsung dibunuh paksa.
+Persis seperti `main.go`: tes koneksi database dulu sebelum membuka port (`db.Ping(ctx)` di Go, `prisma.$queryRaw` dengan `SELECT 1` di sini), dan menangani sinyal `SIGINT`/`SIGTERM` untuk mematikan server dengan rapi (menyelesaikan request yang sedang berjalan dulu, lalu `prisma.$disconnect()` menutup koneksi database) alih-alih langsung dibunuh paksa.
+
 
 ### Langkah menjalankan dari nol
 
-1.  Pastikan `schema.sql` sudah dijalankan ke Neon (Bagian 05) dan `.env` sudah diisi lengkap (Bagian 06).
-2.  Install dependency: `npm install`.
+1.  Pastikan `.env` sudah diisi lengkap (Bagian 06) dan migrasi sudah diterapkan ke database: `npx prisma migrate deploy` (atau `npx prisma migrate dev` kalau ini pertama kali dan kamu sedang mengembangkan skema — Bagian 05).
+2.  Install dependency: `npm install` (otomatis menjalankan `prisma generate` lewat skrip `postinstall`).
 3.  Jalankan mode development (auto-restart): `npm run dev`.
 4.  Harus muncul di terminal: `berhasil terhubung ke PostgreSQL` lalu `server berjalan di port 8080`.
 5.  Tes cepat: buka `http://localhost:8080/healthz` di browser, atau `curl http://localhost:8080/healthz` — harus balas kosong dengan status `200`.
 
 Checkpoint
 
-Kalau langkah 5 berhasil (200 OK), seluruh fondasi (koneksi database, Express, middleware) sudah benar. Lanjut ke Bagian 16 untuk menguji seluruh alur CRUD lengkap.
+Kalau langkah 5 berhasil (200 OK), seluruh fondasi (koneksi database, Prisma, Express, middleware) sudah benar. Lanjut ke Bagian 16 untuk menguji seluruh alur CRUD lengkap.
+
 
 ## 16Testing Lengkap via curl
 
@@ -1360,7 +1497,7 @@ terminal
     curl -s -w "\nHTTP:%{http_code}\n" http://localhost:8080/api/produk/1
     # {"error":{"message":"produk tidak ditemukan","code":"NOT_FOUND"}}  HTTP:404
 
-### 6. SQL injection tetap aman
+### 6. SQL injection tetap aman (Prisma otomatis parameterized)
 
 terminal
 
@@ -1391,16 +1528,17 @@ Ketujuh skenario ini dijalankan terhadap server Node.js + PostgreSQL 17 sungguha
 
 | Error yang muncul | Penyebab paling umum | Solusi |
 |----|----|----|
-| `ECONNREFUSED` saat start server | `DATABASE_URL` salah, atau Neon project sedang "sleep" (auto-suspend saat idle lama). | Cek ulang connection string di Neon Console, buka dashboard Neon sekali untuk membangunkan project-nya. |
-| `self-signed certificate in certificate chain` | Opsi `ssl` di `db.js` tidak aktif padahal connection string mengandung `sslmode=require`. | Pastikan `DATABASE_URL` di `.env` benar-benar memuat teks `sslmode=require` persis seperti itu — `db.js` mendeteksinya dari situ. |
-| `relation "users" already exists` | `schema.sql` dijalankan dua kali ke database yang sama. | Abaikan kalau memang tabelnya sudah ada; kalau mau mulai bersih, `DROP TABLE produk, umkm, users;` dulu baru jalankan ulang. |
+| `P1001: Can't reach database server` | `DATABASE_URL` salah, atau Neon project sedang "sleep" (auto-suspend saat idle lama). | Cek ulang connection string di Neon Console, buka dashboard Neon sekali untuk membangunkan project-nya, lalu coba lagi. |
+| `Environment variable not found: DATABASE_URL` | Berkas `.env` belum dibuat, salah nama, atau tidak berada di root proyek (sejajar `package.json`). | Salin `.env.example` jadi `.env` di root proyek dan isi `DATABASE_URL`-nya; jalankan Prisma CLI dari folder root itu. |
+| `P3005: The database schema is not empty` | Database sudah berisi tabel (mis. dari `schema.sql` versi lama) sehingga `migrate` tidak mau menimpa. | Pakai database kosong, atau baseline: `npx prisma migrate resolve --applied <timestamp>_init` (lihat Bagian 05). |
 | `EADDRINUSE: address already in use :::8080` | Server lama (dari `nodemon` atau terminal lain) masih berjalan di port yang sama. | Hentikan proses lama (`Ctrl+C` di terminal itu), atau ganti `PORT` di `.env`. |
 | Field form (`nama`, dll) selalu `undefined` di endpoint upload | Lupa memasang `uploadSingle(...)` di route, atau mengirim request sebagai JSON padahal field-nya ditulis sebagai `multipart/form-data`. | Endpoint yang menerima foto (buat/update UMKM & produk) wajib dikirim sebagai *form-data* (pakai `-F` di curl, bukan `-d` dengan JSON), dan route-nya wajib melalui `uploadSingle(...)`. |
 | `Unexpected field` dari multer | Nama field file di form-data tidak sama dengan nama field di `uploadSingle(subDir, fieldName)`. | Pastikan nama field upload selalu `foto` (huruf kecil semua), sama seperti didaftarkan di `app.js`. |
 | `JsonWebTokenError: jwt malformed` | Header `Authorization` terkirim kosong, atau menempelkan teks lain (bukan token asli) setelah "Bearer ". | Login ulang, salin token hasil `data.token` persis, cek tidak ada spasi/baris baru tambahan yang ikut tersalin. |
 | CORS error di console browser (saat dites dari Flutter Web) | Middleware `cors()` belum terpasang atau terpasang setelah route. | Pastikan `app.use(cors())` ada di baris paling atas `app.js`, sebelum route apa pun didaftarkan. |
 | Response menggantung tanpa balasan sama sekali (tidak error, tidak sukses) | Lupa `try/catch` di salah satu fungsi handler `async`, sehingga exception tidak pernah sampai ke `next(err)`. | Cek ulang semua handler punya pola `try { ... } catch (err) { next(err); }` seperti dijelaskan di Bagian 13. |
-| `meta.total` di JSON berupa `"3"` (string, bertanda kutip) | Lupa membungkus hasil `COUNT(*)` dengan `Number(...)` di repository. | Lihat kembali `count()`/`countByUmkmId()` di Bagian 10 — baris `Number(rows[0].count)` wajib ada. |
+| `harga` di JSON berupa `"15000"` (string, bertanda kutip) | Lupa mengonversi kolom `Decimal` dengan `Number(...)` di `produkRepository` (fungsi `mapRow`). | Lihat kembali `mapRow()` di Bagian 10 — pastikan dipakai di `create`, `findById`, dan `findByUmkmId`. |
+| `@prisma/client did not initialize yet` / `Cannot find module '.prisma/client'` | Prisma Client belum di-generate (mis. habis `git clone`, atau `postinstall` terlewat). | Jalankan `npx prisma generate`, lalu jalankan ulang server. |
 
 ## 18Perbandingan Go vs Node.js
 
@@ -1409,17 +1547,18 @@ Satu proyek, dua bahasa — tabel ini meringkas padanan tiap konsep, supaya kala
 | Konsep | Golang (umkm-api) | Node.js (umkm-api-node) |
 |----|----|----|
 | Web framework | `net/http` + `http.ServeMux` (bawaan Go 1.22+) | Express |
-| Driver database | `pgx` + `pgxpool.Pool` | `pg` (node-postgres) + `Pool` |
-| Error "tidak ketemu" dari DB | `pgx.ErrNoRows` → dikonversi manual jadi `domain.ErrNotFound` | `rows[0]` bernilai `undefined` → repository mengembalikan `null` |
+| ORM / driver database | `pgx` + `pgxpool.Pool` (SQL ditulis manual) | Prisma Client (query lewat method, SQL dibuat otomatis) di atas koneksi `PrismaClient` |
+| Error "tidak ketemu" dari DB | `pgx.ErrNoRows` → dikonversi manual jadi `domain.ErrNotFound` | `findUnique` mengembalikan `null` → service yang melempar `NotFoundError` |
 | Penanganan error di handler | `switch { case errors.Is(err, ...) }` diulang di tiap handler | `throw` kelas error kustom, ditangkap satu `errorHandler` terpusat |
 | Middleware auth | `func(http.Handler) http.Handler`, userID disisipkan ke `context.Context` | fungsi `(req, res, next)` biasa, userID ditempel langsung ke `req.userId` |
 | Rate limiting | `golang.org/x/time/rate`, `map[string]*rate.Limiter` ditulis manual per IP | `express-rate-limit`, penghitung per IP sudah dibungkus library |
 | Hashing password | `golang.org/x/crypto/bcrypt` | `bcrypt` (binding native ke algoritma yang sama) |
 | JWT | `golang-jwt/jwt/v5`, klaim lewat `jwt.MapClaims` | `jsonwebtoken`, klaim lewat object literal biasa |
 | Upload file | `r.ParseMultipartForm` + `io.Copy` manual | `multer` (`diskStorage` + `fileFilter`) |
-| Tipe data numerik dari DB | di-`Scan` otomatis ke tipe Go asli (`int`, `float64`) | `bigint`/`numeric` selalu balik sebagai **string**, wajib `Number()` manual |
+| Tipe data numerik dari DB | di-`Scan` otomatis ke tipe Go asli (`int`, `float64`) | `count()` sudah `Number`, tapi kolom `Decimal` (harga) berupa objek/string → wajib `Number()` manual |
 | Concurrency model | goroutine, tiap request punya *thread* ringan sendiri | single-threaded + event loop, `async/await` untuk I/O non-blocking |
 | Dokumentasi API | Swagger via komentar `// @Summary` dkk (swaggo) | bisa ditambah `swagger-jsdoc` + `swagger-ui-express` dengan pola komentar serupa (di luar cakupan materi ini) |
+| Skema & migrasi | `golang-migrate` — berkas `.sql` bernomor ditulis tangan | Prisma Migrate — tulis `schema.prisma`, SQL migrasi dibuat otomatis |
 
 Satu pelajaran terpenting dari perbandingan ini
 
@@ -1428,9 +1567,11 @@ Baris kode berbeda, library berbeda, bahkan model concurrency-nya berbeda total 
 ## 19Latihan
 
 1.  Tambahkan endpoint `GET /api/umkm/:id/produk/:produkId` yang memvalidasi produk tersebut benar-benar milik UMKM dengan `:id` itu (bukan cuma dicari lewat `produkId` saja) — balas `404` kalau tidak cocok.
-2.  Tambahkan validasi panjang maksimal `nama` (mis. 150 karakter) di `umkmService.createOwn`, balas `InvalidInputError` kalau melebihi — cek juga kolom `VARCHAR(150)` di skema supaya konsisten.
+2.  Tambahkan validasi panjang maksimal `nama` (mis. 150 karakter) di `umkmService.createOwn`, balas `InvalidInputError` kalau melebihi — cek juga `@db.VarChar(150)` di `schema.prisma` supaya konsisten.
 3.  Ganti `express-rate-limit` default (disimpan di memori) menjadi versi yang disimpan di Redis, supaya rate limit tetap konsisten walau server di-restart atau dijalankan lebih dari satu instance.
 4.  **Tantangan:** tambahkan `swagger-jsdoc` + `swagger-ui-express`, tulis dokumentasi untuk seluruh endpoint di atas memakai komentar JSDoc, supaya ada halaman `/docs` yang setara `/swagger/` di versi Go.
 5.  **Tantangan integrasi:** jalankan server Node ini di port berbeda dari versi Go (mis. 8081), lalu ubah `baseUrl` di `ApiService` Flutter (Pertemuan 7) untuk sementara menunjuk ke situ — buktikan aplikasi `umkm-app` yang sama persis bisa jalan tanpa perubahan kode Flutter sedikit pun, baik menunjuk ke backend Go maupun Node.
+6.  Tambahkan model `Kategori` (id, nama) di `schema.prisma` dengan relasi satu-ke-banyak ke `Produk`, lalu jalankan `npx prisma migrate dev --name tambah_kategori`. Buka berkas SQL baru di `prisma/migrations/` dan jelaskan apa yang berubah dibanding migrasi `init`.
+7.  Ubah endpoint detail UMKM supaya sekalian menyertakan daftar produknya dalam **satu** query memakai `include` (`prisma.umkm.findUnique({ where: { id }, include: { produk: true } })`). Bandingkan dengan pendekatan dua query terpisah (`findById` + `findByUmkmId`) — apa untung-ruginya?
 
-Dengan panduan ini, proyek `umkm-api` yang sama bisa dibangun ulang dari nol dengan stack Node.js + Express + PostgreSQL kapan pun dibutuhkan — seluruh endpoint, aturan bisnis, dan skema database identik dengan versi Golang di Pertemuan 4/9, dan setiap baris kodenya sudah diuji berjalan nyata sebelum materi ini ditulis. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung
+Dengan panduan ini, proyek `umkm-api` yang sama bisa dibangun ulang dari nol dengan stack Node.js + Express + Prisma + PostgreSQL kapan pun dibutuhkan — seluruh endpoint, aturan bisnis, dan skema database identik dengan versi Golang di Pertemuan 4/9, dan setiap baris kodenya sudah diuji berjalan nyata sebelum materi ini ditulis. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung

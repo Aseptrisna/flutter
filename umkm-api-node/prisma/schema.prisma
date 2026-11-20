@@ -1,0 +1,54 @@
+// Skema database UMKM API — menggantikan schema.sql.
+// Satu-satunya sumber kebenaran: dari file ini Prisma membuat tabel (migrate)
+// sekaligus Prisma Client yang bertipe aman (generate).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  nama       String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  umkm Umkm?
+
+  @@map("users")
+}
+
+model Umkm {
+  id         Int      @id @default(autoincrement())
+  user_id    Int      @unique
+  nama       String   @db.VarChar(150)
+  deskripsi  String?
+  alamat     String?  @db.VarChar(255)
+  foto       String?  @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  user   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  produk Produk[]
+
+  @@map("umkm")
+}
+
+model Produk {
+  id         Int      @id @default(autoincrement())
+  umkm_id    Int
+  nama       String   @db.VarChar(150)
+  harga      Decimal  @default(0) @db.Decimal(12, 2)
+  deskripsi  String?
+  foto       String?  @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  umkm Umkm @relation(fields: [umkm_id], references: [id], onDelete: Cascade)
+
+  @@index([umkm_id])
+  @@map("produk")
+}

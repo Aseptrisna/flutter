@@ -1,35 +1,28 @@
-const pool = require('../db');
+const prisma = require('../db');
+
+const userSelect = { id: true, nama: true, email: true, password: true };
 
 async function create(user) {
-  const { rows } = await pool.query(
-    'INSERT INTO users (nama, email, password) VALUES ($1, $2, $3) RETURNING id',
-    [user.nama, user.email, user.password]
-  );
-  return { ...user, id: rows[0].id };
+  return prisma.user.create({
+    data: { nama: user.nama, email: user.email, password: user.password },
+    select: userSelect,
+  });
 }
 
 async function findByEmail(email) {
-  const { rows } = await pool.query(
-    'SELECT id, nama, email, password FROM users WHERE email = $1',
-    [email]
-  );
-  return rows[0] || null;
+  return prisma.user.findUnique({ where: { email }, select: userSelect });
 }
 
 async function findById(id) {
-  const { rows } = await pool.query(
-    'SELECT id, nama, email, password FROM users WHERE id = $1',
-    [id]
-  );
-  return rows[0] || null;
+  return prisma.user.findUnique({ where: { id }, select: userSelect });
 }
 
 async function updateProfile(id, nama, email) {
-  await pool.query('UPDATE users SET nama = $1, email = $2 WHERE id = $3', [nama, email, id]);
+  await prisma.user.update({ where: { id }, data: { nama, email } });
 }
 
 async function updatePassword(id, hashedPassword) {
-  await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, id]);
+  await prisma.user.update({ where: { id }, data: { password: hashedPassword } });
 }
 
 module.exports = { create, findByEmail, findById, updateProfile, updatePassword };

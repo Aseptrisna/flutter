@@ -1,8 +1,10 @@
-const pool = require('../db');
+const prisma = require('../db');
 
-// mapRow mengubah kolom "harga" (tipe NUMERIC di Postgres) dari string --
-// begitulah node-postgres selalu membalasnya, supaya tidak diam-diam
-// kehilangan presisi kalau dipaksa jadi float -- balik ke Number biasa,
+const produkSelect = { id: true, umkm_id: true, nama: true, harga: true, deskripsi: true, foto: true };
+
+// mapRow mengubah kolom "harga" (tipe Decimal di Prisma) menjadi Number biasa.
+// Prisma membalas NUMERIC/Decimal sebagai objek Decimal (di JSON jadi STRING
+// "15000") supaya tidak kehilangan presisi -- kita konversi balik ke Number,
 // setara float64 Harga di struct domain.Produk versi Go.
 function mapRow(row) {
   if (!row) return row;
@@ -10,45 +12,47 @@ function mapRow(row) {
 }
 
 async function create(produk) {
-  const { rows } = await pool.query(
-    `INSERT INTO produk (umkm_id, nama, harga, deskripsi, foto)
-     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-    [produk.umkm_id, produk.nama, produk.harga, produk.deskripsi, produk.foto]
-  );
-  return { ...produk, id: rows[0].id };
+  const row = await prisma.produk.create({
+    data: {
+      umkm_id: produk.umkm_id,
+      nama: produk.nama,
+      harga: produk.harga,
+      deskripsi: produk.deskripsi,
+      foto: produk.foto,
+    },
+    select: produkSelect,
+  });
+  return mapRow(row);
 }
 
 async function findById(id) {
-  const { rows } = await pool.query(
-    'SELECT id, umkm_id, nama, harga, deskripsi, foto FROM produk WHERE id = $1',
-    [id]
-  );
-  return mapRow(rows[0]) || null;
+  return mapRow(await prisma.produk.findUnique({ where: { id }, select: produkSelect }));
 }
 
 async function findByUmkmId(umkmId, limit, offset) {
-  const { rows } = await pool.query(
-    `SELECT id, umkm_id, nama, harga, deskripsi, foto FROM produk
-     WHERE umkm_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3`,
-    [umkmId, limit, offset]
-  );
+  const rows = await prisma.produk.findMany({
+    where: { umkm_id: umkmId },
+    orderBy: { id: 'desc' },
+    take: limit,
+    skip: offset,
+    select: produkSelect,
+  });
   return rows.map(mapRow);
 }
 
 async function countByUmkmId(umkmId) {
-  const { rows } = await pool.query('SELECT COUNT(*) FROM produk WHERE umkm_id = $1', [umkmId]);
-  return Number(rows[0].count);
+  return prisma.produk.count({ where: { umkm_id: umkmId } });
 }
 
 async function update(produk) {
-  await pool.query(
-    'UPDATE produk SET nama = $1, harga = $2, deskripsi = $3, foto = $4 WHERE id = $5',
-    [produk.nama, produk.harga, produk.deskripsi, produk.foto, produk.id]
-  );
+  await prisma.produk.update({
+    where: { id: produk.id },
+    data: { nama: produk.nama, harga: produk.harga, deskripsi: produk.deskripsi, foto: produk.foto },
+  });
 }
 
 async function remove(id) {
-  await pool.query('DELETE FROM produk WHERE id = $1', [id]);
+  await prisma.produk.delete({ where: { id } });
 }
 
 module.exports = { create, findById, findByUmkmId, countByUmkmId, update, remove };
