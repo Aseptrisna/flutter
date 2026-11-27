@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LaundryCare: CRUD Pesanan</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3EEE1; --panel:#FFFFFF; --text:#13261C; --muted:#6D776A; --line:#E3DCC5;
+    --accent:#3F8A2A; --accent-dim:#E3F2CE; --code-bg:#102A1F; --code-text:#DCEBD6; --blue:#2F8F82; --green:#1F7A4D; --green-dim:#DCEFDD;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  *{box-sizing:border-box;}
+  body{
+    background:radial-gradient(1100px 500px at 85% -10%, rgba(63,138,42,.10), transparent), var(--bg);
+    color:var(--text); margin:0; font-family:'Inter',system-ui,sans-serif; line-height:1.65; font-size:16.5px;
+  }
+  a{color:var(--accent);}
+  strong{font-weight:600; color:var(--text);}
+  .shell{display:flex; max-width:1180px; margin:0 auto;}
+  nav.side{position:sticky; top:0; align-self:flex-start; width:250px; flex:0 0 250px; padding:40px 20px 40px 28px; height:100vh; overflow-y:auto; border-right:1px solid var(--line);}
+  .brand{font-family:'JetBrains Mono',monospace; font-size:11.5px; letter-spacing:.03em; color:var(--muted); margin-bottom:24px; line-height:1.6;}
+  nav.side ol{list-style:none; margin:0; padding:0; border-left:1px solid var(--line);}
+  nav.side a{display:block; padding:7px 0 7px 16px; font-size:13.5px; color:var(--muted); border-left:2px solid transparent; margin-left:-1px;}
+  nav.side a:hover{color:var(--text);}
+  nav.side a.active{color:var(--accent); border-left-color:var(--accent);}
+  main{flex:1; min-width:0; padding:56px 32px 120px; max-width:800px;}
+  .back{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--text); margin-bottom:22px; padding:7px 14px 7px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); transition:background .15s, border-color .15s; text-decoration:none;} .back:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .kicker{display:inline-block; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent); background:var(--accent-dim); padding:4px 10px; border-radius:999px; font-weight:600; letter-spacing:.02em; margin-bottom:18px;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:clamp(28px,4.5vw,40px); line-height:1.15; margin:0 0 14px; color:var(--text);}
+  .sub{color:var(--muted); font-size:16.5px; max-width:62ch; margin:0 0 20px;}
+  h2{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:23px; color:var(--text); margin:60px 0 16px; display:flex; align-items:center; gap:12px; scroll-margin-top:24px;}
+  h2 .badge{flex:0 0 auto; width:30px; height:30px; border-radius:8px; background:var(--accent-dim); color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  h3{font-family:'Space Grotesk',sans-serif; font-size:17.5px; font-weight:600; color:var(--text); margin:26px 0 10px;}
+  h4{font-family:'Space Grotesk',sans-serif; font-size:15.5px; font-weight:600; color:var(--accent); margin:22px 0 8px;}
+  p{margin:0 0 15px; max-width:68ch;}
+  ul,ol{margin:0 0 18px; padding-left:20px;}
+  li{margin-bottom:8px; max-width:66ch;}
+  li::marker{color:var(--accent);}
+  code{font-family:'JetBrains Mono',monospace;}
+  :not(pre)>code{background:var(--accent-dim); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.88em;}
+  .codecard{background:var(--code-bg); border:1px solid var(--line); border-radius:10px; margin:0 0 20px; overflow:hidden;}
+  .codecard .bar{display:flex; align-items:center; gap:6px; padding:10px 14px; border-bottom:1px solid var(--line);}
+  .codecard .dot{width:9px; height:9px; border-radius:50%; background:#20402F;}
+  .codecard .tag{margin-left:8px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);}
+  .codecard pre{margin:0; padding:16px 18px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.65; color:var(--code-text);}
+  .note{background:var(--panel); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .note .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--accent); font-size:13px; margin-bottom:4px;}
+  .note p{margin:0; font-size:15px;}
+  .verify{background:var(--green-dim); border-left:3px solid var(--green); border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .verify .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--green); font-size:13px; margin-bottom:4px;}
+  .verify p{margin:0; font-size:15px;}
+  .warn{background:#331A1A; border-left:3px solid #F26B6B; border-radius:0 10px 10px 0; padding:14px 18px; margin:0 0 20px;}
+  .warn .lbl{display:block; font-family:'Space Grotesk',sans-serif; font-weight:600; color:#F26B6B; font-size:13px; margin-bottom:4px;}
+  .warn p{margin:0; font-size:15px;}
+  .oscard{border:1px solid var(--line); border-radius:10px; padding:4px 18px 6px; margin:0 0 24px; background:var(--panel);}
+  table{width:100%; border-collapse:collapse; margin:0 0 20px; font-size:14.5px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:.03em;}
+  .toc{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:18px 22px; margin:0 0 28px;}
+  .toc .lbl{font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--text); font-size:14px; margin-bottom:10px; display:block;}
+  .toc ol{columns:2; column-gap:24px; margin:0; padding-left:18px;}
+  .toc li{font-size:13.5px; margin-bottom:6px; break-inside:avoid;}
+  footer{margin-top:70px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px;}
+  @media (max-width:880px){ nav.side{display:none;} main{padding:36px 20px 90px; max-width:100%;} table{display:block; overflow-x:auto;} .toc ol{columns:1;} }
+  ::selection{background:var(--accent); color:#fff;}
+
+  /* === site header & footer === */
+  .site-header-bar{border-bottom:1px solid var(--line); background:var(--panel);}
+  .site-header{display:flex; align-items:center; justify-content:space-between; max-width:1180px; margin:0 auto; padding:18px 32px; gap:16px;}
+  .site-brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text);}
+  .site-brand-mark{width:34px; height:34px; border-radius:10px; background:var(--accent); color:#fff; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto;}
+  .site-brand-text{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; line-height:1.3;}
+  .site-brand-text small{display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--muted); margin-top:1px;}
+  .site-header-cta{display:inline-flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:600; color:var(--text); padding:9px 16px; border:1px solid var(--line); border-radius:999px; background:var(--bg); text-decoration:none; transition:background .15s, border-color .15s;}
+  .site-header-cta:hover{background:var(--accent-dim); border-color:var(--accent);}
+  .site-footer{background:var(--code-bg); color:var(--code-text); margin-top:56px; padding:44px 32px 26px;}
+  .site-footer-inner{max-width:1180px; margin:0 auto; display:flex; flex-wrap:wrap; gap:40px; justify-content:space-between;}
+  .site-footer-brand{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px;}
+  .site-footer-desc{font-size:13.5px; color:var(--code-text); opacity:.82; max-width:38ch; margin:0;}
+  .site-footer-col{display:flex; flex-direction:column; gap:9px;}
+  .site-footer-lbl{font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#8FBF9E; margin-bottom:2px;}
+  .site-footer-col a{color:var(--code-text); text-decoration:none; font-size:13.5px;}
+  .site-footer-col a:hover{color:#fff; text-decoration:underline;}
+  .site-footer-bottom{max-width:1180px; margin:32px auto 0; padding-top:20px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:#8FBF9E;}
+  @media (max-width:880px){
+    .site-header{padding:14px 20px;}
+    .site-footer{padding:36px 20px 22px;}
+  }
+
+  /* === animasi & interaksi === */
+  .scrollbar{position:fixed; top:0; left:0; width:100%; height:3px; background:transparent; z-index:80;}
+  .scrollbar-fill{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), #7ED957); transition:width .1s linear;}
+  .site-header-bar{transition:box-shadow .25s ease;}
+  .site-header-bar.scrolled{box-shadow:0 6px 18px -10px rgba(19,38,29,.25);}
+  nav.side a{transition:color .2s ease, border-left-color .2s ease, padding-left .2s ease;}
+  nav.side a:hover{padding-left:20px;}
+  .reveal{opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1);}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+  .codecard, .try, .task, .note, .warn, .verify{transition:transform .25s ease, box-shadow .25s ease;}
+  .codecard:hover, .try:hover, .task:hover, .note:hover, .warn:hover, .verify:hover{transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(19,38,29,.28);}
+  .site-header-cta{transition:opacity .15s, transform .15s, box-shadow .15s;}
+  .site-header-cta:hover{transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(63,138,42,.45);}
+  .back:hover, .seriesnav a:hover{transform:translateY(-1px);}
+  .back, .seriesnav a{transition:background .15s, border-color .15s, transform .15s;}
+  h2 .badge{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  h2.in-view .badge{animation:badgePop .5s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{0%{transform:scale(0.4) rotate(-20deg);} 100%{transform:scale(1) rotate(0);}}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important;}
+    h2.in-view .badge{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="scrollbar"><div class="scrollbar-fill" id="scrollFill"></div></div>
+<div class="site-header-bar">
+  <header class="site-header">
+    <a class="site-brand" href="../index.html">
+      <span class="site-brand-mark">PIV</span>
+      <span class="site-brand-text">Pemrograman IV<small>Sistem Informasi &middot; FIK UBL</small></span>
+    </a>
+    <a class="site-header-cta" href="index.html">Semua Project &rarr;</a>
+  </header>
+</div>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">SISTEM INFORMASI<br>FAKULTAS ILMU KOMPUTER<br>UNIVERSITAS BANDAR LAMPUNG</div>
+    <ol>
+      <li><a href="#s1">Yang Akan Dibuat</a></li>
+      <li><a href="#s2">Rancangan Tabel</a></li>
+      <li><a href="#s3">Skema & Migrasi</a></li>
+      <li><a href="#s4">Repository — Akses Database</a></li>
+      <li><a href="#s5">Service — Validasi & Hak Akses</a></li>
+      <li><a href="#s6">Handler — Request & Response</a></li>
+      <li><a href="#s7">Route</a></li>
+      <li><a href="#s8">Swagger</a></li>
+      <li><a href="#s9">Jalankan & Uji</a></li>
+      <li><a href="#s10">Tantangan & Troubleshooting</a></li>
+    </ol>
+  </nav>
+  <main>
+    <a class="back" href="index.html">&larr; Daftar tutorial project</a>
+    <header>
+      <span class="kicker">Project 01 &middot; CRUD 1 Tabel</span>
+      <h1>LaundryCare: CRUD Pesanan</h1>
+      <p class="sub">Menambahkan tabel milik project <strong>LaundryCare</strong> di atas fondasi modul user, memakai Express, Prisma, dan Swagger.</p>
+    </header>
+    <h2 id="s1"><span class="badge">01</span>Yang Akan Dibuat</h2>
+    <p>CRUD tabel <code>pesanan</code> untuk project <strong>LaundryCare</strong>. Setiap data punya pemilik: pengguna hanya bisa melihat dan mengubah datanya sendiri.</p>
+    <table>
+      <tr><th>Endpoint</th><th>Fungsi</th></tr>
+      <tr><td><code>GET /api/pesanan</code></td><td>Daftar milik sendiri, dengan <code>?q=</code>, <code>page</code>, <code>limit</code></td></tr>
+      <tr><td><code>GET /api/pesanan/{id}</code></td><td>Detail satu data</td></tr>
+      <tr><td><code>POST /api/pesanan</code></td><td>Tambah</td></tr>
+      <tr><td><code>PUT /api/pesanan/{id}</code></td><td>Ubah</td></tr>
+      <tr><td><code>DELETE /api/pesanan/{id}</code></td><td>Hapus</td></tr>
+    </table>
+    <div class="note"><span class="lbl">Syarat sebelum mulai</span><p>Selesaikan <a href="00-fondasi.html">Fondasi Modul User</a> sampai <code>GET /profile</code> membalas <code>200</code>.</p></div>
+    <h2 id="s2"><span class="badge">02</span>Rancangan Tabel</h2>
+    <table>
+      <tr><th>Kolom</th><th>Tipe</th><th>Isian</th><th>Keterangan</th></tr>
+      <tr><td><code>id</code></td><td>bilangan bulat</td><td>otomatis</td><td>Primary key</td></tr>
+      <tr><td><code>user_id</code></td><td>bilangan bulat</td><td>dari token</td><td>Pemilik data</td></tr>
+      <tr><td><code>nama_pelanggan</code></td><td>teks</td><td>wajib</td><td>maks. 100 karakter; contoh: <code>"Rina"</code></td></tr>
+      <tr><td><code>layanan</code></td><td>pilihan</td><td>wajib</td><td>Salah satu: <code>cuci_kering</code>, <code>cuci_setrika</code>, <code>setrika</code></td></tr>
+      <tr><td><code>berat_kg</code></td><td>angka desimal</td><td>wajib</td><td>minimal 0.1; contoh: <code>3.5</code></td></tr>
+      <tr><td><code>total</code></td><td>angka desimal</td><td>wajib</td><td>minimal 0; contoh: <code>28000</code></td></tr>
+      <tr><td><code>status</code></td><td>pilihan</td><td>wajib</td><td>Salah satu: <code>diterima</code>, <code>diproses</code>, <code>selesai</code>, <code>diambil</code></td></tr>
+    </table>
+    <p>Kolom <code>created_at</code> juga dibuat otomatis. Pencarian <code>?q=</code> mencocokkan kolom <code>nama_pelanggan</code>.</p>
+    <h2 id="s3"><span class="badge">03</span>Skema & Migrasi</h2>
+    <p>Ganti seluruh isi <code>prisma/schema.prisma</code>. Yang baru: <code>model Pesanan</code> dan satu baris relasi <code>pesanan Pesanan[]</code> di model <code>User</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">prisma/schema.prisma</span></div><pre><code>// Skema database. User dipakai semua project; tambahkan tabelmu di bawahnya.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  nama       String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(150)
+  password   String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  pesanan Pesanan[]
+
+  @@map("users")
+}
+
+model Pesanan {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  nama_pelanggan String   @db.VarChar(100)
+  layanan        String   @db.VarChar(30)
+  berat_kg       Decimal  @db.Decimal(6, 2)
+  total          Decimal  @db.Decimal(12, 2)
+  status         String   @db.VarChar(30)
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("pesanan")
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>npx prisma migrate dev --name tambah_pesanan</code></pre></div>
+    <p>Hentikan dulu <code>npm run dev</code> saat migrasi, lalu nyalakan lagi setelah semua file di bawah selesai. Penjelasan migrasi: <a href="../pertemuan-09a.html#s5">Pertemuan 9a Bagian 05</a>.</p>
+    <h2 id="s4"><span class="badge">04</span>Repository — Akses Database</h2>
+    <p>Hanya lapisan ini yang berbicara dengan database. Semua daftar dibatasi <code>user_id</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/repositories/pesananRepository.js</span></div><pre><code>const prisma = require('../db');
+
+// Kolom yang dikirim ke klien. created_at sengaja tidak ikut.
+const kolom = {
+  id: true,
+  user_id: true,
+  nama_pelanggan: true,
+  layanan: true,
+  berat_kg: true,
+  total: true,
+  status: true,
+};
+
+// mapRow mengubah tipe dari Prisma menjadi bentuk JSON yang ramah klien:
+// Decimal -&gt; angka biasa, tanggal -&gt; teks YYYY-MM-DD.
+function mapRow(row) {
+  if (!row) return row;
+  return {
+    ...row,
+    berat_kg: row.berat_kg === null ? null : Number(row.berat_kg),
+    total: row.total === null ? null : Number(row.total),
+  };
+}
+
+// Selalu dibatasi user_id, supaya pengguna hanya melihat datanya sendiri.
+function buildWhere(userId, q) {
+  const where = { user_id: userId };
+  if (q) where.nama_pelanggan = { contains: q, mode: 'insensitive' };
+  return where;
+}
+
+async function create(data) {
+  return mapRow(await prisma.pesanan.create({ data, select: kolom }));
+}
+
+async function findAllByUser(userId, q, limit, offset) {
+  const rows = await prisma.pesanan.findMany({
+    where: buildWhere(userId, q),
+    orderBy: { id: 'desc' },
+    take: limit,
+    skip: offset,
+    select: kolom,
+  });
+  return rows.map(mapRow);
+}
+
+async function countByUser(userId, q) {
+  return prisma.pesanan.count({ where: buildWhere(userId, q) });
+}
+
+async function findById(id) {
+  return mapRow(await prisma.pesanan.findUnique({ where: { id }, select: kolom }));
+}
+
+async function update(id, data) {
+  return mapRow(await prisma.pesanan.update({ where: { id }, data, select: kolom }));
+}
+
+async function remove(id) {
+  await prisma.pesanan.delete({ where: { id } });
+}
+
+module.exports = { create, findAllByUser, countByUser, findById, update, remove };</code></pre></div>
+    <h2 id="s5"><span class="badge">05</span>Service — Validasi & Hak Akses</h2>
+    <p>Objek <code>aturan</code> menentukan isian yang sah; <code>validate</code> membuang kolom lain yang dikirim klien. <code>authorizeOwner</code> membalas <code>404</code> bila data tidak ada dan <code>403</code> bila milik orang lain. <code>PUT</code> menulis ulang seluruh data, jadi kolom opsional yang tidak dikirim menjadi kosong (atau <code>false</code>).</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/services/pesananService.js</span></div><pre><code>const pesananRepository = require('../repositories/pesananRepository');
+const { normalizePagination } = require('../utils/pagination');
+const { validate } = require('../utils/validate');
+const { NotFoundError, ForbiddenError } = require('../errors');
+
+// Aturan tiap kolom. Samakan dengan schema.prisma.
+const aturan = {
+  nama_pelanggan: { tipe: 'teks', wajib: true, max: 100 },
+  layanan: { tipe: 'pilihan', wajib: true, opsi: ['cuci_kering', 'cuci_setrika', 'setrika'] },
+  berat_kg: { tipe: 'angka', wajib: true, min: 0.1, max: 9999.99 },
+  total: { tipe: 'angka', wajib: true, min: 0, max: 9999999999.99 },
+  status: { tipe: 'pilihan', wajib: true, opsi: ['diterima', 'diproses', 'selesai', 'diambil'] },
+};
+
+async function list(userId, q, rawPage, rawLimit) {
+  const { page, limit } = normalizePagination(rawPage, rawLimit);
+  const offset = (page - 1) * limit;
+
+  const data = await pesananRepository.findAllByUser(userId, q, limit, offset);
+  const total = await pesananRepository.countByUser(userId, q);
+  return { data, total, page, limit };
+}
+
+// authorizeOwner: datanya harus ada (404) dan milik pengguna yang login (403).
+async function authorizeOwner(userId, id) {
+  const data = await pesananRepository.findById(id);
+  if (!data) throw new NotFoundError('data tidak ditemukan');
+  if (data.user_id !== userId) throw new ForbiddenError('Anda bukan pemilik data ini');
+  return data;
+}
+
+async function create(userId, body) {
+  const data = validate(body, aturan);
+  // user_id diambil dari token, bukan dari isian klien
+  return pesananRepository.create({ ...data, user_id: userId });
+}
+
+async function update(userId, id, body) {
+  await authorizeOwner(userId, id);
+  return pesananRepository.update(id, validate(body, aturan));
+}
+
+async function remove(userId, id) {
+  await authorizeOwner(userId, id);
+  await pesananRepository.remove(id);
+}
+
+module.exports = { list, detail: authorizeOwner, create, update, remove };</code></pre></div>
+    <h2 id="s6"><span class="badge">06</span>Handler — Request & Response</h2>
+    <p>Mengambil input dari <code>req</code>, memanggil service, lalu membalas JSON.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/handlers/pesananHandler.js</span></div><pre><code>const pesananService = require('../services/pesananService');
+const { ok, paginated } = require('../utils/response');
+const { parseId } = require('../utils/validate');
+
+async function list(req, res, next) {
+  try {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const { data, total, page, limit } = await pesananService.list(req.userId, q, req.query.page, req.query.limit);
+    paginated(res, 200, data, page, limit, total);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function detail(req, res, next) {
+  try {
+    ok(res, 200, await pesananService.detail(req.userId, parseId(req.params.id)));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function create(req, res, next) {
+  try {
+    ok(res, 201, await pesananService.create(req.userId, req.body));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function update(req, res, next) {
+  try {
+    ok(res, 200, await pesananService.update(req.userId, parseId(req.params.id), req.body));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function remove(req, res, next) {
+  try {
+    await pesananService.remove(req.userId, parseId(req.params.id));
+    ok(res, 200, { message: 'data berhasil dihapus' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { list, detail, create, update, remove };</code></pre></div>
+    <h2 id="s7"><span class="badge">07</span>Route</h2>
+    <p>Ganti seluruh isi <code>src/app.js</code>. Tambahannya: satu <code>require</code> handler dan lima route yang semuanya melewati <code>requireAuth</code>.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/app.js</span></div><pre><code>const express = require('express');
+const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+
+const swaggerSpec = require('./docs/swagger');
+const { requireAuth } = require('./middleware/auth');
+const { loginLimiter } = require('./middleware/rateLimit');
+const { errorHandler } = require('./middleware/errorHandler');
+
+const authHandler = require('./handlers/authHandler');
+const pesananHandler = require('./handlers/pesananHandler');
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+// auth
+app.post('/api/auth/register', authHandler.register);
+app.post('/api/auth/login', loginLimiter, authHandler.login);
+
+// profile (butuh login)
+app.get('/api/profile', requireAuth, authHandler.profile);
+app.put('/api/profile', requireAuth, authHandler.updateProfile);
+app.put('/api/profile/password', requireAuth, authHandler.updatePassword);
+
+// --- route project-mu ---
+app.get('/api/pesanan', requireAuth, pesananHandler.list);
+app.get('/api/pesanan/:id', requireAuth, pesananHandler.detail);
+app.post('/api/pesanan', requireAuth, pesananHandler.create);
+app.put('/api/pesanan/:id', requireAuth, pesananHandler.update);
+app.delete('/api/pesanan/:id', requireAuth, pesananHandler.remove);
+
+// health check
+app.get('/healthz', (req, res) =&gt; res.sendStatus(200));
+
+// dokumentasi Swagger. persistAuthorization: token tetap tersimpan setelah reload
+// /swagger/index.html (alamat di versi Go) dialihkan, karena file bawaan paket
+// di alamat itu menampilkan contoh "Petstore", bukan API kita.
+app.get('/swagger/index.html', (req, res) =&gt; res.redirect('/swagger/'));
+app.use(
+  '/swagger',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, { swaggerOptions: { persistAuthorization: true } }),
+);
+
+// errorHandler WAJIB didaftarkan PALING TERAKHIR -- Express mengenali
+// middleware 4-parameter (err, req, res, next) sebagai error handler hanya
+// kalau ia didaftarkan setelah semua route lain.
+app.use(errorHandler);
+
+module.exports = app;</code></pre></div>
+    <h2 id="s8"><span class="badge">08</span>Swagger</h2>
+    <p>Buat file dokumentasi, lalu daftarkan.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/docs/pesanan.js</span></div><pre><code>const crudDocs = require('./crud');
+
+module.exports = crudDocs({
+  tag: 'LaundryCare',
+  path: 'pesanan',
+  properties: {
+    nama_pelanggan: { type: 'string', maxLength: 100, example: 'Rina' },
+    layanan: { type: 'string', enum: ['cuci_kering', 'cuci_setrika', 'setrika'], example: 'cuci_kering' },
+    berat_kg: { type: 'number', example: 3.5 },
+    total: { type: 'number', example: 28000 },
+    status: { type: 'string', enum: ['diterima', 'diproses', 'selesai', 'diambil'], example: 'diterima' },
+  },
+  required: ['nama_pelanggan', 'layanan', 'berat_kg', 'total', 'status'],
+});</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/docs/swagger.js — tambahkan di baris paling bawah</span></div><pre><code>// --- modul pesanan ---
+const pesanan = require('./pesanan');
+module.exports.tags.push(pesanan.tag);
+Object.assign(module.exports.paths, pesanan.paths);</code></pre></div>
+    <h2 id="s9"><span class="badge">09</span>Jalankan & Uji</h2>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal</span></div><pre><code>npm run dev</code></pre></div>
+    <p>Buka <code>http://localhost:8080/swagger/</code>, login, klik <em>Authorize</em>, lalu buka kelompok <strong>LaundryCare</strong>.</p>
+    <ol>
+      <li><strong>POST</strong> dengan contoh di bawah → <code>201</code>. Catat <code>id</code>-nya.</li>
+      <li><strong>GET daftar</strong> → <code>200</code>, data muncul dan <code>meta.total</code> bertambah.</li>
+      <li><strong>GET /{id}</strong> → <code>200</code>.</li>
+      <li><strong>PUT /{id}</strong> dengan nilai yang diubah → <code>200</code>.</li>
+      <li><strong>DELETE /{id}</strong> → <code>200</code>, lalu GET id yang sama → <code>404</code>.</li>
+    </ol>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">contoh body</span></div><pre><code>{
+  "nama_pelanggan": "Rina",
+  "layanan": "cuci_kering",
+  "berat_kg": 3.5,
+  "total": 28000,
+  "status": "diterima"
+}</code></pre></div>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">terminal — alternatif tanpa Swagger</span></div><pre><code>TOKEN="tempel-token-hasil-login"
+curl -s -X POST http://localhost:8080/api/pesanan \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"nama_pelanggan": "Rina", "layanan": "cuci_kering", "berat_kg": 3.5, "total": 28000, "status": "diterima"}'</code></pre></div>
+    <h3>Uji jalur gagal</h3>
+    <table>
+      <tr><th>Request</th><th>Yang dicoba</th><th>Harus dibalas</th></tr>
+      <tr><td>POST</td><td>Hapus <code>nama_pelanggan</code> dari body</td><td><code>400</code> nama_pelanggan wajib diisi</td></tr>
+      <tr><td>POST</td><td>Isi <code>berat_kg</code> dengan teks <code>"seribu"</code></td><td><code>400</code></td></tr>
+      <tr><td>GET /{id}</td><td>id <code>999999</code></td><td><code>404</code> data tidak ditemukan</td></tr>
+      <tr><td>GET, PUT, DELETE /{id}</td><td>Login sebagai akun kedua, pakai id milik akun pertama</td><td><code>403</code></td></tr>
+      <tr><td>GET (daftar)</td><td>Login sebagai akun kedua</td><td><code>200</code>, data akun pertama tidak terlihat</td></tr>
+      <tr><td>Semua</td><td>Tanpa token</td><td><code>401</code></td></tr>
+    </table>
+    <h2 id="s10"><span class="badge">10</span>Tantangan & Troubleshooting</h2>
+    <div class="note"><span class="lbl">Tantangan (kerjakan sendiri)</span><p>Hitung <code>total</code> di service dari <code>berat_kg</code> dan tarif per layanan, supaya klien tidak bisa mengarang harga.</p></div>
+    <table>
+      <tr><th>Gejala</th><th>Penyebab</th><th>Solusi</th></tr>
+      <tr><td><code>Cannot find module</code></td><td>Nama file atau folder berbeda dari tutorial.</td><td>Samakan huruf besar dan kecilnya.</td></tr>
+      <tr><td><code>Cannot read properties of undefined</code> saat query</td><td>Prisma Client belum dibuat ulang.</td><td><code>npx prisma generate</code>, lalu restart.</td></tr>
+      <tr><td>Prisma meminta <em>reset</em></td><td>Database berisi tabel dari project lain.</td><td>Jawab tidak, pakai database baru.</td></tr>
+      <tr><td>Kelompok baru tidak muncul di Swagger</td><td>Baris tambahan di <code>swagger.js</code> belum ada.</td><td>Tambahkan, restart, muat ulang halaman.</td></tr>
+    </table>
+    <footer>Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung</footer>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-col">
+      <div class="site-footer-brand">Pemrograman IV &amp; Praktikum Pemrograman IV</div>
+      <p class="site-footer-desc">Program Studi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung.</p>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Navigasi</span>
+      <a href="../index.html">Semua Pertemuan</a>
+      <a href="../pertemuan-09.html">Studi Kasus UMKM (Go &amp; Node.js)</a>
+      <a href="../pertemuan-10.html">Praktikum Proyek Sendiri</a>
+    </div>
+    <div class="site-footer-col">
+      <span class="site-footer-lbl">Rangkaian Praktikum</span>
+      <a href="../pertemuan-10.html">10. Desain Proyek Sendiri</a>
+      <a href="../pertemuan-13.html">13. CRUD Lengkap</a>
+      <a href="../pertemuan-16.html">16. UAS: Proyek Akhir</a>
+    </div>
+  </div>
+  <div class="site-footer-bottom">&copy; 2026 Sistem Informasi &middot; Fakultas Ilmu Komputer &middot; Universitas Bandar Lampung</div>
+</footer>
+<script>
+  const links = document.querySelectorAll('nav.side a');
+  const sections = [...links].map(l => document.querySelector(l.getAttribute('href')));
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const idx = sections.indexOf(e.target);
+      if (idx >= 0) links[idx].classList.add('active');
+    }});
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => s && io.observe(s));
+
+  // progress bar + header shadow saat scroll
+  (function(){
+    const fill = document.getElementById('scrollFill');
+    const bar = document.querySelector('.site-header-bar');
+    function onScroll(){
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+      if (fill) fill.style.width = pct + '%';
+      if (bar) bar.classList.toggle('scrolled', h.scrollTop > 4);
+    }
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // reveal halus saat elemen masuk layar
+  (function(){
+    const targets = document.querySelectorAll('h2, .codecard, .note, .warn, .verify, .try, .task, table');
+    targets.forEach(el => el.classList.add('reveal'));
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in-view'); io2.unobserve(e.target); }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+    targets.forEach(el => io2.observe(el));
+  })();
+</script>
+</body>
+</html>
