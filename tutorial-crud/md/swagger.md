@@ -19,7 +19,7 @@ Dari project yang baru punya modul user sampai semua endpoint-nya bisa diuji dar
 
 Dokumentasi tidak otomatis
 
-Swagger hanya menampilkan apa yang ditulis di file deskripsi. Ia tidak membuat atau memvalidasi endpoint. Kalau API berubah, deskripsinya ikut diubah.
+Swagger hanya menampilkan apa yang ditulis di file deskripsi. Ia tidak membuat atau memvalidasi endpoint. Kalau API berubah, deskripsinya ikut diubah. Mau dibuat dari route dengan satu perintah? Lihat [Generate Swagger Otomatis](swagger-generate.md).
 
 ## 02 Syarat Awal
 

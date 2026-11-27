@@ -279,6 +279,79 @@ async function remove(id) {
 module.exports = { create, findAllByUser, countByUser, findById, update, remove };</code></pre></div>
     <h2 id="s5"><span class="badge">05</span>Service — Validasi & Hak Akses</h2>
     <p>Objek <code>aturan</code> menentukan isian yang sah; <code>validate</code> membuang kolom lain yang dikirim klien. <code>authorizeOwner</code> membalas <code>404</code> bila data tidak ada dan <code>403</code> bila milik orang lain. <code>PUT</code> menulis ulang seluruh data, jadi kolom opsional yang tidak dikirim menjadi kosong (atau <code>false</code>).</p>
+    <p>Service dan handler memanggil <code>src/utils/validate.js</code>. Kalau file ini belum ada di foldermu, buat <strong>lebih dulu</strong>. Isinya sama untuk semua project; kalau sudah ada dari Fondasi, lewati.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/utils/validate.js</span></div><pre><code>const { InvalidInputError } = require('../errors');
+
+const MAKS_INT = 2147483647; // batas kolom Int di PostgreSQL
+const POLA_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
+
+function gagal(pesan) {
+  throw new InvalidInputError(pesan);
+}
+
+// Satu pemeriksa untuk tiap tipe kolom. Mengembalikan nilai yang siap disimpan.
+const pemeriksa = {
+  teks(nama, nilai, aturan) {
+    if (typeof nilai !== 'string' || nilai.trim() === '') gagal(`${nama} harus berupa teks`);
+    if (aturan.max &amp;&amp; nilai.trim().length &gt; aturan.max) gagal(`${nama} maksimal ${aturan.max} karakter`);
+    return nilai.trim();
+  },
+  bulat(nama, nilai, aturan) {
+    const min = aturan.min ?? 0;
+    if (!Number.isInteger(nilai) || nilai &lt; min || nilai &gt; MAKS_INT) {
+      gagal(`${nama} harus bilangan bulat minimal ${min}`);
+    }
+    return nilai;
+  },
+  angka(nama, nilai, aturan) {
+    if (typeof nilai !== 'number' || nilai &lt; aturan.min || nilai &gt; aturan.max) {
+      gagal(`${nama} harus angka antara ${aturan.min} dan ${aturan.max}`);
+    }
+    return nilai;
+  },
+  boolean(nama, nilai) {
+    if (typeof nilai !== 'boolean') gagal(`${nama} harus true atau false`);
+    return nilai;
+  },
+  tanggal(nama, nilai) {
+    const pesan = `${nama} harus tanggal berformat YYYY-MM-DD`;
+    if (typeof nilai !== 'string' || !POLA_TANGGAL.test(nilai)) gagal(pesan);
+    const tanggal = new Date(`${nilai}T00:00:00Z`);
+    // tanggal mustahil seperti 2026-02-30 bergeser atau tidak valid
+    if (Number.isNaN(tanggal.getTime()) || tanggal.toISOString().slice(0, 10) !== nilai) gagal(pesan);
+    return tanggal;
+  },
+  pilihan(nama, nilai, aturan) {
+    if (!aturan.opsi.includes(nilai)) gagal(`${nama} harus salah satu dari: ${aturan.opsi.join(', ')}`);
+    return nilai;
+  },
+};
+
+// validate memeriksa body sesuai aturan, lalu mengembalikan HANYA kolom yang
+// terdaftar. Kolom lain yang dikirim klien (misalnya user_id) otomatis dibuang.
+function validate(body, aturan) {
+  const hasil = {};
+  for (const [nama, a] of Object.entries(aturan)) {
+    const nilai = body ? body[nama] : undefined;
+    if (nilai === undefined || nilai === null || nilai === '') {
+      if (a.wajib) gagal(`${nama} wajib diisi`);
+      hasil[nama] = a.tipe === 'boolean' ? false : null;
+    } else {
+      hasil[nama] = pemeriksa[a.tipe](nama, nilai, a);
+    }
+  }
+  return hasil;
+}
+
+// parseId mengubah :id dari URL menjadi angka yang aman.
+function parseId(value) {
+  const id = Number(value);
+  if (!Number.isInteger(id) || id &lt; 1 || id &gt; MAKS_INT) gagal('id tidak valid');
+  return id;
+}
+
+module.exports = { validate, parseId };</code></pre></div>
+    <p>Lalu buat service-nya.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/services/sepatuService.js</span></div><pre><code>const sepatuRepository = require('../repositories/sepatuRepository');
 const { normalizePagination } = require('../utils/pagination');
 const { validate } = require('../utils/validate');
@@ -432,6 +505,84 @@ app.use(errorHandler);
 
 module.exports = app;</code></pre></div>
     <h2 id="s8"><span class="badge">08</span>Swagger</h2>
+    <p>File dokumentasi project memanggil <code>src/docs/crud.js</code>. Kalau file ini belum ada di foldermu, buat <strong>lebih dulu</strong>. Isinya sama untuk semua project; kalau sudah ada dari Fondasi, lewati.</p>
+    <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/docs/crud.js</span></div><pre><code>// crudDocs membuat dokumentasi Swagger untuk 5 endpoint CRUD sekaligus.
+function crudDocs({ tag, path, properties, required }) {
+  const security = [{ bearerAuth: [] }];
+  const contoh = { id: 1, user_id: 1 };
+  for (const [nama, p] of Object.entries(properties)) contoh[nama] = p.example;
+
+  const json = (example) =&gt; ({ 'application/json': { example } });
+  const reply = (description, data) =&gt; ({ description, content: json({ data }) });
+  const gagal = (description, code) =&gt; ({
+    description,
+    content: json({ error: { message: description, code } }),
+  });
+
+  const body = {
+    required: true,
+    content: { 'application/json': { schema: { type: 'object', required, properties } } },
+  };
+  const id = [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }];
+  const query = ['q', 'page', 'limit'].map((name) =&gt; ({
+    name,
+    in: 'query',
+    schema: { type: name === 'q' ? 'string' : 'integer' },
+  }));
+
+  const salahInput = gagal('input tidak valid', 'BAD_REQUEST');
+  const tanpaToken = gagal('token tidak valid', 'UNAUTHORIZED');
+  const bukanPemilik = gagal('Anda bukan pemilik data ini', 'FORBIDDEN');
+  const tidakAda = gagal('data tidak ditemukan', 'NOT_FOUND');
+  const base = { tags: [tag], security };
+
+  return {
+    tag: { name: tag, description: 'Data milik pengguna yang login' },
+    paths: {
+      [`/${path}`]: {
+        get: {
+          ...base,
+          summary: 'Daftar data milik sendiri',
+          parameters: query,
+          responses: { 200: reply('Daftar data', [contoh]), 401: tanpaToken },
+        },
+        post: {
+          ...base,
+          summary: 'Tambah data',
+          requestBody: body,
+          responses: { 201: reply('Data dibuat', contoh), 400: salahInput, 401: tanpaToken },
+        },
+      },
+      [`/${path}/{id}`]: {
+        get: {
+          ...base,
+          summary: 'Detail data',
+          parameters: id,
+          responses: { 200: reply('Detail', contoh), 403: bukanPemilik, 404: tidakAda },
+        },
+        put: {
+          ...base,
+          summary: 'Ubah data (kirim semua kolom)',
+          parameters: id,
+          requestBody: body,
+          responses: { 200: reply('Data diubah', contoh), 400: salahInput, 403: bukanPemilik, 404: tidakAda },
+        },
+        delete: {
+          ...base,
+          summary: 'Hapus data',
+          parameters: id,
+          responses: {
+            200: reply('Terhapus', { message: 'data berhasil dihapus' }),
+            403: bukanPemilik,
+            404: tidakAda,
+          },
+        },
+      },
+    },
+  };
+}
+
+module.exports = crudDocs;</code></pre></div>
     <p>Buat file dokumentasi, lalu daftarkan.</p>
     <div class="codecard"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="tag">src/docs/sepatu.js</span></div><pre><code>const crudDocs = require('./crud');
 

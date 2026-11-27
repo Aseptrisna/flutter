@@ -12,6 +12,7 @@ Fondasi yang sama, tabel yang berbeda untuk setiap project.
 2.  [Fondasi Modul User](00-fondasi.md) — sama untuk semua.
 3.  Tutorial project-mu di daftar bawah — CRUD satu tabel.
 4.  [Setup Swagger dari Awal](swagger.md) — cara membuat dokumentasi API modul user selangkah demi selangkah.
+5.  [Generate Swagger Otomatis](swagger-generate.md) — alternatifnya: dokumentasi dibuat dari route dengan satu perintah.
 
 ## 02 Daftar Project
 

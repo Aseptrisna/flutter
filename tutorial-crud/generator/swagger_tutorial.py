@@ -225,7 +225,7 @@ def build(page, p, h3, ul, box, card, table, c):
              [c("swagger-ui-express"), "Paket npm yang menyajikan Swagger UI dari server Express."],
              [c("src/docs/swagger.js"), "File deskripsi yang akan kita buat."],
          ])
-         + box("note", "Dokumentasi tidak otomatis", "Swagger hanya menampilkan apa yang ditulis di file deskripsi. Ia tidak membuat atau memvalidasi endpoint. Kalau API berubah, deskripsinya ikut diubah.")),
+         + box("note", "Dokumentasi tidak otomatis", "Swagger hanya menampilkan apa yang ditulis di file deskripsi. Ia tidak membuat atau memvalidasi endpoint. Kalau API berubah, deskripsinya ikut diubah. Mau dibuat dari route dengan satu perintah? Lihat <a href=\"swagger-generate.html\">Generate Swagger Otomatis</a>.")),
         ("Syarat Awal",
          p("Project Express-mu sudah punya modul user dan bisa dijalankan dengan <code>npm run dev</code>. Pastikan lima route ini ada di <code>src/app.js</code>:")
          + table(["Route", "Fungsi"], [

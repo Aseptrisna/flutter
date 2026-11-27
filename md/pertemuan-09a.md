@@ -2110,6 +2110,10 @@ Kalau langkah 5 berhasil (200 OK), seluruh fondasi (koneksi database, Prisma, Ex
 
 Modul user terdiri dari lima endpoint: register, login, lihat profil, ubah profil, dan ubah password. Dengan server menyala, buka `http://localhost:8080/swagger/` di browser.
 
+> **Tutorial Swagger**
+>
+> Ingin dokumentasinya dibuat otomatis dari route, seperti `swag init` di Go? Ikuti [Generate Swagger Otomatis di Node.js](../tutorial-crud/swagger-generate.html). Ingin memahami cara menulisnya sendiri? Ikuti [Setup Swagger dari Awal](../tutorial-crud/swagger.html).
+
 ### Urutan uji jalur sukses
 
 1.  **POST /auth/register** → *Try it out* → *Execute*. Contoh isian sudah tersedia. Harus `201`.

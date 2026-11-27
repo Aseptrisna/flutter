@@ -15,6 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.dont_write_bytecode = True
 import kode  # noqa: E402
+import swagger_generate  # noqa: E402
 import swagger_tutorial  # noqa: E402
 from data import PROJECTS  # noqa: E402
 
@@ -157,7 +158,7 @@ def foundation_page():
          box("warn", "Pakai database baru", "Buat database <strong>baru yang kosong</strong> di Neon untuk project-mu. Jangan memakai database latihan UMKM: Prisma akan menemukan tabel lain dan meminta <em>reset</em> yang menghapus data.")
          + card("terminal", "cp .env.example .env      # isi DATABASE_URL dan JWT_SECRET\nnpx prisma migrate dev --name init\nnpm run dev")
          + p("Buka <code>http://localhost:8080/swagger/</code>, lalu uji register, login, <em>Authorize</em>, dan profil seperti di %s." % s9(16))
-         + p('Ingin membuat Swagger-nya sendiri selangkah demi selangkah? Ikuti <a href="swagger.html">Setup Swagger dari Awal</a>.')
+         + p('Ingin membuat Swagger-nya sendiri selangkah demi selangkah? Ikuti <a href="swagger.html">Setup Swagger dari Awal</a>. Mau dibuat otomatis dari route? Ikuti <a href="swagger-generate.html">Generate Swagger Otomatis</a>.')
          + box("verify", "Checkpoint", "Lanjut ke tutorial project-mu hanya kalau <code>GET /profile</code> sudah membalas <code>200</code>. Kembali ke <a href=\"index.html\">daftar project</a>.")),
     ]
     return page("Fondasi: Modul User untuk Semua Project", "Langkah 1 &middot; Sama untuk Semua",
@@ -212,6 +213,12 @@ def project_page(pr):
     ]
 
     curl_body = json.dumps(body, ensure_ascii=False).replace("'", "'\\''")
+    shared = kode.foundation_files()
+
+    def shared_card(name, users):
+        return (p("%s memanggil <code>%s</code>. Kalau file ini belum ada di foldermu, buat <strong>lebih dulu</strong>. Isinya sama untuk semua project; kalau sudah ada dari Fondasi, lewati." % (users, name))
+                + card(name, shared[name]))
+
     note = box("warn", "Perlu dikonfirmasi", pr["catatan"]) if pr["catatan"] else ""
     sections = [
         ("Yang Akan Dibuat",
@@ -236,6 +243,8 @@ def project_page(pr):
          + card(repo, files[repo])),
         ("Service — Validasi & Hak Akses",
          p("Objek <code>aturan</code> menentukan isian yang sah; <code>validate</code> membuang kolom lain yang dikirim klien. <code>authorizeOwner</code> membalas <code>404</code> bila data tidak ada dan <code>403</code> bila milik orang lain. <code>PUT</code> menulis ulang seluruh data, jadi kolom opsional yang tidak dikirim menjadi kosong (atau <code>false</code>).")
+         + shared_card("src/utils/validate.js", "Service dan handler")
+         + p("Lalu buat service-nya.")
          + card(svc, files[svc])),
         ("Handler — Request & Response",
          p("Mengambil input dari <code>req</code>, memanggil service, lalu membalas JSON.")
@@ -244,7 +253,8 @@ def project_page(pr):
          p("Ganti seluruh isi <code>src/app.js</code>. Tambahannya: satu <code>require</code> handler dan lima route yang semuanya melewati <code>requireAuth</code>.")
          + card("src/app.js", files["src/app.js"])),
         ("Swagger",
-         p("Buat file dokumentasi, lalu daftarkan.")
+         shared_card("src/docs/crud.js", "File dokumentasi project")
+         + p("Buat file dokumentasi, lalu daftarkan.")
          + card(docs, files[docs])
          + card("src/docs/swagger.js — tambahkan di baris paling bawah", kode.swagger_append(pr))),
         ("Jalankan & Uji",
@@ -282,6 +292,7 @@ def index_page():
             '<a href="00-fondasi.html">Fondasi Modul User</a> — sama untuk semua.',
             "Tutorial project-mu di daftar bawah — CRUD satu tabel.",
             '<a href="swagger.html">Setup Swagger dari Awal</a> — cara membuat dokumentasi API modul user selangkah demi selangkah.',
+            '<a href="swagger-generate.html">Generate Swagger Otomatis</a> — alternatifnya: dokumentasi dibuat dari route dengan satu perintah.',
         ], "ol")),
         ("Daftar Project", p("Cari berdasarkan nama project yang kamu daftarkan.")
          + table(["No", "Project", "Tabel", "Tutorial"], rows)),
@@ -315,7 +326,8 @@ def write(path, text):
 def main():
     assert len({pr["slug"] for pr in PROJECTS}) == len(PROJECTS), "slug kembar"
     pages = {"index.html": index_page(), "00-fondasi.html": foundation_page(),
-             "swagger.html": swagger_tutorial.build(page, p, h3, ul, box, card, table, c)}
+             "swagger.html": swagger_tutorial.build(page, p, h3, ul, box, card, table, c),
+             "swagger-generate.html": swagger_generate.build(page, p, h3, ul, box, card, table, c)}
     pages.update({filename(pr): project_page(pr) for pr in PROJECTS})
     for name, source in pages.items():
         write(name, source)
