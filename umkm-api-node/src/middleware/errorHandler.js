@@ -17,6 +17,11 @@ function errorHandler(err, req, res, next) {
     });
   }
 
+  // Body JSON yang rusak ditolak express.json() sebelum sampai ke handler.
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: { message: 'body tidak valid', code: 'BAD_REQUEST' } });
+  }
+
   if (err.status) {
     return res.status(err.status).json({ error: { message: err.message, code: err.code } });
   }

@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const swaggerUi = require('swagger-ui-express');
 
 const config = require('./config');
+const swaggerSpec = require('./docs/swagger');
 const { requireAuth } = require('./middleware/auth');
 const { loginLimiter } = require('./middleware/rateLimit');
 const { errorHandler } = require('./middleware/errorHandler');
@@ -46,6 +48,16 @@ app.use('/uploads', express.static(path.resolve(config.uploadDir)));
 
 // health check
 app.get('/healthz', (req, res) => res.sendStatus(200));
+
+// dokumentasi Swagger. persistAuthorization: token tetap tersimpan setelah reload
+// /swagger/index.html (alamat di versi Go) dialihkan, karena file bawaan paket
+// di alamat itu menampilkan contoh "Petstore", bukan API kita.
+app.get('/swagger/index.html', (req, res) => res.redirect('/swagger/'));
+app.use(
+  '/swagger',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, { swaggerOptions: { persistAuthorization: true } }),
+);
 
 // errorHandler WAJIB didaftarkan PALING TERAKHIR -- Express mengenali
 // middleware 4-parameter (err, req, res, next) sebagai error handler hanya

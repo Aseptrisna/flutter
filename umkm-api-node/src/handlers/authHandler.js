@@ -1,5 +1,6 @@
 const authService = require('../services/authService');
 const { ok } = require('../utils/response');
+const { AppError, InvalidInputError, NotFoundError } = require('../errors');
 
 async function register(req, res, next) {
   try {
@@ -17,14 +18,13 @@ async function login(req, res, next) {
     const result = await authService.login(email, password);
     ok(res, 200, result);
   } catch (err) {
-    // Baik "email tidak ditemukan" (NotFoundError) maupun "password salah"
-    // (InvalidInputError) sengaja dibalas SAMA, 401 "email atau password
-    // salah" -- supaya tidak membocorkan ke penyerang apakah suatu email
-    // terdaftar atau tidak. Ini meniru persis switch-case di AuthHandler.Login Go.
-    err.status = 401;
-    err.code = 'UNAUTHORIZED';
-    err.message = 'email atau password salah';
-    next(err);
+    // "email tidak ditemukan" (NotFoundError) dan "password salah"
+    // (InvalidInputError) sengaja dibalas SAMA, 401 -- supaya tidak membocorkan
+    // ke penyerang apakah suatu email terdaftar atau tidak.
+    if (err instanceof NotFoundError || err instanceof InvalidInputError) {
+      return next(new AppError('email atau password salah', 'UNAUTHORIZED', 401));
+    }
+    next(err); // error lain (mis. database mati) tetap 500 dan tercetak di terminal
   }
 }
 

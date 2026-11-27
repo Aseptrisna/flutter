@@ -23,10 +23,11 @@ Daftar isi cepat
 13. [13. Handler (Controller) Layer](#s13)
 14. [14. Routing: app.js](#s14)
 15. [15. server.js & Menjalankan Project](#s15)
-16. [16. Testing Lengkap via curl](#s16)
-17. [17. Troubleshooting Cepat](#s17)
-18. [18. Perbandingan Go vs Node.js](#s18)
-19. [19. Latihan](#s19)
+16. [16. Uji Modul User (Swagger)](#s16)
+17. [17. Testing Lengkap via curl](#s17)
+18. [18. Troubleshooting Cepat](#s18)
+19. [19. Perbandingan Go vs Node.js](#s19)
+20. [20. Latihan](#s20)
 
 ## 01Tujuan & Prasyarat
 
@@ -52,7 +53,7 @@ terminal
     mkdir umkm-api-node && cd umkm-api-node
     npm init -y
 
-    npm install --save-exact express@4.22.3 @prisma/client@6.19.3 bcrypt@6.0.0 jsonwebtoken@9.0.3 multer@2.5.0 cors@2.8.6 dotenv@16.6.1 express-rate-limit@7.5.1
+    npm install --save-exact express@4.22.3 @prisma/client@6.19.3 bcrypt@6.0.0 jsonwebtoken@9.0.3 multer@2.5.0 cors@2.8.6 dotenv@16.6.1 express-rate-limit@7.5.1 swagger-ui-express@5.0.1
     npm install --save-exact --save-dev nodemon@3.1.11 prisma@6.19.3
 
 - `express` — framework HTTP, setara `net/http` + `http.ServeMux` di Go.
@@ -64,6 +65,7 @@ terminal
 - `cors` — mengizinkan Flutter Web (kalau dipakai) memanggil API dari origin berbeda.
 - `dotenv` — membaca berkas `.env`, setara `godotenv`.
 - `express-rate-limit` — pembatas percobaan login, setara `golang.org/x/time/rate` yang dipakai manual di Go.
+- `swagger-ui-express` — halaman dokumentasi API yang bisa langsung dicoba dari browser, setara `http-swagger` di Go.
 - `nodemon` (dev saja) — restart otomatis server tiap kali berkas disimpan, setara `air`/`fresh` di dunia Go.
 
 Pakai nomor versi persis seperti di atas
@@ -103,6 +105,8 @@ struktur folder
         ├── config.js         baca .env
         ├── db.js             instance PrismaClient (koneksi database)
         ├── errors.js         kelas error kustom (AppError & turunannya)
+        ├── docs/
+        │   └── swagger.js    dokumentasi Swagger (modul user)
         ├── middleware/
         │   ├── auth.js        requireAuth (verifikasi JWT)
         │   ├── rateLimit.js    pembatas percobaan login
@@ -128,7 +132,7 @@ Buat semua folder kosongnya dulu, biar tidak bolak-balik `mkdir` di tengah jalan
 
 terminal
 
-    mkdir -p src/middleware src/utils src/repositories src/services src/handlers uploads
+    mkdir -p src/docs src/middleware src/utils src/repositories src/services src/handlers uploads
     touch uploads/.gitkeep
 
 ### Fungsi setiap folder
@@ -137,6 +141,7 @@ terminal
 |----|----|----|
 | `prisma/` | Definisi database: skema dan riwayat perubahannya. | Di-commit ke Git, termasuk seluruh isi `migrations/`. |
 | `src/` | Semua kode aplikasi. | `server.js` sengaja di luar sebagai pintu masuk. |
+| `src/docs/` | Dokumentasi API untuk Swagger UI. | Hanya data deskripsi, tanpa logika aplikasi. |
 | `src/middleware/` | Kode yang dijalankan di tengah perjalanan request: cek token, batasi login, ubah error jadi JSON. | Tidak berisi aturan bisnis. |
 | `src/utils/` | Fungsi bantu yang dipakai banyak tempat: respons, pagination, upload. | Tidak mengakses database. |
 | `src/repositories/` | Satu-satunya lapisan yang berbicara dengan database lewat Prisma Client. | Tanpa validasi dan tanpa keputusan bisnis. |
@@ -162,6 +167,7 @@ terminal
 | `src/config.js` | Membaca `.env` dan memberi nilai default. | auth, upload, service, server |
 | `src/db.js` | Membuat satu `PrismaClient` untuk seluruh aplikasi. | Semua repository, `server.js` |
 | `src/errors.js` | Kelas error yang membawa status HTTP dan kode error. | Service dan handler |
+| `src/docs/swagger.js` | Deskripsi OpenAPI endpoint auth dan profil. | `app.js` |
 | `src/middleware/auth.js` | `requireAuth`: memeriksa token JWT. | `app.js` |
 | `src/middleware/rateLimit.js` | `loginLimiter`: maksimal 5 percobaan login per menit. | `app.js` |
 | `src/middleware/errorHandler.js` | Mengubah semua error menjadi respons JSON. | `app.js` |
@@ -230,7 +236,8 @@ package.json
         "express": "4.22.3",
         "express-rate-limit": "7.5.1",
         "jsonwebtoken": "9.0.3",
-        "multer": "2.5.0"
+        "multer": "2.5.0",
+        "swagger-ui-express": "5.0.1"
       },
       "devDependencies": {
         "nodemon": "3.1.11",
@@ -796,10 +803,10 @@ src/middleware/errorHandler.js
     const { InvalidFileTypeError } = require('../utils/upload');
 
     // errorHandler adalah satu-satunya tempat error diterjemahkan jadi response
-    // JSON. Service/handler tinggal `throw` instance dari src/errors.js, tidak
-    // perlu switch-case berulang di tiap endpoint seperti pola errors.Is di
-    // versi Go -- karena status HTTP & code sudah menempel di objek error itu
-    // sendiri (lihat AppError).
+    // JSON. Service/handler tinggal `throw` instance dari src/errors.js (atau
+    // panggil next(err)), tidak perlu switch-case berulang di tiap endpoint
+    // seperti pola errors.Is di versi Go -- karena di sini status HTTP & code
+    // sudah menempel di objek error-nya sendiri (lihat AppError).
     function errorHandler(err, req, res, next) {
       // Error dari multer (upload foto) ditangani lebih dulu, bentuknya beda
       // dari AppError karena datang dari library pihak ketiga.
@@ -812,6 +819,11 @@ src/middleware/errorHandler.js
         });
       }
 
+      // Body JSON yang rusak ditolak express.json() sebelum sampai ke handler.
+      if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: { message: 'body tidak valid', code: 'BAD_REQUEST' } });
+      }
+
       if (err.status) {
         return res.status(err.status).json({ error: { message: err.message, code: err.code } });
       }
@@ -822,15 +834,11 @@ src/middleware/errorHandler.js
 
     module.exports = { errorHandler };
 
-Urutan pemeriksaannya: (1) tipe file salah → `400`; (2) file lebih dari 5 MB → `400`; (3) error yang punya `status` (semua `AppError`) → status dan pesannya sendiri; (4) selain itu → dicetak ke terminal dan dibalas `500`. Pengguna tidak melihat detail error server, tetapi kamu bisa membacanya di terminal.
+Urutan pemeriksaannya: (1) tipe file salah → `400`; (2) file lebih dari 5 MB → `400`; (3) body JSON rusak → `400` "body tidak valid"; (4) error yang punya `status` (semua `AppError`) → status dan pesannya sendiri; (5) selain itu → dicetak ke terminal dan dibalas `500`. Pengguna tidak melihat detail error server, tetapi kamu bisa membacanya di terminal.
 
-Dua hal yang perlu diketahui saat debugging
+Error dari Prisma
 
-Body JSON yang rusak ditolak oleh `express.json()` dengan status `400` tetapi tanpa field `code`. Error dari Prisma (misalnya `P2002`, data unik kembar) tidak punya `status`, jadi menjadi `500`.
-
-Middleware 4-parameter = error handler
-
-Express mengenali sebuah middleware sebagai *error handler* khusus kalau fungsinya punya tepat 4 parameter: `(err, req, res, next)`. Middleware ini harus didaftarkan **paling terakhir** di `app.js`, setelah semua route — dijelaskan lagi di Bagian 14.
+Error Prisma (misalnya `P2002`, data unik kembar) tidak punya `status`, jadi menjadi `500` kecuali service menerjemahkannya. `authService` melakukannya untuk email kembar (Bagian 11).
 
 ## 09Upload Foto (multer)
 
@@ -1163,20 +1171,55 @@ src/services/authService.js
       return { id: user.id, nama: user.nama, email: user.email };
     }
 
+    // Batas panjang mengikuti kolom di schema.prisma (VarChar 100 dan 150).
+    const MAKS_NAMA = 100;
+    const MAKS_EMAIL = 150;
+
+    // isText: harus berupa teks yang tidak kosong. Body JSON bisa berisi angka,
+    // null, atau objek, jadi tipenya wajib diperiksa.
+    function isText(value) {
+      return typeof value === 'string' && value.length > 0;
+    }
+
+    function isPassword(value) {
+      return typeof value === 'string' && value.length >= 6;
+    }
+
+    function checkLength(nama, email) {
+      if (nama.length > MAKS_NAMA || email.length > MAKS_EMAIL) {
+        throw new InvalidInputError('nama maksimal 100 karakter dan email maksimal 150 karakter');
+      }
+    }
+
+    // P2002 = kode Prisma untuk nilai unik yang kembar. Di tabel users satu-satunya
+    // kolom unik selain id adalah email.
+    function toEmailConflict(err) {
+      return err.code === 'P2002' ? new ConflictError('email sudah terdaftar') : err;
+    }
+
     async function register(nama, email, password) {
-      if (!nama || !email || !password || password.length < 6) {
+      if (!isText(nama) || !isText(email) || !isPassword(password)) {
         throw new InvalidInputError('nama, email, dan password (min 6 karakter) wajib diisi');
       }
+      checkLength(nama, email);
 
       const existing = await userRepository.findByEmail(email);
       if (existing) throw new ConflictError('email sudah terdaftar');
 
       const hashed = await bcrypt.hash(password, 10);
-      const user = await userRepository.create({ nama, email, password: hashed });
-      return toSafeUser(user);
+      try {
+        const user = await userRepository.create({ nama, email, password: hashed });
+        return toSafeUser(user);
+      } catch (err) {
+        throw toEmailConflict(err); // dua pendaftaran email sama di waktu bersamaan
+      }
     }
 
     async function login(email, password) {
+      if (!isText(email) || !isText(password)) {
+        throw new InvalidInputError('email atau password salah');
+      }
+
       const user = await userRepository.findByEmail(email);
       if (!user) throw new NotFoundError('email atau password salah');
 
@@ -1189,25 +1232,31 @@ src/services/authService.js
 
     async function profile(userId) {
       const user = await userRepository.findById(userId);
-      if (!user) throw new NotFoundError();
+      if (!user) throw new NotFoundError('pengguna tidak ditemukan');
       return toSafeUser(user);
     }
 
     async function updateProfile(userId, nama, email) {
-      if (!nama || !email) throw new InvalidInputError('gagal memperbarui profil');
-      await userRepository.updateProfile(userId, nama, email);
+      if (!isText(nama) || !isText(email)) throw new InvalidInputError('nama dan email wajib diisi');
+      checkLength(nama, email);
+      try {
+        await userRepository.updateProfile(userId, nama, email);
+      } catch (err) {
+        throw toEmailConflict(err); // email sudah dipakai akun lain -> 409
+      }
     }
 
     async function updatePassword(userId, passwordLama, passwordBaru) {
       const user = await userRepository.findById(userId);
-      if (!user) throw new NotFoundError();
+      if (!user) throw new NotFoundError('pengguna tidak ditemukan');
+
+      const pesan = 'password lama salah atau password baru terlalu pendek';
+      if (!isText(passwordLama)) throw new InvalidInputError(pesan);
 
       const match = await bcrypt.compare(passwordLama, user.password);
-      if (!match) throw new InvalidInputError('password lama salah atau password baru terlalu pendek');
+      if (!match) throw new InvalidInputError(pesan);
 
-      if (!passwordBaru || passwordBaru.length < 6) {
-        throw new InvalidInputError('password lama salah atau password baru terlalu pendek');
-      }
+      if (!isPassword(passwordBaru)) throw new InvalidInputError(pesan);
 
       const hashed = await bcrypt.hash(passwordBaru, 10);
       await userRepository.updatePassword(userId, hashed);
@@ -1225,19 +1274,30 @@ src/services/authService.js
 
 Membuat objek baru yang hanya berisi `id`, `nama`, dan `email`. Setiap data user yang keluar dari service melewati fungsi ini, supaya hash password tidak pernah terkirim.
 
+#### isText, isPassword, checkLength, toEmailConflict
+
+| Fungsi bantu | Kegunaan |
+|----|----|
+| `isText(value)` | Memastikan nilainya teks yang tidak kosong. Body JSON bisa berisi angka atau objek. |
+| `isPassword(value)` | Teks minimal 6 karakter. |
+| `checkLength(nama, email)` | Menolak nama lebih dari 100 atau email lebih dari 150 karakter, sesuai batas kolom. |
+| `toEmailConflict(err)` | Mengubah error Prisma `P2002` menjadi `ConflictError` (409). |
+
 #### register(nama, email, password)
 
-1.  Semua field wajib ada dan password minimal 6 karakter; kalau tidak, `InvalidInputError` (400).
-2.  `findByEmail`: kalau email sudah dipakai, `ConflictError` (409).
-3.  `bcrypt.hash(password, 10)`: password diubah jadi hash satu arah. Angka 10 adalah *cost*; makin besar makin lambat ditebak.
-4.  `userRepository.create` menyimpan **hash**-nya.
-5.  Kembalikan `toSafeUser(user)`.
+1.  Tipe dan isi setiap field diperiksa, password minimal 6 karakter; kalau tidak, `InvalidInputError` (400).
+2.  `checkLength` memeriksa panjang nama dan email (400).
+3.  `findByEmail`: kalau email sudah dipakai, `ConflictError` (409).
+4.  `bcrypt.hash(password, 10)`: password diubah jadi hash satu arah. Angka 10 adalah *cost*; makin besar makin lambat ditebak.
+5.  `userRepository.create` menyimpan **hash**-nya. Kalau dua orang mendaftar dengan email sama di waktu bersamaan, database menolak yang kedua dan `toEmailConflict` membalas 409.
+6.  Kembalikan `toSafeUser(user)`.
 
 #### login(email, password)
 
-1.  Cari user lewat email; tidak ada → `NotFoundError`.
-2.  `bcrypt.compare(password, user.password)` mencocokkan password ketikan dengan hash; tidak cocok → `InvalidInputError`.
-3.  Cocok → `generateToken(user.id)`, lalu kembalikan `{ token, user }`.
+1.  Email dan password harus berupa teks; kalau tidak → `InvalidInputError`.
+2.  Cari user lewat email; tidak ada → `NotFoundError`.
+3.  `bcrypt.compare(password, user.password)` mencocokkan password ketikan dengan hash; tidak cocok → `InvalidInputError`.
+4.  Cocok → `generateToken(user.id)`, lalu kembalikan `{ token, user }`.
 
 Kedua kegagalan memakai pesan yang sama, dan handler mengubahnya menjadi `401`.
 
@@ -1247,11 +1307,11 @@ Kedua kegagalan memakai pesan yang sama, dan handler mengubahnya menjadi `401`.
 
 #### updateProfile(userId, nama, email)
 
-Menolak field kosong, lalu menyimpan. Keunikan email dijaga database: memakai email milik akun lain menghasilkan error Prisma `P2002` yang saat ini dibalas `500` (lihat Latihan).
+Menolak field kosong atau terlalu panjang, lalu menyimpan. Keunikan email dijaga database: memakai email milik akun lain menghasilkan error `P2002`, yang diubah menjadi `409` "email sudah terdaftar".
 
 #### updatePassword(userId, passwordLama, passwordBaru)
 
-Urutannya: ambil user → cocokkan password lama → periksa panjang password baru → hash → simpan. Token lama tetap berlaku sampai kedaluwarsa. Kalau field `password_lama` tidak dikirim sama sekali, `bcrypt` melempar error dan hasilnya `500`.
+Urutannya: ambil user → cocokkan password lama → periksa panjang password baru → hash → simpan. Token lama tetap berlaku sampai kedaluwarsa. Field `password_lama` yang tidak dikirim ditolak lebih dulu dengan `400`, sebelum sampai ke `bcrypt`.
 
 #### generateToken(userId)
 
@@ -1466,7 +1526,7 @@ Syarat `!(harga >= 0)` menolak angka negatif sekaligus `NaN`.
 
 Sudah diuji sungguhan
 
-Seluruh alur `authorizeOwner` di atas (akun B mencoba edit produk milik akun A lewat endpoint `PUT /api/produk/:id`) sudah diuji langsung di server Node + PostgreSQL sungguhan sebelum materi ini ditulis, dan konsisten membalas `403 Forbidden` — lihat hasil lengkapnya di Bagian 16.
+Seluruh alur `authorizeOwner` di atas (akun B mencoba edit produk milik akun A lewat endpoint `PUT /api/produk/:id`) sudah diuji langsung di server Node + PostgreSQL sungguhan sebelum materi ini ditulis, dan konsisten membalas `403 Forbidden` — lihat hasil lengkapnya di Bagian 17.
 
 ## 13Handler (Controller) Layer
 
@@ -1478,6 +1538,7 @@ src/handlers/authHandler.js
 
     const authService = require('../services/authService');
     const { ok } = require('../utils/response');
+    const { AppError, InvalidInputError, NotFoundError } = require('../errors');
 
     async function register(req, res, next) {
       try {
@@ -1495,13 +1556,13 @@ src/handlers/authHandler.js
         const result = await authService.login(email, password);
         ok(res, 200, result);
       } catch (err) {
-        // Baik "email tidak ditemukan" (NotFoundError) maupun "password salah"
-        // (InvalidInputError) sengaja dibalas SAMA, 401 "email atau password
-        // salah" -- meniru persis switch-case di AuthHandler.Login versi Go.
-        err.status = 401;
-        err.code = 'UNAUTHORIZED';
-        err.message = 'email atau password salah';
-        next(err);
+        // "email tidak ditemukan" (NotFoundError) dan "password salah"
+        // (InvalidInputError) sengaja dibalas SAMA, 401 -- supaya tidak membocorkan
+        // ke penyerang apakah suatu email terdaftar atau tidak.
+        if (err instanceof NotFoundError || err instanceof InvalidInputError) {
+          return next(new AppError('email atau password salah', 'UNAUTHORIZED', 401));
+        }
+        next(err); // error lain (mis. database mati) tetap 500 dan tercetak di terminal
       }
     }
 
@@ -1546,7 +1607,7 @@ src/handlers/authHandler.js
 
 Blok catch di login berbeda
 
-Handler lain meneruskan error apa adanya, sedangkan `login` menimpa **semua** error menjadi `401`, termasuk saat database bermasalah. Kalau login selalu `401` padahal password benar, tambahkan sementara `console.error(err)` di awal blok `catch` untuk melihat penyebab aslinya.
+Hanya dua kegagalan yang diubah menjadi `401`: email tidak terdaftar (`NotFoundError`) dan password salah (`InvalidInputError`). Error lain, misalnya database mati, diteruskan apa adanya sehingga dibalas `500` dan tercetak di terminal.
 
 ### umkmHandler.js
 
@@ -1718,6 +1779,143 @@ Berbeda dari Go yang errornya selalu berupa *return value* biasa, `async functio
 
 ## 14Routing: app.js
 
+### docs/swagger.js — dokumentasi modul user
+
+**Swagger UI** adalah halaman web yang menampilkan daftar endpoint dan menyediakan tombol untuk mencobanya, tanpa Postman. Isinya diambil dari deskripsi berformat **OpenAPI**. Di versi Go deskripsi itu dibuat dari komentar `// @Summary`; di sini ditulis langsung sebagai objek JavaScript. Buat file ini **sebelum** `app.js`, karena `app.js` memanggilnya.
+
+src/docs/swagger.js
+
+    // Dokumentasi OpenAPI untuk modul user (auth & profil).
+    // Isinya hanya objek JavaScript biasa. Swagger UI membacanya lalu membuat
+    // halaman uji coba di http://localhost:8080/swagger/
+
+    // Bentuk body JSON; semua properti yang ditulis dianggap wajib.
+    function jsonBody(properties) {
+      return {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { type: 'object', required: Object.keys(properties), properties },
+          },
+        },
+      };
+    }
+
+    // Contoh respons sukses.
+    function sukses(description, data) {
+      return { description, content: { 'application/json': { example: { data } } } };
+    }
+
+    // Contoh respons gagal.
+    function gagal(message, code) {
+      return { description: message, content: { 'application/json': { example: { error: { message, code } } } } };
+    }
+
+    // Potongan yang dipakai berulang.
+    const nama = { type: 'string', maxLength: 100, example: 'Budi Tester' };
+    const email = { type: 'string', format: 'email', maxLength: 150, example: 'budi@test.com' };
+    const password = { type: 'string', format: 'password', minLength: 6, example: 'rahasia123' };
+    const user = { id: 1, nama: 'Budi Tester', email: 'budi@test.com' };
+    const butuhToken = [{ bearerAuth: [] }];
+    const tokenSalah = gagal('token tidak valid', 'UNAUTHORIZED');
+
+    module.exports = {
+      openapi: '3.0.3',
+      info: {
+        title: 'UMKM API (Node.js)',
+        version: '1.0.0',
+        description:
+          'Modul user. Urutan uji: register, login, salin token, klik Authorize, ' +
+          'tempel token (tanpa kata Bearer), lalu coba endpoint profil.',
+      },
+      servers: [{ url: '/api' }],
+      tags: [
+        { name: 'Auth', description: 'Daftar dan masuk' },
+        { name: 'Profil', description: 'Butuh token' },
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        },
+      },
+      paths: {
+        '/auth/register': {
+          post: {
+            tags: ['Auth'],
+            summary: 'Daftar akun baru',
+            requestBody: jsonBody({ nama, email, password }),
+            responses: {
+              201: sukses('Akun dibuat', user),
+              400: gagal('nama, email, dan password (min 6 karakter) wajib diisi', 'BAD_REQUEST'),
+              409: gagal('email sudah terdaftar', 'CONFLICT'),
+            },
+          },
+        },
+        '/auth/login': {
+          post: {
+            tags: ['Auth'],
+            summary: 'Masuk dan dapatkan token (maks. 5 kali per menit)',
+            requestBody: jsonBody({ email, password }),
+            responses: {
+              200: sukses('Berhasil masuk', { token: 'eyJhbGciOiJIUzI1NiIs...', user }),
+              401: gagal('email atau password salah', 'UNAUTHORIZED'),
+              429: gagal('terlalu banyak percobaan, coba lagi nanti', 'TOO_MANY_REQUESTS'),
+            },
+          },
+        },
+        '/profile': {
+          get: {
+            tags: ['Profil'],
+            summary: 'Lihat profil sendiri',
+            security: butuhToken,
+            responses: { 200: sukses('Data profil', user), 401: tokenSalah },
+          },
+          put: {
+            tags: ['Profil'],
+            summary: 'Ubah nama dan email',
+            security: butuhToken,
+            requestBody: jsonBody({ nama, email }),
+            responses: {
+              200: sukses('Profil diubah', { message: 'profil berhasil diperbarui' }),
+              400: gagal('nama dan email wajib diisi', 'BAD_REQUEST'),
+              401: tokenSalah,
+              409: gagal('email sudah terdaftar', 'CONFLICT'),
+            },
+          },
+        },
+        '/profile/password': {
+          put: {
+            tags: ['Profil'],
+            summary: 'Ubah password',
+            security: butuhToken,
+            requestBody: jsonBody({
+              password_lama: password,
+              password_baru: { ...password, example: 'rahasiabaru456' },
+            }),
+            responses: {
+              200: sukses('Password diubah', { message: 'password berhasil diperbarui' }),
+              400: gagal('password lama salah atau password baru terlalu pendek', 'BAD_REQUEST'),
+              401: tokenSalah,
+            },
+          },
+        },
+      },
+    };
+
+| Bagian | Fungsi |
+|----|----|
+| `openapi, info` | Versi format serta judul dan keterangan di bagian atas halaman. |
+| `servers` | Awalan semua path. `/api` relatif, jadi tetap benar di port atau domain mana pun. |
+| `tags` | Pengelompokan endpoint: Auth dan Profil. |
+| `components.securitySchemes` | Memberi tahu Swagger bahwa API memakai token Bearer; ini yang memunculkan tombol *Authorize*. |
+| `paths` | Daftar endpoint: method, ringkasan, body, dan kemungkinan respons. |
+| `security: butuhToken` | Menandai endpoint yang harus dikirim bersama token (ikon gembok). |
+| `jsonBody, sukses, gagal` | Fungsi bantu supaya deskripsi tidak ditulis berulang. |
+
+Dokumentasi ini **tidak diperbarui otomatis**: kalau endpoint atau pesan error berubah, ubah juga file ini. Dokumentasi tidak menambah atau memvalidasi apa pun di API.
+
+### app.js — mendaftarkan semua route
+
 Satu berkas ini mendaftarkan seluruh endpoint, persis seperti daftar `mux.Handle(...)` di `main.go` Pertemuan 9 Bagian 08 — bandingkan urutannya, sama persis:
 
 src/app.js
@@ -1725,8 +1923,10 @@ src/app.js
     const express = require('express');
     const cors = require('cors');
     const path = require('path');
+    const swaggerUi = require('swagger-ui-express');
 
     const config = require('./config');
+    const swaggerSpec = require('./docs/swagger');
     const { requireAuth } = require('./middleware/auth');
     const { loginLimiter } = require('./middleware/rateLimit');
     const { errorHandler } = require('./middleware/errorHandler');
@@ -1771,6 +1971,16 @@ src/app.js
     // health check
     app.get('/healthz', (req, res) => res.sendStatus(200));
 
+    // dokumentasi Swagger. persistAuthorization: token tetap tersimpan setelah reload
+    // /swagger/index.html (alamat di versi Go) dialihkan, karena file bawaan paket
+    // di alamat itu menampilkan contoh "Petstore", bukan API kita.
+    app.get('/swagger/index.html', (req, res) => res.redirect('/swagger/'));
+    app.use(
+      '/swagger',
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerSpec, { swaggerOptions: { persistAuthorization: true } }),
+    );
+
     // errorHandler WAJIB didaftarkan PALING TERAKHIR -- Express mengenali
     // middleware 4-parameter (err, req, res, next) sebagai error handler hanya
     // kalau ia didaftarkan setelah semua route lain.
@@ -1804,6 +2014,8 @@ Beberapa route sengaja menumpuk 3 middleware sekaligus, misalnya `POST /api/umkm
 | `GET /api/produk/:id`       | tidak            | `produkHandler.detail`       |
 | `PUT /api/produk/:id`       | ya               | `produkHandler.update`       |
 | `DELETE /api/produk/:id`    | ya               | `produkHandler.remove`       |
+
+Selain 16 endpoint di atas, `GET /swagger/` menampilkan Swagger UI. `swaggerUi.serve` mengirim file tampilannya, `swaggerUi.setup(swaggerSpec, ...)` mengisinya dengan deskripsi kita, dan `persistAuthorization` membuat token tetap tersimpan setelah halaman dimuat ulang.
 
 ### Menelusuri alur auth dari awal sampai akhir
 
@@ -1862,6 +2074,7 @@ server.js
 
       const server = app.listen(config.port, () => {
         console.log(`server berjalan di port ${config.port}`);
+        console.log(`swagger: http://localhost:${config.port}/swagger/`);
       });
 
       // graceful shutdown
@@ -1886,14 +2099,52 @@ Persis seperti `main.go`: tes koneksi database dulu sebelum membuka port (`db.Pi
 2.  Install dependency: `npm install` (otomatis menjalankan `prisma generate` lewat skrip `postinstall`; di komputer lain atau server boleh `npm ci`).
 3.  Terapkan migrasi ke database: `npx prisma migrate deploy` (atau `npx prisma migrate dev` kalau kamu sedang mengembangkan skema — Bagian 05).
 4.  Jalankan mode development (auto-restart): `npm run dev`.
-5.  Harus muncul di terminal: `berhasil terhubung ke PostgreSQL` lalu `server berjalan di port 8080`.
+5.  Harus muncul di terminal: `berhasil terhubung ke PostgreSQL`, `server berjalan di port 8080`, lalu `swagger: http://localhost:8080/swagger/`.
 6.  Tes cepat: buka `http://localhost:8080/healthz` di browser, atau `curl http://localhost:8080/healthz` — harus balas kosong dengan status `200`.
 
 Checkpoint
 
-Kalau langkah 5 berhasil (200 OK), seluruh fondasi (koneksi database, Prisma, Express, middleware) sudah benar. Lanjut ke Bagian 16 untuk menguji seluruh alur CRUD lengkap.
+Kalau langkah 5 berhasil (200 OK), seluruh fondasi (koneksi database, Prisma, Express, middleware) sudah benar. Lanjut ke Bagian 16 untuk mencoba modul user lewat Swagger, lalu Bagian 17 untuk menguji seluruh alur CRUD.
 
-## 16Testing Lengkap via curl
+## 16Uji Modul User lewat Swagger
+
+Modul user terdiri dari lima endpoint: register, login, lihat profil, ubah profil, dan ubah password. Dengan server menyala, buka `http://localhost:8080/swagger/` di browser.
+
+### Urutan uji jalur sukses
+
+1.  **POST /auth/register** → *Try it out* → *Execute*. Contoh isian sudah tersedia. Harus `201`.
+2.  **POST /auth/login** → *Try it out* → *Execute*. Harus `200`. Salin nilai `token` tanpa tanda kutip.
+3.  **GET /profile** sebelum Authorize → `401` "token tidak ditemukan". Ini membuktikan endpoint terlindungi.
+4.  Klik **Authorize** (kanan atas), tempel token **tanpa kata Bearer** (Swagger menambahkannya sendiri), klik *Authorize*, lalu *Close*.
+5.  **GET /profile** lagi → `200` berisi `id`, `nama`, `email`.
+6.  **PUT /profile** → ganti `nama` di body → `200`. Panggil lagi GET /profile untuk melihat hasilnya.
+7.  **PUT /profile/password** → `200`. Login berikutnya harus memakai password baru (`rahasiabaru456` bila memakai contoh).
+
+### Uji jalur gagal
+
+Ubah isi body sebelum menekan *Execute*, lalu cocokkan statusnya:
+
+| Endpoint | Yang dicoba | Harus dibalas |
+|----|----|----|
+| register | Email yang sama dua kali | `409` email sudah terdaftar |
+| register | Password 3 karakter, atau field dihapus | `400` |
+| register | Nama lebih dari 100 karakter | `400` |
+| register | JSON rusak (hapus satu tanda kurung) | `400` body tidak valid |
+| login | Password salah atau email tak terdaftar | `401` email atau password salah |
+| login | Lebih dari 5 kali dalam 1 menit | `429` |
+| GET /profile | Setelah *Logout* di jendela Authorize | `401` |
+| PUT /profile | Email milik akun lain | `409` |
+| PUT /profile/password | Password lama salah, atau password baru terlalu pendek | `400` |
+
+Token berlaku 24 jam
+
+Karena `persistAuthorization` aktif, token tersimpan di browser. Kalau esok harinya semua endpoint profil membalas `401`, login lagi dan Authorize dengan token baru.
+
+Khusus development
+
+Halaman Swagger memperlihatkan seluruh endpoint kepada siapa pun yang bisa membukanya. Untuk server produksi, matikan atau lindungi route `/swagger`.
+
+## 17Testing Lengkap via curl
 
 Urutan di bawah ini **sudah benar-benar dijalankan** terhadap server Node + PostgreSQL sungguhan sebelum materi ini ditulis — setiap hasil yang dicantumkan adalah hasil asli, bukan contoh karangan. Jalankan dari terminal, berurutan dari atas.
 
@@ -2030,7 +2281,7 @@ Semua hasil di atas adalah hasil nyata
 
 Ketujuh skenario ini dijalankan terhadap server Node.js + PostgreSQL 17 sungguhan (bukan database tiruan) sebelum materi ini ditulis. Kalau kamu mengikuti kode dari Bagian 02-15 persis seperti yang tertulis, hasil yang kamu dapatkan di komputermu sendiri akan identik.
 
-## 17Troubleshooting Cepat
+## 18Troubleshooting Cepat
 
 | Error yang muncul | Penyebab paling umum | Solusi |
 |----|----|----|
@@ -2039,6 +2290,9 @@ Ketujuh skenario ini dijalankan terhadap server Node.js + PostgreSQL 17 sungguha
 | `P3005: The database schema is not empty` | Database sudah berisi tabel (mis. dibuat versi Go) sehingga `migrate` tidak mau menimpa. | Pakai database kosong, atau lakukan baseline (lihat Bagian 05). |
 | `EADDRINUSE: address already in use :::8080` | Server lama (dari `nodemon` atau terminal lain) masih berjalan di port yang sama. | Hentikan proses lama (`Ctrl+C` di terminal itu), atau ganti `PORT` di `.env`. |
 | Field form (`nama`, dll) selalu `undefined` di endpoint upload | Lupa memasang `uploadSingle(...)` di route, atau mengirim request sebagai JSON padahal field-nya ditulis sebagai `multipart/form-data`. | Endpoint yang menerima foto (buat/update UMKM & produk) wajib dikirim sebagai *form-data* (pakai `-F` di curl, bukan `-d` dengan JSON), dan route-nya wajib melalui `uploadSingle(...)`. |
+| `Cannot find module 'swagger-ui-express'` | Paket belum terpasang (misalnya setelah `git pull`). | Jalankan `npm install`. |
+| `Cannot find module './docs/swagger'` | File `src/docs/swagger.js` belum dibuat. | Buat file itu (Bagian 14). |
+| Sudah Authorize di Swagger tetapi tetap `401` | Yang ditempel berisi kata `Bearer`, tanda kutip, atau token sudah kedaluwarsa. | Klik *Logout* di jendela Authorize, tempel token saja. |
 | `Cannot find module '../utils/pagination'` | File `src/utils/pagination.js` belum dibuat. | Buat file itu (Bagian 12). |
 | Respons `500` dan terminal menulis `MulterError: Unexpected file field` | Nama field file di form-data tidak sama dengan nama field di `uploadSingle(subDir, fieldName)`. | Pastikan nama field upload selalu `foto` (huruf kecil semua), sama seperti didaftarkan di `app.js`. |
 | `JsonWebTokenError: jwt malformed` | Header `Authorization` terkirim kosong, atau menempelkan teks lain (bukan token asli) setelah "Bearer ". | Login ulang, salin token hasil `data.token` persis, cek tidak ada spasi/baris baru tambahan yang ikut tersalin. |
@@ -2047,7 +2301,7 @@ Ketujuh skenario ini dijalankan terhadap server Node.js + PostgreSQL 17 sungguha
 | `harga` di JSON berupa `"15000"` (string, bertanda kutip) | Lupa mengonversi kolom `Decimal` dengan `Number(...)` di `produkRepository` (fungsi `mapRow`). | Lihat kembali `mapRow()` di Bagian 10 — pastikan dipakai di `create`, `findById`, dan `findByUmkmId`. |
 | `@prisma/client did not initialize yet` / `Cannot find module '.prisma/client'` | Prisma Client belum di-generate (mis. habis `git clone`, atau `postinstall` terlewat). | Jalankan `npx prisma generate`, lalu jalankan ulang server. |
 
-## 18Perbandingan Go vs Node.js
+## 19Perbandingan Go vs Node.js
 
 Satu proyek, dua bahasa — tabel ini meringkas padanan tiap konsep, supaya kalau suatu saat perlu membaca atau menulis salah satu versi, versi yang satunya terasa seperti sudah pernah dilihat sebelumnya:
 
@@ -2064,7 +2318,7 @@ Satu proyek, dua bahasa — tabel ini meringkas padanan tiap konsep, supaya kala
 | Upload file | `r.ParseMultipartForm` + `io.Copy` manual | `multer` (`diskStorage` + `fileFilter`) |
 | Tipe data numerik dari DB | di-`Scan` otomatis ke tipe Go asli (`int`, `float64`) | `count()` sudah `Number`, tapi kolom `Decimal` (harga) berupa objek/string → wajib `Number()` manual |
 | Concurrency model | goroutine, tiap request punya *thread* ringan sendiri | single-threaded + event loop, `async/await` untuk I/O non-blocking |
-| Dokumentasi API | Swagger via komentar `// @Summary` dkk (swaggo) | bisa ditambah `swagger-jsdoc` + `swagger-ui-express` dengan pola komentar serupa (di luar cakupan materi ini) |
+| Dokumentasi API | Swagger via komentar `// @Summary` dkk (swaggo) | `swagger-ui-express` + objek OpenAPI di `src/docs/swagger.js` (baru modul user) |
 | Skema & migrasi | `golang-migrate` — berkas `.sql` bernomor ditulis tangan | Prisma Migrate — tulis `schema.prisma`, SQL migrasi dibuat otomatis |
 
 Satu pelajaran terpenting dari perbandingan ini
@@ -2073,17 +2327,16 @@ Baris kode berbeda, library berbeda, bahkan model concurrency-nya berbeda total 
 
 Perbedaan perilaku yang masih ada
 
-Endpoint dan alur utamanya sama, tetapi di kasus tepi ada beda: field `deskripsi`/`alamat` yang tidak dikirim tersimpan `NULL` di Node (Go: teks kosong) dan saat update nilai lamanya dipertahankan (Go: dikosongkan); email kembar saat ubah profil dibalas `500` (Go: `400`). Aplikasi `umkm-app` selalu mengirim semua field, jadi dua hal pertama tidak muncul dari aplikasi.
+Endpoint dan alur utamanya sama, tetapi di kasus tepi ada beda: field `deskripsi`/`alamat` yang tidak dikirim tersimpan `NULL` di Node (Go: teks kosong) dan saat update nilai lamanya dipertahankan (Go: dikosongkan); email kembar saat ubah profil dibalas `409` (Go: `400`). Aplikasi `umkm-app` selalu mengirim semua field, jadi dua hal pertama tidak muncul dari aplikasi.
 
-## 19Latihan
+## 20Latihan
 
-1.  Perbaiki `updateProfile` di `authService`: tangkap error Prisma `P2002` dan lempar `ConflictError` supaya email kembar dibalas `409`, bukan `500`.
-2.  Tambahkan endpoint `GET /api/umkm/:id/produk/:produkId` yang memvalidasi produk tersebut benar-benar milik UMKM dengan `:id` itu (bukan cuma dicari lewat `produkId` saja) — balas `404` kalau tidak cocok.
-3.  Tambahkan validasi panjang maksimal `nama` (mis. 150 karakter) di `umkmService.createOwn`, balas `InvalidInputError` kalau melebihi — cek juga `@db.VarChar(150)` di `schema.prisma` supaya konsisten.
-4.  Ganti `express-rate-limit` default (disimpan di memori) menjadi versi yang disimpan di Redis, supaya rate limit tetap konsisten walau server di-restart atau dijalankan lebih dari satu instance.
-5.  **Tantangan:** tambahkan `swagger-jsdoc` + `swagger-ui-express`, tulis dokumentasi untuk seluruh endpoint di atas memakai komentar JSDoc, supaya ada halaman `/docs` yang setara `/swagger/` di versi Go.
-6.  **Tantangan integrasi:** jalankan server Node ini di port berbeda dari versi Go (mis. 8081), lalu ubah `baseUrl` di `ApiService` Flutter (Pertemuan 7) untuk sementara menunjuk ke situ — buktikan aplikasi `umkm-app` yang sama persis bisa jalan tanpa perubahan kode Flutter sedikit pun, baik menunjuk ke backend Go maupun Node.
-7.  Tambahkan model `Kategori` (id, nama) di `schema.prisma` dengan relasi satu-ke-banyak ke `Produk`, lalu jalankan `npx prisma migrate dev --name tambah_kategori`. Buka berkas SQL baru di `prisma/migrations/` dan jelaskan apa yang berubah dibanding migrasi `init`.
-8.  Ubah endpoint detail UMKM supaya sekalian menyertakan daftar produknya dalam **satu** query memakai `include` (`prisma.umkm.findUnique({ where: { id }, include: { produk: true } })`). Bandingkan dengan pendekatan dua query terpisah (`findById` + `findByUmkmId`) — apa untung-ruginya?
+1.  Tambahkan endpoint `GET /api/umkm/:id/produk/:produkId` yang memvalidasi produk tersebut benar-benar milik UMKM dengan `:id` itu (bukan cuma dicari lewat `produkId` saja) — balas `404` kalau tidak cocok.
+2.  Tambahkan validasi panjang maksimal `nama` (mis. 150 karakter) di `umkmService.createOwn`, balas `InvalidInputError` kalau melebihi — cek juga `@db.VarChar(150)` di `schema.prisma` supaya konsisten.
+3.  Ganti `express-rate-limit` default (disimpan di memori) menjadi versi yang disimpan di Redis, supaya rate limit tetap konsisten walau server di-restart atau dijalankan lebih dari satu instance.
+4.  **Tantangan:** lengkapi `src/docs/swagger.js` dengan endpoint UMKM dan produk (upload foto memakai `multipart/form-data`), supaya setara `/swagger/` di versi Go.
+5.  **Tantangan integrasi:** jalankan server Node ini di port berbeda dari versi Go (mis. 8081), lalu ubah `baseUrl` di `ApiService` Flutter (Pertemuan 7) untuk sementara menunjuk ke situ — buktikan aplikasi `umkm-app` yang sama persis bisa jalan tanpa perubahan kode Flutter sedikit pun, baik menunjuk ke backend Go maupun Node.
+6.  Tambahkan model `Kategori` (id, nama) di `schema.prisma` dengan relasi satu-ke-banyak ke `Produk`, lalu jalankan `npx prisma migrate dev --name tambah_kategori`. Buka berkas SQL baru di `prisma/migrations/` dan jelaskan apa yang berubah dibanding migrasi `init`.
+7.  Ubah endpoint detail UMKM supaya sekalian menyertakan daftar produknya dalam **satu** query memakai `include` (`prisma.umkm.findUnique({ where: { id }, include: { produk: true } })`). Bandingkan dengan pendekatan dua query terpisah (`findById` + `findByUmkmId`) — apa untung-ruginya?
 
 Dengan panduan ini, proyek `umkm-api` yang sama bisa dibangun ulang dari nol dengan stack Node.js + Express + Prisma + PostgreSQL kapan pun dibutuhkan — seluruh endpoint, aturan bisnis, dan skema database identik dengan versi Golang di Pertemuan 4/9, dan setiap baris kodenya sudah diuji berjalan nyata sebelum materi ini ditulis. — Materi Sistem Informasi, Fakultas Ilmu Komputer, Universitas Bandar Lampung

@@ -15,6 +15,7 @@ async function main() {
 
   const server = app.listen(config.port, () => {
     console.log(`server berjalan di port ${config.port}`);
+    console.log(`swagger: http://localhost:${config.port}/swagger/`);
   });
 
   // graceful shutdown
