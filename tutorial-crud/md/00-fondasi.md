@@ -865,6 +865,8 @@ terminal
 
 Buka `http://localhost:8080/swagger/`, lalu uji register, login, *Authorize*, dan profil seperti di [Pertemuan 9a Bagian 16](../../pertemuan-09a.html#s16).
 
+Ingin membuat Swagger-nya sendiri selangkah demi selangkah? Ikuti [Setup Swagger dari Awal](swagger.md).
+
 Checkpoint
 
 Lanjut ke tutorial project-mu hanya kalau `GET /profile` sudah membalas `200`. Kembali ke [daftar project](index.md).

@@ -11,6 +11,7 @@ Fondasi yang sama, tabel yang berbeda untuk setiap project.
 1.  [Pertemuan 9a](../../pertemuan-09a.html) — pahami konsepnya (studi kasus UMKM).
 2.  [Fondasi Modul User](00-fondasi.md) — sama untuk semua.
 3.  Tutorial project-mu di daftar bawah — CRUD satu tabel.
+4.  [Setup Swagger dari Awal](swagger.md) — cara membuat dokumentasi API modul user selangkah demi selangkah.
 
 ## 02 Daftar Project
 
